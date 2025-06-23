@@ -42,30 +42,12 @@ export default function SignInPage() {
 
   // Check if passwords match
   const passwordsMatch = password === confirmPassword && password.length > 0
-  const showPasswordError = touched.confirmPassword && confirmPassword.length > 0 && !passwordsMatch
-  const isFormValid = email.length > 0 && password.length > 0 && passwordsMatch
   const isOtpComplete = otp.every(digit => digit !== "")
-
-  const handleWalletConnect = () => {
-    console.log("Connecting wallet...")
-  }
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setIsLoading(true)
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      setIsLoading(false)
-      return
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long")
-      setIsLoading(false)
-      return
-    }
 
     try {
       // Simulate API call to send OTP
@@ -93,12 +75,9 @@ export default function SignInPage() {
     // Simulate API call
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        // For demo purposes, accept "123456" as valid OTP
-        if (otpCode === "123456") {
-          resolve(true)
-        } else {
-          reject(new Error("Invalid OTP"))
-        }
+        // Add the OTP Pull request and match the two
+
+       
       }, 1000)
     })
   }
@@ -172,9 +151,6 @@ export default function SignInPage() {
     }
   }
 
-  const handleConfirmPasswordBlur = () => {
-    setTouched({ ...touched, confirmPassword: true })
-  }
 
   const renderRegistrationStep = () => (
     <>
@@ -193,16 +169,7 @@ export default function SignInPage() {
          
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Wallet Connect */}
-          <div className="space-y-4">
-            
-            
-          </div>
-
-          <div className="relative">
-            
-          </div>
-
+          
           {/* Email Registration Form */}
           <form onSubmit={handleEmailSignUp} className="space-y-6">
             <div className="space-y-2">
