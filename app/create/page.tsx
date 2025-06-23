@@ -4,12 +4,10 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
+
 import {
   Calendar,
   MapPin,
@@ -91,12 +89,7 @@ export default function CreateEventPage() {
                 <span>Public</span>
                 <ChevronDown className="w-4 h-4" />
               </div>
-              <Button 
-                onClick={handleSubmit}
-                className="bg-white text-gray-900 hover:bg-gray-100 font-medium px-6"
-              >
-                Create Event
-              </Button>
+
             </div>
           </div>
         </div>
@@ -344,6 +337,12 @@ export default function CreateEventPage() {
                     <Edit3 className="w-4 h-4 text-white/50" />
                   </div>
                 </div>
+              <Button 
+                onClick={handleSubmit}
+                className="bg-white w-auto text-gray-900 hover:bg-gray-100 font-medium px-6"
+              >
+                Create Event
+              </Button>
               </div>
           </div>
         </div>
