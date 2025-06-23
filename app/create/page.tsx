@@ -35,6 +35,8 @@ import {
 } from "lucide-react"
 import EventImageUpload from "@/components/EventImageUpload"
 import Link from "next/link"
+import {useRouter} from "next/navigation"
+import { useEventStore } from "@/store/EventStore"
 
 export default function CreateEventPage() {
   const [eventData, setEventData] = useState({
@@ -53,6 +55,9 @@ export default function CreateEventPage() {
     timezone: "GMT+03:00 Nairobi",
   })
 
+  const addEvent = useEventStore((state) => state.addEvent)
+  const router = useRouter();
+
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false)
   const [capacityDialogOpen, setCapacityDialogOpen] = useState(false)
   const [tempTicketData, setTempTicketData] = useState({
@@ -65,6 +70,12 @@ export default function CreateEventPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    addEvent({
+      ...eventData,
+      id: Date.now().toString(),
+      attendees: "",
+    })
+    router.push("/dashboard")
     console.log("Event created:", eventData)
   }
 
@@ -129,7 +140,7 @@ export default function CreateEventPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/discover" passHref>
+              <Link href="/dashboard" passHref>
                 <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10" asChild>
                   <span className="flex items-center">
                     <ArrowLeft className="w-4 h-4 mr-2" />
@@ -171,7 +182,7 @@ export default function CreateEventPage() {
                   <>
                     <Globe className="w-4 h-4" />
                     <span>Public</span>
-                    </>
+                  </>
                 )}
                 <ChevronDown className="w-4 h-4" />
               </button>
