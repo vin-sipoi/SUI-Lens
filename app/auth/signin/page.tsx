@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Wallet, Mail, Lock, Eye, EyeOff, Sparkles, Shield, Zap } from "lucide-react"
 import Link from "next/link"
+import { ConnectButton } from "@mysten/dapp-kit"
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -57,9 +58,7 @@ export default function SignInPage() {
             <Link href="/discover" className="text-white/70 hover:text-white transition-colors">
               Discover Events
             </Link>
-            <Link href="/auth/signup">
-              <Button className="base-button-secondary">Create Account</Button>
-            </Link>
+           <ConnectButton className="base-button-secondary"/>
           </div>
         </div>
       </header>
@@ -72,40 +71,17 @@ export default function SignInPage() {
             <span className="text-blue-300 font-semibold">Welcome Back</span>
           </div>
           <h1 className="text-4xl font-bold text-white mb-3">Sign In</h1>
-          <p className="text-white/70 text-lg">Continue your Web3 event journey</p>
+          <p className="text-white/70 text-lg">Continue on your Web3 event journey</p>
         </div>
 
         <Card className="base-card-light shadow-2xl">
           <CardHeader className="text-center pb-6">
-            <CardTitle className="text-2xl font-bold text-gray-800">Choose Your Path</CardTitle>
+            
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Wallet Connect */}
-            <div className="space-y-4">
-              <Button
-                onClick={handleWalletConnect}
-                className="w-full py-4 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
-              >
-                <div className="flex items-center justify-center space-x-3">
-                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                    <Wallet className="w-5 h-5" />
-                  </div>
-                  <span>Connect Sui Wallet</span>
-                  <Zap className="w-5 h-5 animate-sparkle" />
-                </div>
-              </Button>
-              <p className="text-center text-sm text-gray-500 flex items-center justify-center">
-                <Shield className="w-4 h-4 mr-2" />
-                Secure & decentralized authentication
-              </p>
-            </div>
 
-            <div className="relative">
-              <Separator className="my-6" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="bg-white px-4 text-gray-500 font-medium">or continue with email</span>
-              </div>
-            </div>
+            
 
             {/* Email Sign In */}
             <form onSubmit={handleEmailSignIn} className="space-y-6">
