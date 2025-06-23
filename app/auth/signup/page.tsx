@@ -223,100 +223,11 @@ export default function SignInPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700 font-semibold">
-                Password
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="pl-10 pr-12 py-3 text-lg rounded-xl border-2 focus:border-blue-400"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password" className="text-gray-700 font-semibold">
-                Confirm Password
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input
-                  id="confirm-password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Confirm your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  onBlur={handleConfirmPasswordBlur}
-                  required
-                  className={`pl-10 pr-12 py-3 text-lg rounded-xl border-2 transition-colors ${
-                    showPasswordError 
-                      ? 'border-red-400 focus:border-red-400' 
-                      : passwordsMatch && confirmPassword.length > 0
-                      ? 'border-green-400 focus:border-green-400'
-                      : 'focus:border-blue-400'
-                  }`}
-                />
-                <div className="absolute right-12 top-1/2 transform -translate-y-1/2">
-                  {confirmPassword.length > 0 && (
-                    passwordsMatch ? (
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                    ) : (
-                      touched.confirmPassword && <XCircle className="w-5 h-5 text-red-500" />
-                    )
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-              {showPasswordError && (
-                <p className="text-red-500 text-sm flex items-center mt-1">
-                  <XCircle className="w-4 h-4 mr-1" />
-                  Passwords do not match
-                </p>
-              )}
-              {passwordsMatch && confirmPassword.length > 0 && (
-                <p className="text-green-500 text-sm flex items-center mt-1">
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                  Passwords match
-                </p>
-              )}
-            </div>
-
-            {error && (
-              <div className="text-red-500 text-sm font-semibold text-center bg-red-50 p-3 rounded-xl border border-red-200">
-                {error}
-              </div>
-            )}
-
             <Button
               type="submit"
-              disabled={!isFormValid || isLoading}
-              className={`w-full py-4 text-lg font-semibold rounded-2xl shadow-xl transition-all duration-300 transform ${
-                isFormValid && !isLoading
-                  ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white hover:shadow-2xl hover:-translate-y-1'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              className='w-full py-4 text-lg font-semibold rounded-2xl shadow-xl transition-all duration-300 transform bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white hover:shadow-2xl hover:-translate-y-1'
             >
-              {isLoading ? "Sending Code..." : "Continue with Email"}
+               Continue with Email
             </Button>
           </form>
 
