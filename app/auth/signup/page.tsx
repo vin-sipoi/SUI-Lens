@@ -368,7 +368,7 @@ export default function SignInPage() {
             <Link href="/discover" className="text-white/70 hover:text-white transition-colors">
               Discover Events
             </Link>
-            <ConnectButton />
+            <ConnectButton/>
           </div>
         </div>
       </header>
