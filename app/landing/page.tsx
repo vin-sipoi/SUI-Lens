@@ -5,8 +5,21 @@ import { Input } from "@/components/ui/input"
 import { ConnectButton } from "@mysten/dapp-kit"
 import { Search, Wallet, Award, Coins, ArrowRight, Play, Calendar } from "lucide-react"
 import Link from "next/link"
+import { useUser } from "./UserContext"
+import { ProfileDropdown } from "./ProfileDropDown"
 
 export default function HomePage() {
+  const { user, login } = useUser()
+
+  // For demo: fake login on click
+  const handleDemoLogin = () => {
+    login({
+      name: "Jane Doe",
+      email: "jane@example.com",
+      avatarUrl: "/avatar-placeholder.png", // Put a real image in public/ if you want
+    })
+  }
+
   return (
     <div className="min-h-screen" style={{ background: "#201a28" }}>
       {/* Floating Elements */}
@@ -55,9 +68,25 @@ export default function HomePage() {
             >
               Explore Events
             </Link>
-            
-            <Link href = "/auth/signup" className="hidden sm:block text-white/70 hover:text-white font-medium transition-colors">Sign Up</Link>
-           
+            {!user ? (
+              <>
+                <Link
+                  href="/auth/signup"
+                  className="hidden sm:block text-white/70 hover:text-white font-medium transition-colors"
+                >
+                  Sign Up
+                </Link>
+                {/* Demo login button, remove in production */}
+                <button
+                  onClick={handleDemoLogin}
+                  className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg"
+                >
+                  Demo Login
+                </button>
+              </>
+            ) : (
+              <ProfileDropdown />
+            )}
           </div>
         </div>
       </header>
