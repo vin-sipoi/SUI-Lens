@@ -31,7 +31,7 @@ export function EmptyStateIllustration({ type, title, description, actionText, o
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
       <div className="mb-8 transform hover:scale-105 transition-transform duration-300">{renderIllustration()}</div>
-      <h3 className="text-2xl font-bold text-gray-900 mb-3">{title}</h3>
+      <h3 className="text-2xl font-bold text-gray-200 mb-3">{title}</h3>
       <p className="text-gray-600 max-w-md mb-8 leading-relaxed">{description}</p>
       {actionText && onAction && (
         <Button

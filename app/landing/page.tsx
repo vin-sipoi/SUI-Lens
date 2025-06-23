@@ -100,17 +100,6 @@ export default function HomePage() {
                 <Button className="base-button-primary px-8 py-4 text-lg font-semibold">Search Events</Button>
               </Link>
             </div>
-
-            <div className="flex flex-wrap justify-center gap-3 pt-4">
-              {["🏗️ DeFi", "🎮 Gaming", "🎨 NFTs", "💻 Development", "🌐 Metaverse", "⚡ Infrastructure"].map((tag) => (
-                <span
-                  key={tag}
-                  className="px-4 py-2 glass-dark border border-white/20 rounded-full text-sm font-medium text-white/80 hover:border-blue-300 hover:bg-blue-500/10 transition-all cursor-pointer"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
       </section>
@@ -133,12 +122,6 @@ export default function HomePage() {
                   <Calendar className="w-12 h-12 text-white/40" />
                 </div>
                 <h3 className="text-2xl font-semibold text-white mb-3">No Events Yet</h3>
-                <p className="text-white/60 max-w-md mx-auto mb-8">
-                  There are no events created yet. Be the first to create an amazing Web3 event!
-                </p>
-                <Button className="base-button-primary">
-                  Create Your First Event
-                </Button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
