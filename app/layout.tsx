@@ -1,10 +1,9 @@
 import type { Metadata } from 'next'
 import './globals.css'
-//import WalletProviderWrapper from '@/components/WalletProvider'
-import Providers from "./providers"
+
 export const metadata: Metadata = {
-  title: 'Sui Lens',
-  description: 'all Sui events in one',
+  title: 'v0 App',
+  description: 'Created with v0',
   generator: 'v0.dev',
 }
 
@@ -15,12 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
-       <Providers>{children}</Providers>
-           
-       
-       
-      </body>
+      <body>{children}</body>
     </html>
   )
 }

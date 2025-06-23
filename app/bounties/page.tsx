@@ -1,240 +1,11 @@
-"use client"
-
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Search, Filter, Coins, Calendar, Users, ExternalLink, Award, Plus, X } from "lucide-react"
+import { Search, Filter, Coins, Calendar, Users, ExternalLink, Award } from "lucide-react"
 import Link from "next/link"
-import { ConnectButton } from "@mysten/dapp-kit"
 
-interface Bounty {
-  id: number
-  title: string
-  description: string
-  event: string
-  reward: string
-  deadline: string
-  difficulty: string
-  submissions: number
-  status: "active" | "completed"
-  tags: string[]
-}
-
-interface BountyFormData {
-  title: string
-  description: string
-  event: string
-  reward: string
-  deadline: string
-  difficulty: string
-  tags: string[]
-}
-
-interface CreateBountyDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  onSubmit: (formData: BountyFormData) => void
-}
-
-const CreateBountyDialog = ({ isOpen, onClose, onSubmit }: CreateBountyDialogProps) => {
-  const [formData, setFormData] = useState<BountyFormData>({
-    title: '',
-    description: '',
-    event: '',
-    reward: '',
-    deadline: '',
-    difficulty: 'Beginner',
-    tags: []
-  })
-  const [tagInput, setTagInput] = useState('')
-
-  const difficulties = ['Beginner', 'Intermediate', 'Advanced', 'Expert']
-
-  const handleInputChange = (field: keyof BountyFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
-
-  const addTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, tagInput.trim()]
-      }))
-      setTagInput('')
-    }
-  }
-
-  const removeTag = (tagToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
-    }))
-  }
-
-  const handleSubmit = () => {
-    if (formData.title && formData.description && formData.reward && formData.deadline) {
-      onSubmit(formData)
-      setFormData({
-        title: '',
-        description: '',
-        event: '',
-        reward: '',
-        deadline: '',
-        difficulty: 'Beginner',
-        tags: []
-      })
-      onClose()
-    }
-  }
-
-  if (!isOpen) return null
-
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="base-card w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl">
-        <div className="p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold gradient-text">Create New Bounty</h2>
-            <Button 
-              onClick={onClose}
-              className="p-2 glass-dark border border-white/20 text-white hover:bg-white/10 rounded-full"
-            >
-              <X className="w-5 h-5" />
-            </Button>
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <label className="block text-white font-medium mb-2">Bounty Title *</label>
-              <Input
-                value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                placeholder="Enter bounty title..."
-                className="base-input"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-white font-medium mb-2">Description *</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Describe what needs to be accomplished..."
-                className="base-input min-h-[100px] resize-vertical"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-white font-medium mb-2">Associated Event</label>
-              <Input
-                value={formData.event}
-                onChange={(e) => handleInputChange('event', e.target.value)}
-                placeholder="Event name (optional)"
-                className="base-input"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-white font-medium mb-2">Reward (SUI) *</label>
-                <Input
-                  value={formData.reward}
-                  onChange={(e) => handleInputChange('reward', e.target.value)}
-                  placeholder="100"
-                  className="base-input"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-white font-medium mb-2">Deadline *</label>
-                <Input
-                  type="date"
-                  value={formData.deadline}
-                  onChange={(e) => handleInputChange('deadline', e.target.value)}
-                  className="base-input"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-white font-medium mb-2">Difficulty Level</label>
-              <select
-                value={formData.difficulty}
-                onChange={(e) => handleInputChange('difficulty', e.target.value)}
-                className="base-input"
-              >
-                {difficulties.map(diff => (
-                  <option key={diff} value={diff} className="bg-gray-800 text-white">
-                    {diff}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-white font-medium mb-2">Tags</label>
-              <div className="flex gap-2 mb-3">
-                <Input
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  placeholder="Add a tag..."
-                  className="base-input flex-1"
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                />
-                <Button
-                  onClick={addTag}
-                  className="base-button-secondary"
-                >
-                  Add
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {formData.tags.map(tag => (
-                  <Badge
-                    key={tag}
-                    className="glass-dark border border-white/20 text-white/70 rounded-full text-xs flex items-center gap-1"
-                  >
-                    {tag}
-                    <button
-                      onClick={() => removeTag(tag)}
-                      className="ml-1 hover:text-red-400"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-4 pt-4">
-              <Button
-                onClick={handleSubmit}
-                className="base-button-primary flex-1"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Bounty
-              </Button>
-              <Button
-                onClick={onClose}
-                className="base-button-secondary"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-const initialBounties: Bounty[] = [
+const bounties = [
   {
     id: 1,
     title: "Build a Sui DApp Tutorial",
@@ -298,29 +69,6 @@ const initialBounties: Bounty[] = [
 ]
 
 export default function BountiesPage() {
-  const [bounties, setBounties] = useState<Bounty[]>(initialBounties)
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-
-  const handleCreateBounty = (formData: BountyFormData) => {
-    const newBounty: Bounty = {
-      id: bounties.length + 1,
-      title: formData.title,
-      description: formData.description,
-      event: formData.event || "Community Initiative",
-      reward: `${formData.reward} SUI`,
-      deadline: new Date(formData.deadline).toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
-      }),
-      difficulty: formData.difficulty,
-      submissions: 0,
-      status: "active",
-      tags: formData.tags,
-    }
-    setBounties(prev => [newBounty, ...prev])
-  }
-
   return (
     <div className="min-h-screen" style={{ background: "#201a28" }}>
       {/* Floating Elements */}
@@ -365,13 +113,10 @@ export default function BountiesPage() {
             </Link>
           </nav>
           <div className="flex items-center space-x-4">
-            <ConnectButton/>
-            <Button 
-              onClick={() => setIsCreateDialogOpen(true)}
-              className="base-button-primary"
-            >
-              Create Bounty
-            </Button>
+            <Button className="base-button-secondary">Connect Wallet</Button>
+            <Link href="/bounties/create">
+              <Button className="base-button-primary">Create Bounty</Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -390,7 +135,7 @@ export default function BountiesPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-100 text-sm font-medium">Active Bounties</p>
-                  <p className="text-3xl font-bold">{bounties.filter(b => b.status === 'active').length}</p>
+                  <p className="text-3xl font-bold">24</p>
                 </div>
                 <Coins className="w-8 h-8 text-purple-200" />
               </div>
@@ -426,7 +171,7 @@ export default function BountiesPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-orange-100 text-sm font-medium">Completed</p>
-                  <p className="text-3xl font-bold">{bounties.filter(b => b.status === 'completed').length}</p>
+                  <p className="text-3xl font-bold">89</p>
                 </div>
                 <Calendar className="w-8 h-8 text-orange-200" />
               </div>
@@ -572,13 +317,6 @@ export default function BountiesPage() {
           <Button className="base-button-secondary px-8 py-4">Load More Bounties</Button>
         </div>
       </div>
-
-      {/* Create Bounty Dialog */}
-      <CreateBountyDialog
-        isOpen={isCreateDialogOpen}
-        onClose={() => setIsCreateDialogOpen(false)}
-        onSubmit={handleCreateBounty}
-      />
     </div>
   )
 }

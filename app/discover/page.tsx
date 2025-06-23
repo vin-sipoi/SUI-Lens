@@ -22,7 +22,6 @@ import {
   Heart,
 } from "lucide-react"
 import Link from "next/link"
-import { ConnectButton } from "@mysten/dapp-kit"
 
 const popularEvents = [
   {
@@ -154,7 +153,7 @@ export default function DiscoverPage() {
               Discover
               <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-blue-400 rounded-full"></div>
             </Link>
-            {["Bounties", "Dashboard"].map((item) => (
+            {["Create Event", "Bounties", "Dashboard"].map((item) => (
               <Link
                 key={item}
                 href={`/${item.toLowerCase().replace(" ", "")}`}
@@ -166,7 +165,11 @@ export default function DiscoverPage() {
           </nav>
 
           <div className="flex items-center space-x-3">
-            <ConnectButton />
+            <Button className="base-button-secondary">
+              <Wallet className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Connect Wallet</span>
+              <span className="sm:hidden">Connect</span>
+            </Button>
             <Link href="/create">
               <Button className="base-button-primary">
                 <span className="hidden sm:inline">Create Event</span>
