@@ -4,6 +4,10 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Search, Filter, Award, Calendar, Users, ExternalLink, Download } from "lucide-react"
 import Link from "next/link"
+<<<<<<< HEAD
+=======
+import { ConnectButton } from "@mysten/dapp-kit"
+>>>>>>> deaea26 (Added backend)
 
 const poaps = [
   {
@@ -119,7 +123,11 @@ export default function POAPsPage() {
             </Link>
           </nav>
           <div className="flex items-center space-x-4">
+<<<<<<< HEAD
             <Button className="base-button-secondary">Connect Wallet</Button>
+=======
+            <ConnectButton />
+>>>>>>> deaea26 (Added backend)
             <Button className="base-button-primary">
               <Award className="w-4 h-4 mr-2" />
               My POAPs

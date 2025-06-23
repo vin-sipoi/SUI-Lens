@@ -1,8 +1,8 @@
-<<<<<<< HEAD
 "use client"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { ConnectButton } from "@mysten/dapp-kit"
 import { Search, Wallet, Award, Coins, ArrowRight, Play, Calendar } from "lucide-react"
 import Link from "next/link"
 
@@ -48,18 +48,16 @@ export default function HomePage() {
             ))}
           </nav>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-10">
             <Link
               href="/discover"
               className="hidden sm:block text-white/70 hover:text-white font-medium transition-colors"
             >
               Explore Events
             </Link>
-            <Button className="base-button-secondary">
-              <Wallet className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Connect Wallet</span>
-              <span className="sm:hidden">Connect</span>
-            </Button>
+            
+            <Link href = "/auth/signup" className="hidden sm:block text-white/70 hover:text-white font-medium transition-colors">Sign Up</Link>
+           
           </div>
         </div>
       </header>
@@ -344,10 +342,4 @@ export default function HomePage() {
       </footer>
     </div>
   )
-=======
-import { redirect } from 'next/navigation'
-
-export default function Home() {
-  redirect('/landing')
->>>>>>> deaea26 (Added backend)
 }
