@@ -7,6 +7,15 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 import {
   Calendar,
@@ -21,7 +30,11 @@ import {
   Ticket,
   Settings,
   ChevronDown,
+  ExternalLink,
+  Video,
 } from "lucide-react"
+import EventImageUpload from "@/components/EventImageUpload"
+import Link from "next/link"
 
 export default function CreateEventPage() {
   const [eventData, setEventData] = useState({
@@ -38,6 +51,16 @@ export default function CreateEventPage() {
     requiresApproval: false,
     isPrivate: false,
     timezone: "GMT+03:00 Nairobi",
+  })
+
+  const [ticketDialogOpen, setTicketDialogOpen] = useState(false)
+  const [capacityDialogOpen, setCapacityDialogOpen] = useState(false)
+  const [tempTicketData, setTempTicketData] = useState({
+    isFree: eventData.isFree,
+    ticketPrice: eventData.ticketPrice,
+  })
+  const [tempCapacityData, setTempCapacityData] = useState({
+    capacity: eventData.capacity,
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -64,6 +87,41 @@ export default function CreateEventPage() {
     return `${displayHour.toString().padStart(2, '0')}:${minutes} ${ampm}`
   }
 
+  const handleTicketSave = () => {
+    setEventData({
+      ...eventData,
+      isFree: tempTicketData.isFree,
+      ticketPrice: tempTicketData.ticketPrice,
+    })
+    setTicketDialogOpen(false)
+  }
+
+  const handleCapacitySave = () => {
+    setEventData({
+      ...eventData,
+      capacity: tempCapacityData.capacity,
+    })
+    setCapacityDialogOpen(false)
+  }
+
+  const isValidUrl = (string: string) => {
+    try {
+      new URL(string)
+      return true
+    } catch (_) {
+      return false
+    }
+  }
+
+  const isVideoCall = (url: string) => {
+    const videoCallDomains = ['zoom.us', 'meet.google.com', 'teams.microsoft.com', 'webex.com']
+    return videoCallDomains.some(domain => url.includes(domain))
+  }
+
+  const isGoogleMapsUrl = (url: string) => {
+    return url.includes('maps.google.com') || url.includes('goo.gl/maps')
+  }
+
   return (
     <div className="min-h-screen" style={{ background: "#201a28" }}>
       {/* Header */}
@@ -71,10 +129,14 @@ export default function CreateEventPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
+              <Link href="/discover" passHref>
+                <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10" asChild>
+                  <span className="flex items-center">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </span>
+                </Button>
+              </Link>
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-blue-500 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">S</span>
@@ -84,12 +146,35 @@ export default function CreateEventPage() {
             </div>
 
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2 text-white/70 text-sm">
-                <Globe className="w-4 h-4" />
-                <span>Public</span>
+              <button
+                type="button"
+                className={`flex items-center space-x-2 text-white/70 text-sm px-2 py-1 rounded-lg transition-colors ${
+                  eventData.isPrivate
+                    ? "bg-pink-700/30 hover:bg-pink-700/50"
+                    : "bg-emerald-700/30 hover:bg-emerald-700/50"
+                }`}
+                onClick={() =>
+                  setEventData((prev) => ({
+                    ...prev,
+                    isPrivate: !prev.isPrivate,
+                  }))
+                }
+                aria-pressed={eventData.isPrivate}
+                title={eventData.isPrivate ? "Private Event" : "Public Event"}
+              >
+                {eventData.isPrivate ? (
+                  <>
+                    <Users className="w-4 h-4" />
+                    <span>Private</span>
+                  </>
+                ) : (
+                  <>
+                    <Globe className="w-4 h-4" />
+                    <span>Public</span>
+                    </>
+                )}
                 <ChevronDown className="w-4 h-4" />
-              </div>
-
+              </button>
             </div>
           </div>
         </div>
@@ -100,48 +185,7 @@ export default function CreateEventPage() {
             {/* Left Column - Preview */}
             <div className="space-y-6">
               {/* Event Image Upload */}
-              <div className="relative">
-                <div 
-                  className="w-full h-64 rounded-2xl border-2 border-dashed border-white/20 bg-white/5 flex items-center justify-center cursor-pointer hover:border-white/40 hover:bg-white/10 transition-all group"
-                  style={{
-                    backgroundImage: eventData.title ? 
-                      "linear-gradient(135deg, rgba(147, 51, 234, 0.8), rgba(59, 130, 246, 0.8)), url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><pattern id=\"grain\" width=\"100\" height=\"100\" patternUnits=\"userSpaceOnUse\"><circle cx=\"20\" cy=\"20\" r=\"1\" fill=\"%23ffffff\" opacity=\"0.1\"/><circle cx=\"80\" cy=\"40\" r=\"1\" fill=\"%23ffffff\" opacity=\"0.1\"/><circle cx=\"40\" cy=\"80\" r=\"1\" fill=\"%23ffffff\" opacity=\"0.1\"/></pattern></defs><rect width=\"100\" height=\"100\" fill=\"url(%23grain)\"/></svg>')" : 
-                      undefined
-                  }}
-                >
-                  {!eventData.title ? (
-                    <div className="text-center">
-                      <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mx-auto mb-4 group-hover:bg-white/20 transition-colors">
-                        <Camera className="w-6 h-6 text-white/60" />
-                      </div>
-                      <p className="text-white/60 font-medium">Add event image</p>
-                      <p className="text-white/40 text-sm mt-1">Recommended: 1200x630</p>
-                    </div>
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col justify-end p-6 bg-gradient-to-t from-black/60 to-transparent rounded-2xl">
-                      <h2 className="text-2xl font-bold text-white mb-2">{eventData.title}</h2>
-                      <div className="flex items-center text-white/90 text-sm">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        {formatDate(eventData.date)} • {formatTime(eventData.time)}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Theme Selector */}
-                <div className="absolute top-4 right-4">
-                  <Button 
-                    type="button"
-                    size="sm" 
-                    variant="secondary" 
-                    className="bg-white/90 text-gray-900 hover:bg-white rounded-xl px-3 py-2 text-xs font-medium"
-                  >
-                    Theme
-                    <ChevronDown className="w-3 h-3 ml-1" />
-                  </Button>
-                </div>
-              </div>
-
+              <EventImageUpload />
               {/* Event Details Preview */}
               <Card className="bg-white/5 border-white/10 rounded-2xl">
                 <CardContent className="p-6 space-y-4">
@@ -166,14 +210,44 @@ export default function CreateEventPage() {
                   {/* Location */}
                   <div className="flex items-center space-x-3 text-white/70">
                     <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                      <MapPin className="w-4 h-4" />
+                      {eventData.location && isValidUrl(eventData.location) ? (
+                        isVideoCall(eventData.location) ? (
+                          <Video className="w-4 h-4" />
+                        ) : (
+                          <MapPin className="w-4 h-4" />
+                        )
+                      ) : (
+                        <MapPin className="w-4 h-4" />
+                      )}
                     </div>
-                    <div>
-                      <div className="text-white font-medium">
-                        {eventData.location || "Add location"}
+                    <div className="flex-1">
+                      <div className="text-white font-medium flex items-center">
+                        {eventData.location ? (
+                          isValidUrl(eventData.location) ? (
+                            <a 
+                              href={eventData.location} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center hover:text-blue-400 transition-colors"
+                            >
+                              {isVideoCall(eventData.location) ? "Join Video Call" : 
+                               isGoogleMapsUrl(eventData.location) ? "View on Google Maps" : 
+                               "Visit Location"}
+                              <ExternalLink className="w-3 h-3 ml-1" />
+                            </a>
+                          ) : (
+                            eventData.location
+                          )
+                        ) : (
+                          "Add location"
+                        )}
                       </div>
                       <div className="text-sm text-white/60">
-                        Offline location or virtual link
+                        {eventData.location && isValidUrl(eventData.location) ? (
+                          isVideoCall(eventData.location) ? "Virtual meeting" : "Online location"
+                        ) : (
+                          "Offline location or virtual link"
+                        )}
                       </div>
                     </div>
                   </div>
@@ -193,6 +267,23 @@ export default function CreateEventPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Capacity Preview */}
+                  {eventData.capacity && (
+                    <div className="flex items-center space-x-3 text-white/70">
+                      <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                        <Users className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-white font-medium">
+                          {eventData.capacity} guests
+                        </div>
+                        <div className="text-sm text-white/60">
+                          Maximum capacity
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -308,10 +399,67 @@ export default function CreateEventPage() {
                     <Ticket className="w-5 h-5 text-white/70" />
                     <span className="text-white font-medium">Tickets</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-white/70">Free</span>
-                    <Edit3 className="w-4 h-4 text-white/50" />
-                  </div>
+                  <Dialog open={ticketDialogOpen} onOpenChange={setTicketDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="flex items-center space-x-2 text-white/70 hover:text-white hover:bg-white/10"
+                        onClick={() => {
+                          setTempTicketData({
+                            isFree: eventData.isFree,
+                            ticketPrice: eventData.ticketPrice,
+                          })
+                        }}
+                      >
+                        <span>{eventData.isFree ? "Free" : `$${eventData.ticketPrice || "0"}`}</span>
+                        <Edit3 className="w-4 h-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px] bg-[#2a1f35] border-white/20 text-white">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Edit Tickets</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="free-ticket"
+                            checked={tempTicketData.isFree}
+                            onCheckedChange={(checked) => 
+                              setTempTicketData({ ...tempTicketData, isFree: checked })
+                            }
+                          />
+                          <Label htmlFor="free-ticket" className="text-white">Free Event</Label>
+                        </div>
+                        {!tempTicketData.isFree && (
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="price" className="text-right text-white">
+                              Price ($)
+                            </Label>
+                            <Input
+                              id="price"
+                              type="number"
+                              placeholder="0.00"
+                              value={tempTicketData.ticketPrice}
+                              onChange={(e) => 
+                                setTempTicketData({ ...tempTicketData, ticketPrice: e.target.value })
+                              }
+                              className="col-span-3 bg-white/5 border-white/20 text-white"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <DialogFooter>
+                        <Button 
+                          type="submit" 
+                          onClick={handleTicketSave}
+                          className="bg-white text-gray-900 hover:bg-gray-100"
+                        >
+                          Save changes
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 {/* Require Approval */}
@@ -332,17 +480,65 @@ export default function CreateEventPage() {
                     <Settings className="w-5 h-5 text-white/70" />
                     <span className="text-white font-medium">Capacity</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-white/70">Unlimited</span>
-                    <Edit3 className="w-4 h-4 text-white/50" />
-                  </div>
+                  <Dialog open={capacityDialogOpen} onOpenChange={setCapacityDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="flex items-center space-x-2 text-white/70 hover:text-white hover:bg-white/10"
+                        onClick={() => {
+                          setTempCapacityData({
+                            capacity: eventData.capacity,
+                          })
+                        }}
+                      >
+                        <span>{eventData.capacity || "Unlimited"}</span>
+                        <Edit3 className="w-4 h-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px] bg-[#2a1f35] border-white/20 text-white">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Edit Capacity</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="capacity" className="text-right text-white">
+                            Max Guests
+                          </Label>
+                          <Input
+                            id="capacity"
+                            type="number"
+                            placeholder="Unlimited"
+                            value={tempCapacityData.capacity}
+                            onChange={(e) => 
+                              setTempCapacityData({ ...tempCapacityData, capacity: e.target.value })
+                            }
+                            className="col-span-3 bg-white/5 border-white/20 text-white"
+                          />
+                        </div>
+                        <p className="text-sm text-white/60">
+                          Leave empty for unlimited capacity
+                        </p>
+                      </div>
+                      <DialogFooter>
+                        <Button 
+                          type="submit" 
+                          onClick={handleCapacitySave}
+                          className="bg-white text-gray-900 hover:bg-gray-100"
+                        >
+                          Save changes
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
-              <Button 
-                onClick={handleSubmit}
-                className="bg-white w-auto text-gray-900 hover:bg-gray-100 font-medium px-6"
-              >
-                Create Event
-              </Button>
+
+                <Button 
+                  onClick={handleSubmit}
+                  className="bg-white w-auto text-gray-900 hover:bg-gray-100 font-medium px-6"
+                >
+                  Create Event
+                </Button>
               </div>
           </div>
         </div>
