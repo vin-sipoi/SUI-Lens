@@ -41,44 +41,32 @@ export default function CommunityEventsPage(){
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center space-x-3 group">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                        <Image 
-                          src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
-                          alt="Suilens Logo" 
-                          width={60}
-                          height={60}
-                          className="object-contain"
-                        />
-                      </div>
-                      <span className="text-2xl font-bold text-gray-800">Suilens</span>
-            </Link>
-            
-            <nav className="hidden md:flex items-center space-x-8">
-              <Link href="/communities" className="text-gray-600 hover:text-gray-900 font-medium">
-                Communities
-              </Link>
-              <Link href="/events" className="text-gray-600 hover:text-gray-900 font-medium">
-                Events
-              </Link>
-              <Link href="/bounties" className="text-gray-600 hover:text-gray-900 font-medium">
-                Bounties
-              </Link>
-            </nav>
-
-            <div className="flex items-center space-x-4">
-                <Link href='/create'>
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                       Create event
-                    </button>
-                </Link>
-              
-              <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
-            </div>
+      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center space-x-3 group">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+            <Image 
+              src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
+              alt="Suilens Logo" 
+              width={60}
+              height={60}
+              className="object-contain"
+            />
           </div>
+          <span className="text-2xl font-bold text-gray-800">Suilens</span>
+          </Link>
+
+          <nav className="hidden lg:flex items-center space-x-8">
+            {["Home", "Communities", "Explore", "Dashboard"].map((item) => (
+              <Link
+                key={item}
+                href={`/${item.toLowerCase().replace(' ', '-')}`}
+                className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+              >
+                {item}
+              </Link>
+            ))}
+          </nav>
         </div>
       </header>
 
