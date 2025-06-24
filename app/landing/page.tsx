@@ -1,13 +1,15 @@
 "use client"
 
+import React from "react"
 import { ProfileDropdown } from "./ProfileDropDown"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Wallet, Award, Coins, ArrowRight, Play, Calendar, MapPin, Users, Clock, Mail, Shield } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { useUser } from "./UserContext"
+import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
+import { useUser } from "./UserContext";
 
 type Event = {
   id: number
@@ -20,7 +22,25 @@ type Event = {
 }
 
 export default function HomePage() {
-  const { login } = useUser()
+  const { login, user, logout } = useUser();
+  const account = useCurrentAccount();
+
+  // When wallet connects, log in with wallet address
+  useEffect(() => {
+    if (account && !user) {
+      login({
+        name: "Sui User",
+        email: "",
+        avatarUrl: "https://via.placeholder.com/100",
+        walletAddress: account.address,
+      });
+    }
+  }, [account, login, user]);
+
+  useEffect(() => {
+    if (!user) setShowDropdown(false);
+  }, [user]);
+
   const [events, setEvents] = useState<Event[]>([])
   const [email, setEmail] = useState("")
   const [showDropdown, setShowDropdown] = useState(false)
@@ -106,28 +126,39 @@ export default function HomePage() {
             ))}
           </nav>
 
-          <div className="flex items-center space-x-4">
-            <Link href='/auth/signin'>
-              <Button variant="outline" className="hidden sm:block border-gray-300 text-gray-700 hover:bg-gray-50">
-                Sign In
-              </Button>
-            </Link>
-            
+          <div className="flex items-center space-x-4 relative">
             <Link href='/create'>
               <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">
-              Start Creating
+                Start Creating
               </Button>
             </Link>
-            <Button
-              variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50"
-              onClick={handleDemoLogin}
-            >
-              Demo Login
-            </Button>
-            {showDropdown && (
-              <div className="absolute right-0 mt-2 z-50">
-                <ProfileDropdown />
+            {/* Only show ConnectButton if not logged in */}
+            {!user ? (
+              <ConnectButton />
+            ) : (
+              <div className="relative">
+                <button
+                  onClick={() => setShowDropdown((v) => !v)}
+                  className="focus:outline-none"
+                  aria-label="Open profile menu"
+                >
+                  <img
+                    src={user.avatarUrl || "https://via.placeholder.com/100"}
+                    alt="Profile"
+                    className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer"
+                  />
+                </button>
+                {showDropdown && (
+                  <div className="absolute right-0 mt-2 z-50">
+                    <ProfileDropdown
+                      walletAddress={user.walletAddress ?? ""}
+                      onLogout={() => {
+                        setShowDropdown(false);
+                        logout();
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>

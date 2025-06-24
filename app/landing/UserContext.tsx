@@ -4,8 +4,17 @@ import React, { createContext, useContext, useState } from "react"
 type User = {
   name: string
   email: string
-  avatarUrl?: string
-  walletAddress?: string // Add walletAddress here
+  avatarUrl: string
+  bio?: string
+  instagram?: string
+  twitter?: string
+  youtube?: string
+  tiktok?: string
+  linkedin?: string
+  website?: string
+  mobile?: string
+  username?: string
+  walletAddress?: string
 }
 
 type UserContextType = {
