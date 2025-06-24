@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import WalletProviderWrapper from '@/components/WalletProvider'
-import { UserProvider } from "@/app/landing/UserContext"
+//import WalletProviderWrapper from '@/components/WalletProvider'
+import Providers from "./providers"
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'Sui Lens',
+  description: 'all Sui events in one',
   generator: 'v0.dev',
 }
 
@@ -16,12 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <WalletProviderWrapper>
-           <UserProvider>
-              {children}
-           </UserProvider>
+       <Providers>{children}</Providers>
            
-        </WalletProviderWrapper>
+       
        
       </body>
     </html>

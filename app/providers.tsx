@@ -1,22 +1,25 @@
 "use client";
 
-import React from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SuiClientProvider, WalletProvider } from "@mysten/dapp-kit";
 import { getFullnodeUrl } from "@mysten/sui/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import "@mysten/dapp-kit/dist/index.css";
 
+// Initialize QueryClient
 const queryClient = new QueryClient();
 
+// Define Sui networks
 const networks = {
-  testnet: { url: getFullnodeUrl("testnet") },
+  devnet: { url: getFullnodeUrl("devnet") },
   mainnet: { url: getFullnodeUrl("mainnet") },
+  testnet: { url: getFullnodeUrl("testnet") },
 };
 
-export default function WalletProviderWrapper({ children }: { children: React.ReactNode }) {
+export default function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <SuiClientProvider networks={networks} defaultNetwork="testnet">
+      <SuiClientProvider networks={networks} defaultNetwork="devnet">
         <WalletProvider>{children}</WalletProvider>
       </SuiClientProvider>
     </QueryClientProvider>
