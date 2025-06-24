@@ -46,7 +46,7 @@ export default function HomePage() {
     },
     {
       name: "SuiGhana", 
-      image: "https://i.ibb.co/8gBCzdmq/Screenshot-2025-06-24-030632.png",
+      image: "https://i.ibb.co/LDDGGYdF/Screenshot-2025-06-24-141355.png",
      
     },
     {
@@ -81,7 +81,7 @@ export default function HomePage() {
           </Link>
 
           <nav className="hidden lg:flex items-center space-x-8">
-            {["Home", "Communities", "Explore", "Dashboard"].map((item) => (
+            {["Communities", "Discover", "Dashboard"].map((item) => (
               <Link
                 key={item}
                 href={`/${item.toLowerCase().replace(' ', '-')}`}
@@ -101,7 +101,7 @@ export default function HomePage() {
             
             <Link href='/create'>
               <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">
-              Start Creating
+              Create Event
               </Button>
             </Link>
             
@@ -127,9 +127,12 @@ export default function HomePage() {
             </div>
 
             <div className="pt-4">
-              <Button className="bg-white text-blue-600 hover:bg-gray-50 px-8 py-4 text-lg font-semibold rounded-lg shadow-lg">
-                Start Exploring
-              </Button>
+              <Link href ="/discover">
+                <Button className="bg-white text-blue-600 hover:bg-gray-50 px-8 py-4 text-lg font-semibold rounded-lg shadow-lg">
+                  Explore Events
+                </Button>
+              </Link>
+              
             </div>
           </div>
         </div>
@@ -168,9 +171,12 @@ export default function HomePage() {
 
             {/* View More Button */}
             <div className="text-center">
-              <Button className="bg-white text-blue-600 hover:bg-gray-50 px-8 py-3 text-lg font-semibold rounded-lg shadow-lg">
+              <Link href="/communities">
+                <Button className="bg-white text-blue-600 hover:bg-gray-50 px-8 py-3 text-lg font-semibold rounded-lg shadow-lg">
                 View More
               </Button>
+              </Link>
+              
             </div>
           </div>
         </div>
@@ -194,9 +200,12 @@ export default function HomePage() {
                     <Award className="w-8 h-8 text-white" />
                   </div>
                 </div>
-                <Button className="bg-white text-blue-600 hover:bg-gray-50 px-6 py-3 font-semibold rounded-lg">
+                <Link href = "/poaps">
+                  <Button className="bg-white text-blue-600 hover:bg-gray-50 px-6 py-3 font-semibold rounded-lg">
                   Learn More
                 </Button>
+                </Link>
+                
               </div>
 
               {/* Bounty Card */}
@@ -212,9 +221,12 @@ export default function HomePage() {
                     <Coins className="w-8 h-8 text-white" />
                   </div>
                 </div>
-                <Button className="bg-white text-orange-600 hover:bg-gray-50 px-6 py-3 font-semibold rounded-lg">
-                  Get Started
-                </Button>
+                <Link href ="/bounties">
+                  <Button className="bg-white text-orange-600 hover:bg-gray-50 px-6 py-3 font-semibold rounded-lg">
+                   Get Started
+                  </Button>
+                </Link>
+                
               </div>
             </div>
           </div>
@@ -252,13 +264,19 @@ export default function HomePage() {
       <footer className="bg-gray-200 text-black py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 ">
               <div className="col-span-1 md:col-span-2">
-                <Link href="/" className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <span className=" font-bold text-lg">S</span>
+                <Link href="/" className="flex items-center space-x-3 group">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <Image 
+                      src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
+                      alt="Suilens Logo" 
+                      width={60}
+                      height={60}
+                      className="object-contain"
+                    />
                   </div>
-                  <span className="text-2xl font-bold ">Suilens</span>
+                  <span className="text-2xl font-bold text-gray-800">Sui Lens</span>
                 </Link>
                 <p className=" mb-4 max-w-md">
                   Connecting the Sui community through events, bounties, and POAPs. Build, learn, and grow together.
@@ -274,19 +292,10 @@ export default function HomePage() {
                   <li><Link href="/poaps" >POAPs</Link></li>
                 </ul>
               </div>
-              
-              <div>
-                <h4 className="font-semibold mb-4">Support</h4>
-                <ul className="space-y-2 ">
-                  <li><Link href="/help" >Help Center</Link></li>
-                  <li><Link href="/contact" >Contact Us</Link></li>
-                  <li><Link href="/privacy" >Privacy Policy</Link></li>
-                  <li><Link href="/terms" >Terms of Service</Link></li>
-                </ul>
-              </div>
+            
             </div>
             
-            <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <div className="border-t border-gray-200 mt-8 pt-8 text-center text-gray-900">
               <p>&copy; 2024 Suilens. All rights reserved. Built for the Sui community.</p>
             </div>
           </div>

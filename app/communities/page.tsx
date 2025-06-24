@@ -2,56 +2,40 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 export default function CommunityEventsPage(){
+
   const events = [
     {
       id: 1,
       title: "SUI Community Ghana",
       description: "Join our vibrant community in Ghana where we explore the latest developments in blockchain technology, share knowledge, and build connections with fellow enthusiasts.",
-      image: "/api/placeholder/400/250",
+      image: "https://i.ibb.co/LDDGGYdF/Screenshot-2025-06-24-141355.png",
       category: "Community",
-      link: "#"
-    },
-    {
-      id: 2,
-      title: "SUI Community Liberia",
-      description: "Connect with blockchain developers and enthusiasts in Liberia. Our community focuses on education, networking, and fostering innovation in the Web3 space.",
-      image: "/api/placeholder/400/250",
-      category: "Community", 
-      link: "#"
+      link: "/ghana"
     },
     {
       id: 3,
       title: "SUI Community Kenya",
       description: "The Kenyan chapter of our global community brings together developers, entrepreneurs, and blockchain enthusiasts to collaborate and learn together.",
-      image: "/api/placeholder/400/250",
+      image: "https://i.ibb.co/YBvqHqsp/Screenshot-2025-06-24-030451.png",
       category: "Community",
-      link: "#"
+      link: "/kenya"
     },
     {
       id: 4,
       title: "SUI Community Nigeria",
       description: "Nigeria's largest blockchain community focused on SUI ecosystem development, education, and creating opportunities for local developers and entrepreneurs.",
-      image: "/api/placeholder/400/250",
+      image: "https://i.ibb.co/W4zMd77q/Screenshot-2025-06-24-030948.png",
       category: "Community",
-      participants: "2.1k Members", 
-      link: "#"
+      link: "/nigeria"
     },
     {
       id: 5,
-      title: "SUI Developers",
-      description: "A dedicated space for developers working with SUI blockchain. Share code, discuss best practices, and collaborate on innovative projects.",
-      image: "/api/placeholder/400/250",
+      title: "SUI Gaming Africa",
+      description: "A dedicated space for gamers and blockchain enthusiasts to enjoy themselves and share their passion for gaming.",
+      image: "https://i.ibb.co/1fmbwkSM/Screenshot-2025-06-24-141856.png",
       category: "Development",
-      link: "#"
+      link: "gaming-africa"
     },
-    {
-      id: 6,
-      title: "SUI Community Uganda",
-      description: "Uganda's growing blockchain community focused on education, innovation, and building the future of decentralized technology in East Africa.",
-      image: "/api/placeholder/400/250",
-      category: "Community",
-      link: "#"
-    }
   ]
 
   return (
@@ -129,16 +113,22 @@ export default function CommunityEventsPage(){
                   </span>
                 </div>
                 {/* Placeholder for actual event image */}
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="text-white text-center">
-                    <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                      </svg>
-                    </div>
-                    <p className="text-sm font-medium">{event.title}</p>
-                  </div>
+                <div className="w-full h-full flex items-center justify-center relative">
+                {/* Background image */}
+                <Image 
+                  src={event.image} 
+                  alt={event.title} 
+                  fill
+                  className="object-cover"
+                />
+                  {/* Overlay content */}
+              <div className="relative z-10 text-white text-center">
+                <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  {/* You can put an icon here or remove this div entirely */}
                 </div>
+                <p className="text-sm font-medium">{event.title}</p>
+                </div>
+              </div>
               </div>
 
               {/* Content */}
