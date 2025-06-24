@@ -5,7 +5,7 @@ import Link from 'next/link';
 const EventPage: React.FC = () => {
   const mainEvent = {
     title: 'Game Night in Ghana',
-    image: 'https://via.placeholder.com/1200x400?text=Game+Night+in+Ghana',
+    image: 'https://i.ibb.co/8DGCTXfs/Go-Qzp-CXYAAgop4.jpg',
     description: 'The Sui community in Ghana is hosting a game night on the date. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Acu more sui events remotes claim problem adopting datum.',
     date: 'June 24, 2025, 02:23 PM EAT',
   };
@@ -66,12 +66,13 @@ const EventPage: React.FC = () => {
       </header>
       {/* Main Event Section */}
       <div className="container mx-auto p-6">
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <img src={mainEvent.image} alt={mainEvent.title} className="w-full h-64 object-cover" />
-          <div className="p-6">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden"
+        style={{ backgroundImage: `url(${mainEvent.image})`, height: '700px', backgroundSize: 'cover', backgroundRepeat: 'no-repeat' }}>
+          <div className="absolute insert-0 bg-black bg-opacity-40"></div>
+          <div className="pl-6 text-white">
             <h1 className="text-3xl font-bold">{mainEvent.title}</h1>
-            <p className="text-gray-600 mt-2">{mainEvent.description}</p>
-            <p className="text-sm text-gray-500 mt-2">{mainEvent.date}</p>
+            <p className="text-white-600 mt-2">{mainEvent.description}</p>
+            <p className="text-sm text-white-500 mt-2">{mainEvent.date}</p>
             <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
               Register Now
             </button>
