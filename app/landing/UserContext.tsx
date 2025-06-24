@@ -5,6 +5,7 @@ type User = {
   name: string
   email: string
   avatarUrl?: string
+  walletAddress?: string // Add walletAddress here
 }
 
 type UserContextType = {

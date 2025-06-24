@@ -5,6 +5,7 @@ import { getFullnodeUrl } from "@mysten/sui/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import "@mysten/dapp-kit/dist/index.css";
+import { UserProvider } from "./landing/UserContext";
 
 // Initialize QueryClient
 const queryClient = new QueryClient();
@@ -18,10 +19,12 @@ const networks = {
 
 export default function Providers({ children }: { children: ReactNode }) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <SuiClientProvider networks={networks} defaultNetwork="devnet">
-        <WalletProvider>{children}</WalletProvider>
-      </SuiClientProvider>
-    </QueryClientProvider>
+    <UserProvider>
+      <QueryClientProvider client={queryClient}>
+        <SuiClientProvider networks={networks} defaultNetwork="devnet">
+          <WalletProvider>{children}</WalletProvider>
+        </SuiClientProvider>
+      </QueryClientProvider>
+    </UserProvider>
   );
 }

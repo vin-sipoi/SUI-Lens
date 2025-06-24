@@ -1,11 +1,13 @@
 "use client"
 
+import { ProfileDropdown } from "./ProfileDropDown"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Wallet, Award, Coins, ArrowRight, Play, Calendar, MapPin, Users, Clock, Mail, Shield } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { useUser } from "./UserContext"
 
 type Event = {
   id: number
@@ -18,8 +20,10 @@ type Event = {
 }
 
 export default function HomePage() {
+  const { login } = useUser()
   const [events, setEvents] = useState<Event[]>([])
   const [email, setEmail] = useState("")
+  const [showDropdown, setShowDropdown] = useState(false)
 
   // Function to add a new event (you can call this from elsewhere in your app)
   const addEvent = (newEvent: Omit<Event, "id">) => {
@@ -36,6 +40,16 @@ export default function HomePage() {
     // Handle newsletter subscription
     console.log("Newsletter subscription:", email)
     setEmail("")
+  }
+
+  const handleDemoLogin = () => {
+    login({
+      name: "John Doe",
+      email: "john@example.com",
+      avatarUrl: "https://example.com/avatar.png",
+      walletAddress: "0x48bf3eee4789de05d3320e703a0d8c837e412b0bfad7"
+    })
+    setShowDropdown(true)
   }
 
   const communities = [
@@ -104,7 +118,18 @@ export default function HomePage() {
               Start Creating
               </Button>
             </Link>
-            
+            <Button
+              variant="outline"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              onClick={handleDemoLogin}
+            >
+              Demo Login
+            </Button>
+            {showDropdown && (
+              <div className="absolute right-0 mt-2 z-50">
+                <ProfileDropdown />
+              </div>
+            )}
           </div>
         </div>
       </header>
