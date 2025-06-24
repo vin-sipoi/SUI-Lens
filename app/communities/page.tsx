@@ -10,7 +10,7 @@ export default function CommunityEventsPage(){
       description: "Join our vibrant community in Ghana where we explore the latest developments in blockchain technology, share knowledge, and build connections with fellow enthusiasts.",
       image: "https://i.ibb.co/LDDGGYdF/Screenshot-2025-06-24-141355.png",
       category: "Community",
-      link: "/ghana"
+      link: '/communities/ghana'
     },
     {
       id: 3,
@@ -18,7 +18,7 @@ export default function CommunityEventsPage(){
       description: "The Kenyan chapter of our global community brings together developers, entrepreneurs, and blockchain enthusiasts to collaborate and learn together.",
       image: "https://i.ibb.co/YBvqHqsp/Screenshot-2025-06-24-030451.png",
       category: "Community",
-      link: "/kenya"
+      link: '/communities/kenya'
     },
     {
       id: 4,
@@ -26,7 +26,7 @@ export default function CommunityEventsPage(){
       description: "Nigeria's largest blockchain community focused on SUI ecosystem development, education, and creating opportunities for local developers and entrepreneurs.",
       image: "https://i.ibb.co/W4zMd77q/Screenshot-2025-06-24-030948.png",
       category: "Community",
-      link: "/nigeria"
+      link: '/communities/nigeria'
     },
     {
       id: 5,
@@ -34,7 +34,7 @@ export default function CommunityEventsPage(){
       description: "A dedicated space for gamers and blockchain enthusiasts to enjoy themselves and share their passion for gaming.",
       image: "https://i.ibb.co/1fmbwkSM/Screenshot-2025-06-24-141856.png",
       category: "Development",
-      link: "gaming-africa"
+      link: '/communities/gaming-africa'
     },
   ]
 
