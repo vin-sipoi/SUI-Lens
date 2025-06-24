@@ -63,11 +63,11 @@ export default function HomePage() {
 
   return (
     
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600">
+    <div className="min-h-screen font-inter bg-gradient-to-b from-blue-400 via-blue-100 to-blue-50">
       {/* Header */}
-      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3 group">
+          <Link href="/" className="flex items-center space-x-3 ">
           <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
             <Image 
               src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
@@ -77,30 +77,31 @@ export default function HomePage() {
               className="object-contain"
             />
           </div>
-          <span className="text-2xl font-bold text-gray-800">Suilens</span>
+          <span className="text-2xl font-bold text-[#020B15]">Suilens</span>
           </Link>
 
-          <nav className="hidden lg:flex items-center space-x-8">
-            {["Communities", "Discover", "Dashboard"].map((item) => (
+          <nav className="hidden lg:flex text-sm font-inter items-center space-x-8">
+            <Link href='/' className="text-gray-800 font-semibold "></Link>
+            {["Communities", "Discover", "Dashboard","Bounties"].map((item) => (
               <Link
                 key={item}
                 href={`/${item.toLowerCase().replace(' ', '-')}`}
-                className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                className="text-gray-600  font-medium transition-colors"
               >
                 {item}
               </Link>
             ))}
           </nav>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex text-sm items-center space-x-4">
             <Link href='/auth/signin'>
-              <Button variant="outline" className="hidden sm:block border-gray-300 text-gray-700 hover:bg-gray-50">
+              <Button className="bg-blue-100 hover:bg-blue-700 transition-colors bg-opacity-20 px-6 rounded-xl text-blue-400">
                 Sign In
               </Button>
             </Link>
             
             <Link href='/create'>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">
+              <Button className="bg-blue-400 hover:bg-blue-700 transition-colors text-white px-6 rounded-xl">
               Create Event
               </Button>
             </Link>
@@ -112,24 +113,26 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="py-20 sm:py-32 relative">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
+          <div className="max-w-4xl mx-auto text-left space-y-8">
             <div className="space-y-6">
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white leading-tight">
+              <h1 className="text-7xl font-inter font-semibold text-[#020B15] leading-tight">
                 Discover, Create,
                 <br />
                 and Share Events
                 <br />
                 on Sui
               </h1>
-              <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
-                From small meetups to large programs, Suilens makes it easy to find community events, host your own, and connect with the Sui community.
+              <p className=" font-inter text-2xl text-[#030F1C] max-w-2xl  leading-relaxed font-normal">
+                From small meetups to large programs, Suilens makes it 
+                <br />
+                easy to find community events, host your own, and connect with the Sui community.
               </p>
             </div>
 
             <div className="pt-4">
               <Link href ="/discover">
-                <Button className="bg-white text-blue-600 hover:bg-gray-50 px-8 py-4 text-lg font-semibold rounded-lg shadow-lg">
-                  Explore Events
+                <Button className="bg-[#4DA2FF] hover:bg-blue-700 transition-colors text-white font-inter px-12 py-9 text-lg font-semibold rounded-xl shadow-lg">
+                  Start Exploring
                 </Button>
               </Link>
               
@@ -141,11 +144,11 @@ export default function HomePage() {
       {/* Community Events Grid */}
       <section className="py-16 relative">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 p-7">
               {communities.map((community, index) => (
-                <div key={community.name} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow group cursor-pointer">
-                  <div className="h-48 relative overflow-hidden">
+                <div key={community.name} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow group cursor-pointer min-h-[400px]">
+                  <div className="h-72 relative overflow-hidden">
                     <img 
                       src={community.image} 
                       alt={`${community.name} community event`}
@@ -158,13 +161,7 @@ export default function HomePage() {
                       </span>
                     </div>
                   </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{community.name} Meetup</h3>
-                    <div className="flex items-center text-gray-600 text-sm">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      <span>Recent Community Event</span>
-                    </div>
-                  </div>
+                  
                 </div>
               ))}
             </div>
