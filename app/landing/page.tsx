@@ -118,16 +118,16 @@ export default function HomePage() {
             ))}
           </nav>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex text-sm items-center space-x-4">
             <Link href='/auth/signin'>
-              <Button variant="outline" className="hidden sm:block border-gray-300 text-gray-700 hover:bg-gray-50">
-                Sign In
+              <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
+              Sign In
               </Button>
             </Link>
             
             <Link href='/create'>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">
-              Start Creating
+              <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
+              Create Event
               </Button>
             </Link>
             {/* Only show ConnectButton if not logged in */}
