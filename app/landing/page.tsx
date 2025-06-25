@@ -54,17 +54,17 @@ export default function HomePage() {
 
   const communities = [
     {
-      name: "SuiKenya",
+      name: "Sui Kenya",
       image: "https://i.ibb.co/YBvqHqsp/Screenshot-2025-06-24-030451.png",
       
     },
     {
-      name: "SuiGhana", 
-      image: "https://i.ibb.co/8gBCzdmq/Screenshot-2025-06-24-030632.png",
+      name: "Sui Ghana", 
+      image: "https://i.ibb.co/LDDGGYdF/Screenshot-2025-06-24-141355.png",
      
     },
     {
-      name: "SuiNigeria",
+      name: "Sui Nigeria",
       image: "https://i.ibb.co/W4zMd77q/Screenshot-2025-06-24-030948.png", 
       
     },
@@ -77,12 +77,12 @@ export default function HomePage() {
 
   return (
     
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600">
+    <div className="min-h-screen font-inter bg-gradient-to-b from-blue-400 via-blue-100 to-blue-50">
       {/* Header */}
-      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3 group">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+          <Link href="/" className="flex items-center space-x-3 ">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center">
             <Image 
               src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
               alt="Suilens Logo" 
@@ -91,31 +91,32 @@ export default function HomePage() {
               className="object-contain"
             />
           </div>
-          <span className="text-2xl font-bold text-gray-800">Suilens</span>
+          <span className="text-2xl font-bold text-[#020B15]">Suilens</span>
           </Link>
 
-          <nav className="hidden lg:flex items-center space-x-8">
-            {["Home", "Communities", "Explore", "Dashboard"].map((item) => (
+          <nav className="hidden lg:flex text-sm font-inter items-center space-x-8">
+            <Link href='/' className="text-gray-800 font-semibold "></Link>
+            {["Communities", "Discover", "Dashboard","Bounties"].map((item) => (
               <Link
                 key={item}
                 href={`/${item.toLowerCase().replace(' ', '-')}`}
-                className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                className="text-gray-600  font-medium transition-colors"
               >
                 {item}
               </Link>
             ))}
           </nav>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex text-sm items-center space-x-4">
             <Link href='/auth/signin'>
-              <Button variant="outline" className="hidden sm:block border-gray-300 text-gray-700 hover:bg-gray-50">
-                Sign In
+              <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
+              Sign In
               </Button>
             </Link>
             
             <Link href='/create'>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">
-              Start Creating
+              <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
+              Create Event
               </Button>
             </Link>
             <Button
@@ -137,24 +138,29 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="py-20 sm:py-32 relative">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
+          <div className="max-w-4xl mx-auto text-left space-y-8">
             <div className="space-y-6">
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white leading-tight">
+              <h1 className="text-7xl font-inter font-semibold text-[#020B15] leading-tight">
                 Discover, Create,
                 <br />
                 and Share Events
                 <br />
                 on Sui
               </h1>
-              <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
-                From small meetups to large programs, Suilens makes it easy to find community events, host your own, and connect with the Sui community.
+              <p className=" font-inter text-2xl text-[#030F1C] max-w-2xl  leading-relaxed font-normal">
+                From small meetups to large programs, Suilens makes it 
+                <br />
+                easy to find community events, host your own, and connect with the Sui community.
               </p>
             </div>
 
             <div className="pt-4">
-              <Button className="bg-white text-blue-600 hover:bg-gray-50 px-8 py-4 text-lg font-semibold rounded-lg shadow-lg">
-                Start Exploring
-              </Button>
+              <Link href ="/discover">
+                <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white font-inter px-12 py-9 text-lg font-semibold rounded-xl shadow-lg">
+                  Start Exploring
+                </Button>
+              </Link>
+              
             </div>
           </div>
         </div>
@@ -163,11 +169,11 @@ export default function HomePage() {
       {/* Community Events Grid */}
       <section className="py-16 relative">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 p-7">
               {communities.map((community, index) => (
-                <div key={community.name} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow group cursor-pointer">
-                  <div className="h-48 relative overflow-hidden">
+                <div key={community.name} className=" rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow group cursor-pointer min-h-[400px]">
+                  <div className="h-full relative overflow-hidden">
                     <img 
                       src={community.image} 
                       alt={`${community.name} community event`}
@@ -175,16 +181,9 @@ export default function HomePage() {
                     />
                     
                     <div className="absolute top-4 left-4">
-                      <span className="bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-medium">
+                      <span className="bg-white backdrop-blur-sm text-gray-800 px-6 py-2 rounded-xl text-sm font-medium">
                         {community.name}
                       </span>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{community.name} Meetup</h3>
-                    <div className="flex items-center text-gray-600 text-sm">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      <span>Recent Community Event</span>
                     </div>
                   </div>
                 </div>
@@ -193,65 +192,90 @@ export default function HomePage() {
 
             {/* View More Button */}
             <div className="text-center">
-              <Button className="bg-white text-blue-600 hover:bg-gray-50 px-8 py-3 text-lg font-semibold rounded-lg shadow-lg">
-                View More
+              <Link href="/communities">
+                <Button className="bg-[#4DA2FF] text-gray-200 hover:bg-blue-500 px-9 py-8 text-lg font-semibold rounded-lg shadow-lg">
+                See More
               </Button>
+              </Link>
+              
             </div>
           </div>
         </div>
       </section>
 
       {/* POAPs Section */}
-      <section className="py-16 bg-gray-900">
+      <section className="py-16 relative bg-[#030F1C]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              {/* POAP Card */}
-              <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl p-8 text-white">
-                <div className="flex items-start justify-between mb-6">
-                  <div>
-                    <h3 className="text-2xl font-bold mb-2">Add POAPs to Your Events</h3>
-                    <p className="text-blue-100 leading-relaxed">
-                      Reward your attendees with Proof of Attendance Protocol tokens. Create memorable digital collectibles for your community events.
-                    </p>
-                  </div>
-                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center ml-4 flex-shrink-0">
-                    <Award className="w-8 h-8 text-white" />
+          <div className="max-w-7xl mx-auto space-y-8">
+            
+            {/* POAP Feature - Text Left, Image Right */}
+            <div className=" overflow-hidden  group cursor-pointer min-h-[300px]">
+              <div className="h-full grid grid-cols-1 md:grid-cols-2 gap-8 items-center py-4">
+                <div className="py-5 text-[#EDF6FF]">
+                  <h3 className="text-5xl font-medium mb-4">
+                    Add POAPs to Your <br /> Events
+                  </h3>
+                  <p className="text-gray-300 font-normal mb-6 text-2xl">
+                    Reward attendees with Proof of Attendance Protocol (POAP) NFTs for joining your event.
+                  </p>
+                  <Link href="/create">
+                    <button className="text-blue-100 font-normal underline text-2xl">
+                      Create your event
+                    </button>
+                  </Link>
+                  
+                </div>
+                
+                <div className="flex items-center justify-center">
+                  <div className="w-full max-w-2xl max-h-[245]">
+                    <img 
+                      src="https://i.ibb.co/dwwYhvJW/Screenshot-2025-06-25-022109.png" 
+                      alt="POAP feature"
+                      height={200}
+                      className="w-full h-auto object-contain rounded-lg"
+                    />
                   </div>
                 </div>
-                <Button className="bg-white text-blue-600 hover:bg-gray-50 px-6 py-3 font-semibold rounded-lg">
-                  Learn More
-                </Button>
               </div>
+            </div>
 
-              {/* Bounty Card */}
-              <div className="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-3xl p-8 text-white">
-                <div className="flex items-start justify-between mb-6">
-                  <div>
-                    <h3 className="text-2xl font-bold mb-2">Bounty & Grant Tracking for Leads</h3>
-                    <p className="text-yellow-100 leading-relaxed">
-                      Track and manage bounties and grants efficiently. Perfect for community leads managing multiple programs and initiatives.
-                    </p>
-                  </div>
-                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center ml-4 flex-shrink-0">
-                    <Coins className="w-8 h-8 text-white" />
+            {/* Bounty & Grant Tracking Feature - Image Left, Text Right */}
+            <div className=" overflow-hidden  group cursor-pointer min-h-[300px]">
+              <div className="h-full grid grid-cols-1 md:grid-cols-2 gap-8 items-center py-4">
+
+                <div className="flex items-center justify-center">
+                  <div className="w-full max-w-2xl max-h-[245]">
+                    <img 
+                      src="https://i.ibb.co/B5k0jnXv/Screenshot-2025-06-25-030420.png" 
+                      alt="Grant photo"
+                      height={200}
+                      className="w-full h-auto object-contain rounded-lg"
+                    />
                   </div>
                 </div>
-                <Button className="bg-white text-orange-600 hover:bg-gray-50 px-6 py-3 font-semibold rounded-lg">
-                  Get Started
-                </Button>
+
+                <div className="py-5 text-[#EDF6FF]">
+                  <h3 className="text-5xl font-medium mb-4">
+                    Bounty & Grant Tracking for Leads Events
+                  </h3>
+                  <p className="text-gray-300 font-normal mb-6 text-2xl">
+                    Community leads can easily track bounties, report progress, and manage grants in one place
+                  </p>
+                  
+                </div>
+                
+                
               </div>
             </div>
           </div>
         </div>
       </section>
-
       {/* Newsletter Section */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Subscribe to our Newsletter</h2>
-            <p className="text-gray-600 mb-8">Stay updated with the latest Sui community events and announcements</p>
+            <h2 className="text-4xl font-medium  text-gray-900 mb-4">Subscribe to our Newsletter</h2>
+            <p className="text-2xl font-normal text-gray-600 mb-8">Stay updated with the latest Sui community events and announcements</p>
             
             <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
               <div className="flex-1 relative">
@@ -260,60 +284,54 @@ export default function HomePage() {
                   type="email"
                   placeholder="Enter your email"
                   value={email}
+                  width={319}
+                  height={56}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 py-3 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="pl-10 h-14 border-gray-300 focus:border-blue-500 focus:ring-blue-500" // Changed py-3 to h-14
                   required
                 />
               </div>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 font-semibold">
-                Subscribe
-              </Button>
+              <Link href="/discover">
+                <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white font-inter px-10 h-14 text-lg font-semibold rounded-xl shadow-lg"> {/* Changed py-7 to h-14 */}
+                  Subscribe
+                </Button>
+              </Link>
             </form>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-200 text-black py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              <div className="col-span-1 md:col-span-2">
-                <Link href="/" className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <span className=" font-bold text-lg">S</span>
-                  </div>
-                  <span className="text-2xl font-bold ">Suilens</span>
-                </Link>
-                <p className=" mb-4 max-w-md">
-                  Connecting the Sui community through events, bounties, and POAPs. Build, learn, and grow together.
-                </p>
+      <footer className="bg-gray-100 py-8">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            {/* Left side - Logo and Links */}
+            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-8">
+              {/* Logo */}
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+                  <Image 
+                    src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
+                    alt="Suilens Logo" 
+                    width={32}
+                    height={32}
+                    className="object-contain"
+                  />
+                </div>
+                <span className="text-xl font-bold text-gray-900">Suilens</span>
               </div>
-              
-              <div>
-                <h4 className="font-semibold mb-4">Platform</h4>
-                <ul className="space-y-2 ">
-                  <li><Link href="/discover">Discover Events</Link></li>
-                  <li><Link href="/communities">Communities</Link></li>
-                  <li><Link href="/bounties" >Bounties</Link></li>
-                  <li><Link href="/poaps" >POAPs</Link></li>
-                </ul>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold mb-4">Support</h4>
-                <ul className="space-y-2 ">
-                  <li><Link href="/help" >Help Center</Link></li>
-                  <li><Link href="/contact" >Contact Us</Link></li>
-                  <li><Link href="/privacy" >Privacy Policy</Link></li>
-                  <li><Link href="/terms" >Terms of Service</Link></li>
-                </ul>
+
+              {/* Links */}
+              <div className="flex space-x-6 font-medium text-sm text-gray-600">
+                <Link href="/privacy" className=" hover:text-gray-900">Privacy Policy</Link>  
+                <Link href="/terms" className="hover:text-gray-900">Terms of Use</Link>
               </div>
             </div>
-            
-            <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-              <p>&copy; 2024 Suilens. All rights reserved. Built for the Sui community.</p>
-            </div>
+
+            {/* Right side - Copyright */}
+            <p className="text-sm font-medium text-gray-600">
+              © 2025 Suilens. All Rights Reserved.
+            </p>
           </div>
         </div>
       </footer>
