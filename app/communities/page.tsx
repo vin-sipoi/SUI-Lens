@@ -60,7 +60,7 @@ export default function CommunityEventsPage(){
             {["Home", "Communities", "Explore", "Dashboard"].map((item) => (
               <Link
                 key={item}
-                href={`/${item.toLowerCase().replace(' ', '-')}`}
+                href={item === "Home" ? "/landing" : `/${item.toLowerCase().replace(' ', '-')}`}
                 className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
               >
                 {item}
