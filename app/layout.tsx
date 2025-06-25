@@ -3,6 +3,7 @@ import './globals.css'
 //import WalletProviderWrapper from '@/components/WalletProvider'
 import { Inter } from 'next/font/google'
 import Providers from "./providers"
+import { EventProvider } from '@/context/EventContext'
 
 const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
@@ -19,10 +20,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.className}>
       <body>
-       <Providers>{children}</Providers>
-           
-       
-       
+        <EventProvider>
+          <Providers>{children}</Providers>
+        </EventProvider>     
       </body>
     </html>
   )

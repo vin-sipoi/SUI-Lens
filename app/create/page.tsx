@@ -37,7 +37,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-
+import { useEventContext } from "@/context/EventContext"
 export default function CreateEventPage() {
   const [eventData, setEventData] = useState({
     title: "",
@@ -67,7 +67,8 @@ export default function CreateEventPage() {
   const [tempCapacityData, setTempCapacityData] = useState({
     capacity: eventData.capacity,
   })
-
+  const {addEvent} = useEventContext();
+  
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
 
@@ -129,13 +130,13 @@ export default function CreateEventPage() {
       const newEvent = {
         ...eventData,
         id: eventId,
-        attendees: "",
+        attendees: 0,
         qrCodeUrl: qrData.qrCodeUrl,
         eventUrl: qrData.eventUrl,
         qrCodeImage: qrData.qrCodeImage,
         createdAt: new Date().toISOString(),
       }
-
+      addEvent(newEvent)
       // Store event data in localStorage for the success page
       localStorage.setItem('currentEvent', JSON.stringify(newEvent))
       
