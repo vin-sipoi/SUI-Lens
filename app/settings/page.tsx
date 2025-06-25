@@ -45,6 +45,52 @@ export default function SettingsPage() {
     const [mobileOtp, setMobileOtp] = useState("");
     const [mobileOtpError, setMobileOtpError] = useState<string | null>(null);
     const [showCalendarModal, setShowCalendarModal] = useState(false);
+    const [theme, setTheme] = useState("system");
+    const [language, setLanguage] = useState("en-uk");
+
+    // Notification preferences state
+    const [notifications, setNotifications] = useState<Record<NotificationKey, string>>({
+      eventInvitations: "email,whatsapp",
+      eventReminders: "email,whatsapp",
+      eventBlasts: "email,whatsapp",
+      eventUpdates: "email",
+      feedbackRequests: "email",
+      guestRegistrations: "off",
+      feedbackResponses: "email",
+      newMembers: "email",
+      eventSubmissions: "email",
+      productUpdates: "email",
+    });
+
+    type NotificationKey =
+      | "eventInvitations"
+      | "eventReminders"
+      | "eventBlasts"
+      | "eventUpdates"
+      | "feedbackRequests"
+      | "guestRegistrations"
+      | "feedbackResponses"
+      | "newMembers"
+      | "eventSubmissions"
+      | "productUpdates";
+
+    const notificationOptions: {
+      key: NotificationKey;
+      label: string;
+      options: string[];
+    }[] = [
+      { key: "eventInvitations", label: "Event Invitations", options: ["off", "email", "whatsapp"] },
+      { key: "eventReminders", label: "Event Reminders", options: ["off", "email", "whatsapp"] },
+      { key: "eventBlasts", label: "Event Blasts", options: ["off", "email", "whatsapp"] },
+      { key: "eventUpdates", label: "Event Updates", options: ["off", "email"] },
+      { key: "feedbackRequests", label: "Feedback Requests", options: ["off", "email"] },
+      { key: "guestRegistrations", label: "Guest Registrations", options: ["off", "email"] },
+      { key: "feedbackResponses", label: "Feedback Responses", options: ["off", "email"] },
+      { key: "newMembers", label: "New Members", options: ["off", "email"] },
+      { key: "eventSubmissions", label: "Event Submissions", options: ["off", "email"] },
+      { key: "productUpdates", label: "Product Updates", options: ["off", "email"] },
+    ];
+
     type Device = {
         id: string;
         name: string;
@@ -63,6 +109,17 @@ export default function SettingsPage() {
         // Fetch devices from backend
         // api.getActiveDevices().then(setDevices);
     }, []);
+
+    useEffect(() => {
+        if (theme === "system") {
+            document.body.classList.remove("theme-light", "theme-dark");
+        } else {
+            document.body.classList.remove("theme-light", "theme-dark");
+            document.body.classList.add(`theme-${theme}`);
+        }
+        // Optionally persist to localStorage
+        localStorage.setItem("suilens-theme", theme);
+    }, [theme]);
 
     const handleVerifyEmail = async (email: string) => {
         setVerifyingEmail(email);
@@ -745,12 +802,143 @@ export default function SettingsPage() {
 
                 {/* Preferences Tab */}
                 {tab === "preferences" && (
-                    <div className="bg-[#23202b] rounded-xl p-6 shadow-lg text-white/70">
-                        <h2 className="font-semibold text-lg mb-2 text-white">Preferences</h2>
-                        <p className="text-white/70 text-sm">
-                            Preferences content goes here (customize as needed).
-                        </p>
-                    </div>
+                    <form className="bg-[#23202b] rounded-xl p-6 shadow-lg text-white/70 space-y-8">
+                        {/* Display Preferences */}
+                        <div>
+                            <h2 className="font-semibold text-lg mb-2 text-white">Display</h2>
+                            <label className="block text-sm mb-1">Choose your desired Suilens interface.</label>
+                            <div className="flex gap-4 mt-2">
+                                {["system", "light", "dark"].map((mode) => (
+                                    <label key={mode} className="flex items-center gap-2 cursor-pointer scale-110">
+                                        <input
+                                            type="radio"
+                                            name="theme"
+                                            value={mode}
+                                            checked={theme === mode}
+                                            onChange={() => setTheme(mode)}
+                                            className="accent-blue-600 scale-125"
+                                        />
+                                        <span className="capitalize">{mode}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Language */}
+                        <div>
+                            <h2 className="font-semibold text-lg mb-2 text-white">Language</h2>
+                            <select
+                                className="bg-[#18151f] border border-white/10 rounded-lg px-3 py-2 text-white"
+                                value={language}
+                                onChange={e => setLanguage(e.target.value)}
+                            >
+                                <option value="en-uk">English (UK)</option>
+                                {/* Add more languages as needed */}
+                            </select>
+                        </div>
+
+                        {/* Notifications */}
+                        <div>
+                          <h2 className="font-semibold text-lg mb-2 text-white">Notifications</h2>
+                          <p className="mb-2">Choose how you would like to be notified about updates, invitations and subscriptions.</p>
+                          <div className="space-y-6">
+                            {/* Events You Attend */}
+                            <div>
+                              <label className="block text-sm font-medium text-white mb-1">Events You Attend</label>
+                              <div className="grid grid-cols-1 gap-2">
+                                {notificationOptions.slice(0, 5).map(opt => (
+                                  <div key={opt.key} className="flex items-center justify-between py-1">
+                                    <span className="text-white">{opt.label}</span>
+                                    <select
+                                      className="bg-[#18151f] border border-white/10 rounded-lg px-2 py-1 text-white scale-110"
+                                      value={notifications[opt.key]}
+                                      onChange={e => setNotifications(n => ({ ...n, [opt.key]: e.target.value }))}
+                                    >
+                                      {opt.options.map(option => (
+                                        <option key={option} value={option}>
+                                          {option === "off" ? "Off" : option.charAt(0).toUpperCase() + option.slice(1)}
+                                        </option>
+                                      ))}
+                                      {opt.options.includes("whatsapp") && (
+                                        <option value="email,whatsapp">Email, WhatsApp</option>
+                                      )}
+                                    </select>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            {/* Events You Host */}
+                            <div>
+                              <label className="block text-sm font-medium text-white mb-1">Events You Host</label>
+                              <div className="grid grid-cols-1 gap-2">
+                                {notificationOptions.slice(5, 7).map(opt => (
+                                  <div key={opt.key} className="flex items-center justify-between bg-[#18151f] rounded-lg px-4 py-2">
+                                    <span className="text-white">{opt.label}</span>
+                                    <select
+                                      className="bg-[#23202b] border border-white/10 rounded-lg px-2 py-1 text-white scale-110"
+                                      value={notifications[opt.key]}
+                                      onChange={e => setNotifications(n => ({ ...n, [opt.key]: e.target.value }))}
+                                    >
+                                      {opt.options.map(option => (
+                                        <option key={option} value={option}>
+                                          {option === "off" ? "Off" : option.charAt(0).toUpperCase() + option.slice(1)}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            {/* Calendars You Manage */}
+                            <div>
+                              <label className="block text-sm font-medium text-white mb-1">Calendars You Manage</label>
+                              <div className="grid grid-cols-1 gap-2">
+                                {notificationOptions.slice(7, 9).map(opt => (
+                                  <div key={opt.key} className="flex items-center justify-between bg-[#18151f] rounded-lg px-4 py-2">
+                                    <span className="text-white">{opt.label}</span>
+                                    <select
+                                      className="bg-[#23202b] border border-white/10 rounded-lg px-2 py-1 text-white scale-110"
+                                      value={notifications[opt.key]}
+                                      onChange={e => setNotifications(n => ({ ...n, [opt.key]: e.target.value }))}
+                                    >
+                                      {opt.options.map(option => (
+                                        <option key={option} value={option}>
+                                          {option === "off" ? "Off" : option.charAt(0).toUpperCase() + option.slice(1)}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            {/* Suilens */}
+                            <div>
+                              <label className="block text-sm font-medium text-white mb-1">Suilens</label>
+                              <div className="grid grid-cols-1 gap-2">
+                                {notificationOptions.slice(9, 10).map(opt => (
+                                  <div key={opt.key} className="flex items-center justify-between bg-[#18151f] rounded-lg px-4 py-2">
+                                    <span className="text-white">{opt.label}</span>
+                                    <select
+                                      className="bg-[#23202b] border border-white/10 rounded-lg px-2 py-1 text-white scale-110"
+                                      value={notifications[opt.key]}
+                                      onChange={e => setNotifications(n => ({ ...n, [opt.key]: e.target.value }))}
+                                    >
+                                      {opt.options.map(option => (
+                                        <option key={option} value={option}>
+                                          {option === "off" ? "Off" : option.charAt(0).toUpperCase() + option.slice(1)}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                       
+ 
+                    </form>
                 )}
 
                 {/* Payment Tab */}

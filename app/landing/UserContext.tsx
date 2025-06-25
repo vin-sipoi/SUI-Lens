@@ -1,5 +1,5 @@
 "use client"
-import React, { createContext, useContext, useState } from "react"
+import React, { createContext, useContext, useState, useEffect } from "react"
 
 type User = {
   name: string
@@ -31,6 +31,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = (user: User) => setUser(user)
   const logout = () => setUser(null)
+
+  useEffect(() => {
+    // Theme handling removed as setTheme is not defined
+}, []);
 
   return (
     <UserContext.Provider value={{ user, login, logout }}>
