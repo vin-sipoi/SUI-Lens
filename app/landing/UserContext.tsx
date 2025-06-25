@@ -1,11 +1,21 @@
 "use client"
-import React, { createContext, useContext, useState } from "react"
+import React, { createContext, useContext, useState, useEffect } from "react"
 
 type User = {
   name: string
   email: string
-  avatarUrl?: string
-  walletAddress?: string // Add walletAddress here
+  avatarUrl: string
+  bio?: string
+  instagram?: string
+  twitter?: string
+  youtube?: string
+  tiktok?: string
+  linkedin?: string
+  website?: string
+  mobile?: string
+  username?: string
+  walletAddress?: string
+  emails: { address: string; primary: boolean; verified: boolean }[]
 }
 
 type UserContextType = {
@@ -21,6 +31,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = (user: User) => setUser(user)
   const logout = () => setUser(null)
+
+  useEffect(() => {
+    // Theme handling removed as setTheme is not defined
+}, []);
 
   return (
     <UserContext.Provider value={{ user, login, logout }}>

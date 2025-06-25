@@ -602,3 +602,13 @@ html {
     @apply bg-background text-foreground;
   }
 }
+
+/* globals.css */
+body.theme-light {
+  background-color: #fff !important;
+  color: #18151f !important;
+}
+body.theme-dark {
+  background-color: #18151f !important;
+  color: #fff !important;
+}

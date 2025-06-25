@@ -1,13 +1,15 @@
 "use client"
 
+import React from "react"
 import { ProfileDropdown } from "./ProfileDropDown"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Wallet, Award, Coins, ArrowRight, Play, Calendar, MapPin, Users, Clock, Mail, Shield } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { useUser } from "./UserContext"
+import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
+import { useUser } from "./UserContext";
 
 type Event = {
   id: number
@@ -20,10 +22,29 @@ type Event = {
 }
 
 export default function HomePage() {
-  const { login } = useUser()
+  const { login, user, logout } = useUser();
+  const account = useCurrentAccount();
+
   const [events, setEvents] = useState<Event[]>([])
   const [email, setEmail] = useState("")
   const [showDropdown, setShowDropdown] = useState(false)
+
+  // When wallet connects, log in with wallet address
+  useEffect(() => {
+    if (account && !user) {
+      login({
+        name: "Sui User",
+        email: "",
+        emails: [{ address: "", primary: true, verified: false }],
+        avatarUrl: "https://via.placeholder.com/100",
+        walletAddress: account.address,
+      });
+    }
+  }, [account, login, user]);
+
+  useEffect(() => {
+    if (!user) setShowDropdown(false);
+  }, [user]);
 
   // Function to add a new event (you can call this from elsewhere in your app)
   const addEvent = (newEvent: Omit<Event, "id">) => {
@@ -40,16 +61,6 @@ export default function HomePage() {
     // Handle newsletter subscription
     console.log("Newsletter subscription:", email)
     setEmail("")
-  }
-
-  const handleDemoLogin = () => {
-    login({
-      name: "John Doe",
-      email: "john@example.com",
-      avatarUrl: "https://example.com/avatar.png",
-      walletAddress: "0x48bf3eee4789de05d3320e703a0d8c837e412b0bfad7"
-    })
-    setShowDropdown(true)
   }
 
   const communities = [
@@ -119,16 +130,33 @@ export default function HomePage() {
               Create Event
               </Button>
             </Link>
-            <Button
-              variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50"
-              onClick={handleDemoLogin}
-            >
-              Demo Login
-            </Button>
-            {showDropdown && (
-              <div className="absolute right-0 mt-2 z-50">
-                <ProfileDropdown />
+            {/* Only show ConnectButton if not logged in */}
+            {!user ? (
+              <ConnectButton />
+            ) : (
+              <div className="relative">
+                <button
+                  onClick={() => setShowDropdown((v) => !v)}
+                  className="focus:outline-none"
+                  aria-label="Open profile menu"
+                >
+                  <img
+                    src={user.avatarUrl || "https://via.placeholder.com/100"}
+                    alt="Profile"
+                    className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer"
+                  />
+                </button>
+                {showDropdown && (
+                  <div className="absolute right-0 mt-2 z-50">
+                    <ProfileDropdown
+                      walletAddress={user.walletAddress ?? ""}
+                      onLogout={() => {
+                        setShowDropdown(false);
+                        logout();
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -1,11 +1,13 @@
 "use client"
 import React from "react";
-import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
 import { useUser } from "../landing/UserContext";
+import { useCurrentAccount } from "@mysten/dapp-kit";
 
 export default function Profile() {
   const { user } = useUser();
   const account = useCurrentAccount();
+  const walletAddress = account?.address || user?.walletAddress || "";
+  const primaryEmail = user?.emails?.find(e => e.primary)?.address || user?.email || "";
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-[#18151f]">
@@ -15,36 +17,27 @@ export default function Profile() {
           alt="Profile Picture"
           className="w-24 h-24 rounded-full mx-auto mb-4"
         />
-        <h2 className="text-xl font-bold text-gray-800 dark:text-white">{user?.name || "POPE"}</h2>
-        <ConnectButton />
-        <div className="my-4">
-          {account ? (
-            <div className="text-gray-600 dark:text-gray-400 text-sm break-all">
-              Connected to {account.address}
-            </div>
-          ) : (
-            <div className="text-gray-600 dark:text-gray-400 text-sm">
-              No wallet connected
-            </div>
-          )}
-        </div>
-        <div className="space-y-4 mt-4">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-white">{user?.username || "Username"}</h2>
+        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 break-all">
+          {walletAddress || "No wallet connected"}
+        </p>
+        <div className="space-y-4">
           <div className="text-left">
             <label className="text-gray-600 dark:text-gray-400 text-sm">Name</label>
             <input
               type="text"
               value={user?.name || ""}
               readOnly
-              className="w-full p-2 border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#18151f] rounded mt-1 text-gray-800 dark:text-white"
+              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded mt-1 text-gray-800 dark:text-white bg-white dark:bg-[#18151f]"
             />
           </div>
           <div className="text-left">
             <label className="text-gray-600 dark:text-gray-400 text-sm">Email Address</label>
             <input
               type="email"
-              value={user?.email || ""}
+              value={primaryEmail}
               readOnly
-              className="w-full p-2 border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#18151f] rounded mt-1 text-gray-800 dark:text-white"
+              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded mt-1 text-gray-800 dark:text-white bg-white dark:bg-[#18151f]"
             />
           </div>
         </div>
