@@ -16,22 +16,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-
+import  Image  from "next/image"
 import {
-  Calendar,
-  MapPin,
-  Upload,
   ArrowLeft,
-  Globe,
-  Users,
-  Clock,
   Edit3,
   Camera,
-  Ticket,
-  Settings,
-  ChevronDown,
-  ExternalLink,
-  Video,
   Plus,
   Loader2,
 } from "lucide-react"
@@ -151,25 +140,7 @@ export default function CreateEventPage() {
     }
   }
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "Date"
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric' 
-    })
-  }
-
-  const formatTime = (timeStr: string) => {
-    if (!timeStr) return "Time"
-    const [hours, minutes] = timeStr.split(':')
-    const hour = parseInt(hours)
-    const ampm = hour >= 12 ? 'PM' : 'AM'
-    const displayHour = hour % 12 || 12
-    return `${displayHour.toString().padStart(2, '0')}:${minutes} ${ampm}`
-  }
-
+  
   const handleTicketSave = () => {
     setEventData({
       ...eventData,
@@ -202,19 +173,47 @@ export default function CreateEventPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/discover" passHref>
-              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900" asChild>
-                <span className="flex items-center">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </span>
+      <header className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center space-x-3 ">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+            <Image 
+              src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
+              alt="Suilens Logo" 
+              width={60}
+              height={60}
+              className="object-contain"
+            />
+          </div>
+          <span className="text-2xl font-bold text-[#020B15]">Suilens</span>
+          </Link>
+
+          <nav className="hidden lg:flex text-sm font-inter items-center space-x-8">
+            <Link href='/' className="text-gray-800 font-semibold "></Link>
+            {["Communities", "Discover", "Dashboard","Bounties"].map((item) => (
+              <Link
+                key={item}
+                href={`/${item.toLowerCase().replace(' ', '-')}`}
+                className="text-gray-600  font-medium transition-colors"
+              >
+                {item}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="flex text-sm items-center space-x-4">
+            <Link href='/auth/signin'>
+              <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
+              Sign In
               </Button>
             </Link>
-            <h1 className="text-xl font-semibold text-gray-900">Create Event</h1>
-            <div className="w-16"></div>
+            
+            <Link href='/create'>
+              <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
+              Create Event
+              </Button>
+            </Link>
+            
           </div>
         </div>
       </header>

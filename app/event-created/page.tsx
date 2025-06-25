@@ -1,7 +1,12 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Download, Copy, Share, ChevronDown, Check } from 'lucide-react'
+import { Download, Copy, Share, ChevronDown, Check, Send } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { FaTelegram, FaXTwitter } from 'react-icons/fa6' 
+import { FaTelegramPlane } from "react-icons/fa";
 
 const EventSuccessPage = () => {
   const [showCustomInput, setShowCustomInput] = useState(false)
@@ -76,7 +81,7 @@ const EventSuccessPage = () => {
 
   const shareEvent = async (platform: ShareEventParams['platform']): Promise<void> => {
     const eventUrl: string = currentQrUrl
-    const text: string = "Check out this event I created on Sultans!"
+    const text: string = "Check out this event I created on Suilens!"
     
     if (platform === 'twitter') {
       const twitterUrl: string = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(eventUrl)}`
@@ -88,87 +93,94 @@ const EventSuccessPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen font-inter bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="text-2xl font-bold text-gray-900">Sultans</div>
-            </div>
-            <nav className="hidden md:flex space-x-8">
-              <a href="#" className="text-gray-500 hover:text-gray-700 transition-colors">Home</a>
-              <a href="#" className="text-gray-500 hover:text-gray-700 transition-colors">Communities</a>
-              <a href="#" className="text-gray-500 hover:text-gray-700 transition-colors">Events</a>
-              <a href="#" className="text-gray-500 hover:text-gray-700 transition-colors">Bonuses</a>
-            </nav>
-            <div className="flex items-center space-x-4">
-              <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                Create Event
-              </button>
-              <div className="w-8 h-8 bg-orange-400 rounded-full"></div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <header className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50">
+              <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+                <Link href="/" className="flex items-center space-x-3 ">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+                  <Image 
+                    src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
+                    alt="Suilens Logo" 
+                    width={60}
+                    height={60}
+                    className="object-contain"
+                  />
+                </div>
+                <span className="text-2xl font-bold text-[#020B15]">Suilens</span>
+                </Link>
+      
+                <nav className="hidden lg:flex text-sm font-inter items-center space-x-8">
+                  <Link href='/' className="text-gray-800 font-semibold "></Link>
+                  {["Communities", "Discover", "Dashboard","Bounties"].map((item) => (
+                    <Link
+                      key={item}
+                      href={`/${item.toLowerCase().replace(' ', '-')}`}
+                      className="text-gray-600  font-medium transition-colors"
+                    >
+                      {item}
+                    </Link>
+                  ))}
+                </nav>
+      
+                <div className="flex text-sm items-center space-x-4">                            
+                  <Link href='/create'>
+                    <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
+                    Create Event
+                    </Button>
+                  </Link>
+                  
+                </div>
+              </div>
+            </header>
 
       {/* Main Content */}
       <main className="max-w-2xl mx-auto px-4 py-16">
         <div className="text-center">
           <div className="mb-8">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 text-green-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              Your Event Is Live!
+            
+            <h1 className="text-3xl font-medium text-gray-900 mb-4">
+              Your Event Is Live
             </h1>
-            <p className="text-gray-600 text-lg">
-              You've successfully created your event on Sultans.<br />
+            <p className="text-[#747474] font-normal text-2xl">
+              You've successfully created your event on Suilens.<br />
               Now let's make it a success.
             </p>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap justify-center gap-4 mb-12">
+          <div className="flex flex-wrap  text-base justify-center gap-4 mb-12">
             <button 
               onClick={copyLink}
-              className="flex items-center px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center px-6 py-3 border text-[#566773] border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
             >
               {copied ? <Check className="w-4 h-4 mr-2 text-green-600" /> : <Copy className="w-4 h-4 mr-2" />}
               {copied ? 'Copied!' : 'Copy link'}
             </button>
             <button 
               onClick={() => shareEvent('twitter')}
-              className="flex items-center px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex font-normal text-[#566773] items-center px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
             >
-              <Share className="w-4 h-4 mr-2" />
+              <FaXTwitter className='mr-2'/>
               Share on X
             </button>
             <button 
               onClick={() => shareEvent('telegram')}
-              className="flex items-center px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex font-normal items-center text-[#566773] px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
             >
-              <Share className="w-4 h-4 mr-2" />
+              <FaTelegramPlane className='mr-2 w-6 h-6'/>      
               Share on Telegram
             </button>
           </div>
 
           {/* QR Code Section */}
           <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
-              Save Your QR Code
+            <h2 className="text-xl font-semibold text-[#2C2C2C] mb-6">
+              SAVE YOUR POAP IMAGE
             </h2>
             
             {/* Custom QR Generator */}
-            <div className="mb-8">
-              <button
-                onClick={() => setShowCustomInput(!showCustomInput)}
-                className="flex items-center justify-center mx-auto px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-4"
-              >
-                Generate Custom QR Code
-                <ChevronDown className={`w-4 h-4 ml-2 transition-transform duration-200 ${showCustomInput ? 'rotate-180' : ''}`} />
-              </button>
-              
+            <div className="mb-8">      
               {showCustomInput && (
                 <div className="max-w-md mx-auto animate-in slide-in-from-top duration-200">
                   <div className="flex gap-2">
@@ -180,12 +192,6 @@ const EventSuccessPage = () => {
                       className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       onKeyPress={(e) => e.key === 'Enter' && generateCustomQR()}
                     />
-                    <button
-                      onClick={generateCustomQR}
-                      className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                    >
-                      Generate
-                    </button>
                   </div>
                 </div>
               )}
@@ -209,33 +215,16 @@ const EventSuccessPage = () => {
               </div>
             </div>
 
-            {/* Current QR URL Display */}
-            <div className="mb-6">
-              <p className="text-sm text-gray-600 mb-2 font-medium">Current QR Code URL:</p>
-              <p className="text-sm bg-gray-100 p-3 rounded-lg break-all font-mono text-gray-800">
-                {currentQrUrl}
-              </p>
-            </div>
+            
 
             {/* Download Button */}
             <button
               onClick={downloadQRCode}
               disabled={!qrCodeDataUrl}
-              className="flex items-center justify-center mx-auto px-8 py-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center font-semibold text-base justify-center mx-auto px-8 py-4 text-[#1C1C1C] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Download className="w-5 h-5 mr-2" />
-              Download QR Code
+              Download Image
             </button>
-          </div>
-
-          {/* Success Message */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-8">
-            <p className="text-green-800 font-medium">
-              🎉 Your event is now live and ready to share!
-            </p>
-            <p className="text-green-600 text-sm mt-1">
-              People can scan the QR code or use the link to access your event.
-            </p>
           </div>
         </div>
       </main>
