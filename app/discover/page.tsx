@@ -96,7 +96,7 @@ const EventDashboard: React.FC = () => {
            </Link>
  
            <nav className="hidden lg:flex items-center space-x-8">
-             {["Home", "Communities", "Explore", "Dashboard"].map((item) => (
+             {["Home", "Communities",].map((item) => (
                <Link
                  key={item}
                  href={`/${item.toLowerCase().replace(' ', '-')}`}
