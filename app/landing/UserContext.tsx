@@ -15,6 +15,7 @@ type User = {
   mobile?: string
   username?: string
   walletAddress?: string
+  emails: { address: string; primary: boolean; verified: boolean }[]
 }
 
 type UserContextType = {

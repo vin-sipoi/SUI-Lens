@@ -7,6 +7,7 @@ export default function Profile() {
   const { user } = useUser();
   const account = useCurrentAccount();
   const walletAddress = account?.address || user?.walletAddress || "";
+  const primaryEmail = user?.emails?.find(e => e.primary)?.address || user?.email || "";
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-[#18151f]">
@@ -34,7 +35,7 @@ export default function Profile() {
             <label className="text-gray-600 dark:text-gray-400 text-sm">Email Address</label>
             <input
               type="email"
-              value={user?.email || ""}
+              value={primaryEmail}
               readOnly
               className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded mt-1 text-gray-800 dark:text-white bg-white dark:bg-[#18151f]"
             />

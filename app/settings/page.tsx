@@ -1,7 +1,8 @@
 "use client"
 import { useUser } from "../landing/UserContext"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import clsx from "clsx"
+import Header from "../components/Header"
 
 const TABS = [
     { key: "profile", label: "Account" },
@@ -28,9 +29,88 @@ export default function SettingsPage() {
     })
     const [avatar, setAvatar] = useState<File | null>(null)
     const [avatarPreview, setAvatarPreview] = useState<string>(user?.avatarUrl || "/avatar-placeholder.png")
+    const [emails, setEmails] = useState(
+        user?.emails?.length
+            ? user.emails
+            : [{ address: user?.email || "", primary: true, verified: true }]
+    );
+    const [newEmail, setNewEmail] = useState("");
+    const [verifyingEmail, setVerifyingEmail] = useState<string | null>(null);
+    const [showOtpDialog, setShowOtpDialog] = useState(false);
+    const [otp, setOtp] = useState("");
+    const [otpError, setOtpError] = useState<string | null>(null);
+    const [mobile, setMobile] = useState(form.mobile || "");
+    const [verifyingMobile, setVerifyingMobile] = useState(false);
+    const [showMobileOtpDialog, setShowMobileOtpDialog] = useState(false);
+    const [mobileOtp, setMobileOtp] = useState("");
+    const [mobileOtpError, setMobileOtpError] = useState<string | null>(null);
+    const [showCalendarModal, setShowCalendarModal] = useState(false);
+    type Device = {
+        id: string;
+        name: string;
+        location: string;
+        current: boolean;
+        lastActive: string;
+    };
+
+    const [devices, setDevices] = useState<Device[]>([
+        // Example static data; replace with backend data
+        // { id: "1", name: "Chrome on Windows", location: "Nairobi, KE", current: true, lastActive: "Active now" },
+        // { id: "2", name: "Mobile Chrome on Android", location: "Nairobi, KE", current: false, lastActive: "Active today" },
+    ]);
+
+    useEffect(() => {
+        // Fetch devices from backend
+        // api.getActiveDevices().then(setDevices);
+    }, []);
+
+    const handleVerifyEmail = async (email: string) => {
+        setVerifyingEmail(email);
+        setOtp("");
+        setOtpError(null);
+        setShowOtpDialog(true);
+        // await api.sendVerificationEmail(email);
+    };
+
+    const handleOtpSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setOtpError(null);
+        try {
+            // await api.verifyEmailOtp(verifyingEmail, otp);
+            setEmails(emails =>
+                emails.map(e =>
+                    e.address === verifyingEmail ? { ...e, verified: true } : e
+                )
+            );
+            setShowOtpDialog(false);
+            setVerifyingEmail(null);
+            setOtp("");
+        } catch (err) {
+            setOtpError("Invalid code. Please try again.");
+        }
+    };
+
+    const handleSendMobileOtp = async () => {
+        setVerifyingMobile(true);
+        setShowMobileOtpDialog(true);
+        // await api.sendMobileOtp(mobile);
+        setVerifyingMobile(false);
+    };
+
+    const handleMobileOtpSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setMobileOtpError(null);
+        try {
+            // await api.verifyMobileOtp(mobile, mobileOtp);
+            setShowMobileOtpDialog(false);
+            // Optionally update context/state to mark mobile as verified
+        } catch (err) {
+            setMobileOtpError("Invalid code. Please try again.");
+        }
+    };
 
     const handleSave = (e: React.FormEvent) => {
-        e.preventDefault()
+        e.preventDefault();
         login({
             ...user!,
             name: `${form.firstName} ${form.lastName}`.trim(),
@@ -43,7 +123,8 @@ export default function SettingsPage() {
             tiktok: form.tiktok,
             linkedin: form.linkedin,
             website: form.website,
-            email: form.email,
+            emails,
+            email: emails.find(e => e.primary)?.address || "", // for backward compatibility
             mobile: form.mobile,
         })
         alert("Changes saved!")
@@ -59,6 +140,7 @@ export default function SettingsPage() {
 
     return (
         <div className="min-h-screen bg-[#18151f] text-white">
+            <Header />
             <div className="max-w-3xl mx-auto py-10 px-4">
                 <h1 className="text-2xl font-bold mb-6 text-white">Settings</h1>
                 {/* Tabs */}
@@ -241,55 +323,215 @@ export default function SettingsPage() {
                         {/* Emails */}
                         <div className="bg-[#23202b] rounded-xl p-6 space-y-4 shadow-lg">
                             <h2 className="font-semibold text-lg mb-2 text-white">Emails</h2>
-                            <button
-                                type="button"
-                                className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm"
-                                disabled
-                            >
-                                Add Email
-                            </button>
-                            <p className="text-white/70 text-sm mt-2">
-                                Add additional emails to receive event invitations sent to those addresses.
-                            </p>
-                            <div className="mt-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-white">{form.email}</span>
-                                    <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded">
-                                        Primary
-                                    </span>
-                                </div>
-                                <p className="text-xs text-white/40 mt-1">
-                                    This email will be shared with hosts when you register for their
-                                    events.
-                                </p>
+                            <div className="space-y-2">
+                                {emails.map((email, idx) => (
+                                    <div key={email.address} className="flex items-center justify-between">
+                                        <div>
+                                            <span className="text-white">{email.address}</span>
+                                            {email.primary && (
+                                                <span className="ml-2 text-xs bg-blue-600 text-white px-2 py-0.5 rounded">
+                                                    Primary
+                                                </span>
+                                            )}
+                                            {email.verified ? (
+                                                <span className="ml-2 text-xs bg-green-600 text-white px-2 py-0.5 rounded">
+                                                    Verified
+                                                </span>
+                                            ) : (
+                                                <span className="ml-2 text-xs bg-yellow-600 text-white px-2 py-0.5 rounded">
+                                                    Unverified
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex gap-2">
+                                            {!email.primary && (
+                                                <button
+                                                    type="button"
+                                                    className="text-xs text-blue-400 hover:underline"
+                                                    onClick={() => {
+                                                        setEmails(emails =>
+                                                            emails.map((e, i) => ({
+                                                                ...e,
+                                                                primary: i === idx,
+                                                            }))
+                                                        );
+                                                    }}
+                                                >
+                                                    Set Primary
+                                                </button>
+                                            )}
+                                            {!email.primary && (
+                                                <button
+                                                    type="button"
+                                                    className="text-xs text-red-400 hover:underline"
+                                                    onClick={() => {
+                                                        setEmails(emails => emails.filter((_, i) => i !== idx));
+                                                    }}
+                                                >
+                                                    Remove
+                                                </button>
+                                            )}
+                                            {!email.verified && (
+                                                <button
+                                                    type="button"
+                                                    className="text-xs text-yellow-400 hover:underline"
+                                                    onClick={() => handleVerifyEmail(email.address)}
+                                                >
+                                                    Verify
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
+                            <div className="flex mt-4 gap-2">
+                                <input
+                                    type="email"
+                                    className="flex-1 rounded-lg px-3 py-2 bg-[#18151f] text-white border border-white/10"
+                                    value={newEmail}
+                                    onChange={e => setNewEmail(e.target.value)}
+                                    placeholder="Add another email"
+                                />
+                                <button
+                                    type="button"
+                                    className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm"
+                                    onClick={() => {
+                                        if (
+                                            newEmail &&
+                                            !emails.some(e => e.address === newEmail)
+                                        ) {
+                                            setEmails([
+                                                ...emails,
+                                                { address: newEmail, primary: false, verified: false },
+                                            ]);
+                                            setNewEmail("");
+                                        }
+                                    }}
+                                    disabled={!newEmail || emails.some(e => e.address === newEmail)}
+                                >
+                                    Add
+                                </button>
+                            </div>
+                            <p className="text-xs text-white/40 mt-1">
+                                Your primary email will be shared with hosts when you register for their events.
+                            </p>
                         </div>
+
+                        {/* OTP Dialog */}
+                        {showOtpDialog && (
+                            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+                                <form
+                                    onSubmit={handleOtpSubmit}
+                                    className="bg-[#23202b] rounded-xl p-8 shadow-xl flex flex-col items-center"
+                                >
+                                    <h3 className="text-lg font-semibold mb-2 text-white">Verify Email</h3>
+                                    <p className="text-white/70 mb-4 text-center">
+                                        Enter the code sent to <span className="font-mono">{verifyingEmail}</span>
+                                    </p>
+                                    <input
+                                        type="text"
+                                        value={otp}
+                                        onChange={e => setOtp(e.target.value)}
+                                        className="mb-2 px-4 py-2 rounded bg-[#18151f] border border-white/10 text-white text-center"
+                                        placeholder="Enter OTP"
+                                        autoFocus
+                                    />
+                                    {otpError && <div className="text-red-400 text-sm mb-2">{otpError}</div>}
+                                    <div className="flex gap-2 mt-2">
+                                        <button
+                                            type="submit"
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                                        >
+                                            Verify
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="px-4 py-2 bg-gray-600 text-white rounded-lg"
+                                            onClick={() => {
+                                                setShowOtpDialog(false);
+                                                setVerifyingEmail(null);
+                                                setOtp("");
+                                                setOtpError(null);
+                                            }}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
+
+                        {/* Mobile OTP Dialog */}
+                        {showMobileOtpDialog && (
+                            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+                                <form
+                                    onSubmit={handleMobileOtpSubmit}
+                                    className="bg-[#23202b] rounded-xl p-8 shadow-xl flex flex-col items-center"
+                                >
+                                    <h3 className="text-lg font-semibold mb-2 text-white">Verify Mobile</h3>
+                                    <p className="text-white/70 mb-4 text-center">
+                                        Enter the code sent to <span className="font-mono">{mobile}</span>
+                                    </p>
+                                    <input
+                                        type="text"
+                                        value={mobileOtp}
+                                        onChange={e => setMobileOtp(e.target.value)}
+                                        className="mb-2 px-4 py-2 rounded bg-[#18151f] border border-white/10 text-white text-center"
+                                        placeholder="Enter OTP"
+                                        autoFocus
+                                    />
+                                    {mobileOtpError && <div className="text-red-400 text-sm mb-2">{mobileOtpError}</div>}
+                                    <div className="flex gap-2 mt-2">
+                                        <button
+                                            type="submit"
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                                        >
+                                            Verify
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="px-4 py-2 bg-gray-600 text-white rounded-lg"
+                                            onClick={() => {
+                                                setShowMobileOtpDialog(false);
+                                                setMobileOtp("");
+                                                setMobileOtpError(null);
+                                            }}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
 
                         {/* Mobile Number */}
                         <div className="bg-[#23202b] rounded-xl p-6 space-y-4 shadow-lg">
                             <h2 className="font-semibold text-lg mb-2 text-white">Mobile Number</h2>
                             <p className="text-white/70 text-sm">
-                                Manage the mobile number you use to sign in to Luma and receive SMS updates.
+                                Manage the mobile number you use to sign in to Suilens and receive SMS updates.
                             </p>
                             <label className="block text-sm text-white/70 mt-2">
                                 Mobile Number
                             </label>
                             <input
                                 className="w-full rounded-lg px-3 py-2 bg-[#18151f] text-white border border-white/10"
-                                value={form.mobile}
-                                onChange={e => setForm(f => ({ ...f, mobile: e.target.value }))}
-                                disabled
+                                value={mobile}
+                                onChange={e => setMobile(e.target.value)}
+                                placeholder="+254712345678"
                             />
                             <button
                                 type="button"
-                                className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm"
-                                disabled
+                                className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm mt-2"
+                                onClick={handleSendMobileOtp}
+                                disabled={!mobile}
                             >
                                 Update
                             </button>
                             <p className="text-xs text-white/40 mt-1">
                                 For your security, we will send you a code to verify any change to your mobile number.
                             </p>
+                            {/* Show verified badge if you track it in state/context */}
+                            {/* {mobileVerified && <span className="text-green-400 text-xs ml-2">Verified</span>} */}
                         </div>
 
                         {/* Password & Security */}
@@ -309,7 +551,12 @@ export default function SettingsPage() {
                                     <button
                                         type="button"
                                         className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm"
-                                        disabled
+                                        onClick={async () => {
+                                        //   await api.sendPasswordResetEmail(
+                                        //     emails.find(e => e.primary)?.address || user.email
+                                        //   );
+                                          alert("Check your email. We've sent instructions to set your password.");
+                                        }}
                                     >
                                         Set Password
                                     </button>
@@ -336,31 +583,10 @@ export default function SettingsPage() {
                         <div className="bg-[#23202b] rounded-xl p-6 space-y-4 shadow-lg">
                             <h2 className="font-semibold text-lg mb-2 text-white">Third Party Accounts</h2>
                             <p className="text-white/70 text-sm mb-4">
-                                Link your accounts to sign in to Luma and automate your workflows.
+                                Link your accounts to sign in to Suilens and automate your workflows.
                             </p>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <span className="font-medium text-white">Google</span>
-                                    <div className="text-white/70 text-sm">
-                                        {form.email}
-                                    </div>
-                                </div>
-                                <div>
-                                    <span className="font-medium text-white">Apple</span>
-                                    <div className="text-white/40 text-sm">Not Linked</div>
-                                </div>
-                                <div>
-                                    <span className="font-medium text-white">Zoom</span>
-                                    <div className="text-white/40 text-sm">Not Linked</div>
-                                </div>
-                                <div>
-                                    <span className="font-medium text-white">Solana</span>
-                                    <div className="text-white/40 text-sm">Not Linked</div>
-                                </div>
-                                <div>
-                                    <span className="font-medium text-white">Ethereum</span>
-                                    <div className="text-white/40 text-sm">Not Linked</div>
-                                </div>
+                            <div className="flex items-center justify-center min-h-[80px]">
+                                <span className="text-white/50 text-base font-semibold">Coming soon</span>
                             </div>
                         </div>
 
@@ -372,14 +598,14 @@ export default function SettingsPage() {
                                     Calendar Syncing
                                 </label>
                                 <p className="text-white/70 text-sm mb-2">
-                                    Sync your Luma events with your Google, Outlook, or Apple calendar.
+                                    Sync your Suilens events with your Google, Outlook, or Apple calendar.
                                 </p>
                                 <button
                                     type="button"
                                     className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm"
-                                    disabled
+                                    onClick={() => setShowCalendarModal(true)}
                                 >
-                                    Add iCal Subscription
+                                    Add Calendar Sync
                                 </button>
                             </div>
                             <div>
@@ -392,47 +618,105 @@ export default function SettingsPage() {
                                 <button
                                     type="button"
                                     className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm"
-                                    disabled
+                                    onClick={() => {
+                                        // Redirect to your backend OAuth endpoint for Google Contacts
+                                        window.location.href = "/api/oauth/google-contacts";
+                                    }}
                                 >
                                     Enable Syncing
                                 </button>
                             </div>
                         </div>
 
+                        {/* Calendar Sync Modal */}
+                        {showCalendarModal && (
+                            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+                                <div className="bg-[#23202b] rounded-xl p-8 shadow-xl w-full max-w-xs flex flex-col items-center">
+                                    <h3 className="text-lg font-semibold mb-4 text-white">Connect a Calendar</h3>
+                                    <button
+                                        className="w-full mb-2 px-4 py-2 bg-[#4285F4] text-white rounded hover:bg-[#357ae8] font-semibold"
+                                        onClick={() => {
+                                            setShowCalendarModal(false);
+                                            // await api.connectGoogleCalendar();
+                                        }}
+                                    >
+                                        Google Calendar
+                                    </button>
+                                    <button
+                                        className="w-full mb-2 px-4 py-2 bg-[#0072C6] text-white rounded hover:bg-[#005fa3] font-semibold"
+                                        onClick={() => {
+                                            setShowCalendarModal(false);
+                                            // await api.connectOutlookCalendar();
+                                        }}
+                                    >
+                                        Outlook Calendar
+                                    </button>
+                                    <button
+                                        className="w-full mb-2 px-4 py-2 bg-[#333] text-white rounded hover:bg-[#222] font-semibold"
+                                        onClick={() => {
+                                            setShowCalendarModal(false);
+                                            // Show iCal URL or instructions for Apple Calendar
+                                        }}
+                                    >
+                                        Apple Calendar (iCal)
+                                    </button>
+                                    <button
+                                        className="mt-4 px-4 py-2 bg-gray-600 text-white rounded"
+                                        onClick={() => setShowCalendarModal(false)}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Active Devices */}
                         <div className="bg-[#23202b] rounded-xl p-6 space-y-4 shadow-lg">
                             <h2 className="font-semibold text-lg mb-2 text-white">Active Devices</h2>
                             <p className="text-white/70 text-sm mb-4">
-                                See the list of devices you are currently signed into Luma from.
+                                See the list of devices you are currently signed into Suilens from.
                             </p>
                             <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <span className="text-white">Chrome on Windows</span>
-                                        <span className="ml-2 text-xs bg-blue-600 text-white px-2 py-0.5 rounded">
-                                            This Device
-                                        </span>
-                                        <div className="text-xs text-white/40">Nairobi, KE</div>
+                                {devices.map(device => (
+                                    <div key={device.id} className="flex items-center justify-between">
+                                        <div>
+                                            <span className="text-white">{device.name}</span>
+                                            {device.current && (
+                                                <span className="ml-2 text-xs bg-blue-600 text-white px-2 py-0.5 rounded">
+                                                    This Device
+                                                </span>
+                                            )}
+                                            <div className="text-xs text-white/40">{device.location}</div>
+                                        </div>
+                                        <span className="text-xs text-white/40">{device.lastActive}</span>
+                                        {!device.current && (
+                                            <button
+                                                type="button"
+                                                className="ml-4 px-2 py-1 bg-red-600 text-white rounded text-xs"
+                                                onClick={async () => {
+                                                    // await api.signOutDevice(device.id);
+                                                    setDevices(devices => devices.filter(d => d.id !== device.id));
+                                                }}
+                                            >
+                                                Sign Out
+                                            </button>
+                                        )}
                                     </div>
-                                    <span className="text-xs text-white/40">Active now</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <span className="text-white">Mobile Chrome on Android</span>
-                                        <div className="text-xs text-white/40">Nairobi, KE</div>
-                                    </div>
-                                    <span className="text-xs text-white/40">Active today</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <span className="text-white">Mobile Chrome on Android</span>
-                                        <div className="text-xs text-white/40">Nairobi, KE</div>
-                                    </div>
-                                </div>
+                                ))}
                             </div>
                             <p className="text-xs text-white/40 mt-2">
                                 See something you don't recognise? You may sign out of all other devices.
                             </p>
+                            <button
+                                type="button"
+                                className="mt-2 px-4 py-2 bg-red-600 text-white rounded text-sm"
+                                onClick={async () => {
+                                    // await api.signOutAllDevices();
+                                    setDevices(devices => devices.filter(d => d.current));
+                                }}
+                            >
+                                Sign out of all other devices
+                            </button>
                         </div>
 
                         {/* Danger Zone */}
@@ -441,15 +725,16 @@ export default function SettingsPage() {
                                 Delete Account
                             </h2>
                             <p className="text-white/70">
-                                If you no longer wish to use Luma, you can permanently delete your
-                                account.
+                                If you no longer wish to use Suilens, you can permanently delete your account.
                             </p>
                             <button
                                 type="button"
                                 className="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold"
-                                onClick={() => {
-                                    logout()
-                                    alert("Account deleted (demo only)")
+                                onClick={async () => {
+                                    if (window.confirm("Are you sure you want to delete your account? This cannot be undone.")) {
+                                        // await api.deleteAccount();
+                                        logout();
+                                    }
                                 }}
                             >
                                 Delete My Account

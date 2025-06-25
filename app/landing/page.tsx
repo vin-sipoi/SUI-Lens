@@ -25,12 +25,17 @@ export default function HomePage() {
   const { login, user, logout } = useUser();
   const account = useCurrentAccount();
 
+  const [events, setEvents] = useState<Event[]>([])
+  const [email, setEmail] = useState("")
+  const [showDropdown, setShowDropdown] = useState(false)
+
   // When wallet connects, log in with wallet address
   useEffect(() => {
     if (account && !user) {
       login({
         name: "Sui User",
         email: "",
+        emails: [{ address: "", primary: true, verified: false }],
         avatarUrl: "https://via.placeholder.com/100",
         walletAddress: account.address,
       });
@@ -40,10 +45,6 @@ export default function HomePage() {
   useEffect(() => {
     if (!user) setShowDropdown(false);
   }, [user]);
-
-  const [events, setEvents] = useState<Event[]>([])
-  const [email, setEmail] = useState("")
-  const [showDropdown, setShowDropdown] = useState(false)
 
   // Function to add a new event (you can call this from elsewhere in your app)
   const addEvent = (newEvent: Omit<Event, "id">) => {
@@ -60,16 +61,6 @@ export default function HomePage() {
     // Handle newsletter subscription
     console.log("Newsletter subscription:", email)
     setEmail("")
-  }
-
-  const handleDemoLogin = () => {
-    login({
-      name: "John Doe",
-      email: "john@example.com",
-      avatarUrl: "https://example.com/avatar.png",
-      walletAddress: "0x48bf3eee4789de05d3320e703a0d8c837e412b0bfad7"
-    })
-    setShowDropdown(true)
   }
 
   const communities = [
@@ -115,7 +106,7 @@ export default function HomePage() {
           </Link>
 
           <nav className="hidden lg:flex items-center space-x-8">
-            {["Home", "Communities", "Explore", "Dashboard"].map((item) => (
+            {["Communities", "Explore", "Dashboard"].map((item) => (
               <Link
                 key={item}
                 href={`/${item.toLowerCase().replace(' ', '-')}`}
