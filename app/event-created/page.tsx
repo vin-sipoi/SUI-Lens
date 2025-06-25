@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react'
 import { Download, Copy, Share, ChevronDown } from 'lucide-react'
+import  QRCode  from 'qrcode'
 
 interface EventSuccessPageProps {
   eventUrl?: string
@@ -12,16 +13,15 @@ const EventSuccessPage: React.FC<EventSuccessPageProps> = ({
   eventUrl = 'https://sultans.com/event/12345',
   eventTitle = 'My Event'
 }) => {
-  const [qrValue, setQrValue] = useState(eventUrl)
+  
   const [showCustomInput, setShowCustomInput] = useState(false)
   const [customUrl, setCustomUrl] = useState('')
   const qrRef = useRef<HTMLDivElement>(null)
+  const [src,setSrc] = useState<string>('')
 
   // Generate QR code with custom URL
   const generateCustomQR = () => {
-    if (customUrl.trim()) {
-      setQrValue(customUrl.trim())
-    }
+    QRCode.toDataURL("https://my.slush.app/").then(setSrc)
   }
 
   // Download QR code as PNG
@@ -58,7 +58,7 @@ const EventSuccessPage: React.FC<EventSuccessPageProps> = ({
   // Copy link to clipboard
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(qrValue)
+      await navigator.clipboard.writeText(src)
       alert('Link copied to clipboard!')
     } catch (err) {
       console.error('Failed to copy: ', err)
@@ -72,7 +72,7 @@ const EventSuccessPage: React.FC<EventSuccessPageProps> = ({
         await navigator.share({
           title: eventTitle,
           text: `Check out this event: ${eventTitle}`,
-          url: qrValue,
+          url: src,
         })
       } catch (err) {
         console.error('Error sharing:', err)
@@ -188,13 +188,14 @@ const EventSuccessPage: React.FC<EventSuccessPageProps> = ({
             >
               <div className="bg-white p-6 rounded-lg shadow-lg">
                 {/* QR Code */}
+                <img src={src} alt='' />
               </div>
             </div>
 
             {/* Current QR URL Display */}
             <div className="mb-4">
               <p className="text-sm text-gray-600 mb-2">Current QR Code URL:</p>
-              <p className="text-sm bg-gray-100 p-2 rounded break-all">{qrValue}</p>
+              <p className="text-sm bg-gray-100 p-2 rounded break-all">{src}</p>
             </div>
 
             {/* Download Button */}
