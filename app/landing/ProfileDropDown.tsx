@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Settings, LogOut, User } from "lucide-react";
 import { useWallets } from "@mysten/dapp-kit";
 
-export function ProfileDropdown({ walletAddress, onLogout }: { walletAddress: string, onLogout: () => void }) {
+export function ProfileDropdown({ walletAddress, onLogout, avatarUrl }: { walletAddress: string, onLogout: () => void, avatarUrl?: string }) {
   const wallets = useWallets();
 
   const handleLogout = () => {
@@ -14,9 +14,11 @@ export function ProfileDropdown({ walletAddress, onLogout }: { walletAddress: st
   return (
     <div className="min-w-[220px] bg-[#23202b] border border-white/10 rounded-xl shadow-lg p-4">
       <div className="flex flex-col items-center mb-4">
-        <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white text-xl font-bold mb-1">
-          <User className="w-8 h-8" />
-        </div>
+        <img
+          src={avatarUrl || "https://via.placeholder.com/100"}
+          alt="Profile"
+          className="w-12 h-12 rounded-full object-cover border-2 border-white mb-1"
+        />
         <div className="text-xs text-gray-400 break-all text-center">{walletAddress}</div>
       </div>
       <div className="flex flex-col">

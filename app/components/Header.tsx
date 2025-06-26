@@ -4,10 +4,14 @@ import Image from "next/image";
 import { useUser } from "../landing/UserContext";
 import { ConnectButton } from "@mysten/dapp-kit";
 import { useState } from "react";
+import { ProfileDropdown } from "../landing/ProfileDropDown";
+import { useCurrentAccount, useDisconnectWallet } from "@mysten/dapp-kit";
 
 export default function Header() {
   const { user, logout } = useUser();
   const [showDropdown, setShowDropdown] = useState(false);
+  const account = useCurrentAccount();
+  const { disconnect } = useDisconnectWallet();
 
   return (
     <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
@@ -36,9 +40,10 @@ export default function Header() {
           ))}
         </nav>
         <div className="flex items-center space-x-4 relative">
-          {!user ? (
+          {!account?.address ? (
             <ConnectButton />
           ) : (
+            // Always show profile dropdown when wallet is connected
             <div className="relative">
               <button
                 onClick={() => setShowDropdown((v) => !v)}
@@ -46,22 +51,22 @@ export default function Header() {
                 aria-label="Open profile menu"
               >
                 <img
-                  src={user.avatarUrl || "https://via.placeholder.com/100"}
+                  src={user?.avatarUrl || "https://via.placeholder.com/100"}
                   alt="Profile"
                   className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer"
                 />
               </button>
               {showDropdown && (
-                <div className="absolute right-0 mt-2 z-50 bg-white rounded shadow-lg">
-                  <button
-                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
-                    onClick={() => {
+                <div className="absolute right-0 mt-2 z-50">
+                  <ProfileDropdown
+                    walletAddress={user?.walletAddress ?? account.address ?? ""}
+                    avatarUrl={user?.avatarUrl}
+                    onLogout={() => {
                       setShowDropdown(false);
-                      logout();
+                      disconnect();
+                      logout?.();
                     }}
-                  >
-                    Sign out
-                  </button>
+                  />
                 </div>
               )}
             </div>

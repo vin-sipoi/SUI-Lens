@@ -195,13 +195,22 @@ export default function SettingsPage() {
         }
     }
 
+    // Add a theme state if not already present
+    // const [theme, setTheme] = useState("light"); // Already present
+
+    // Helper for conditional classes
+    const isLight = theme === "light" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: light)").matches);
+
     return (
-        <div className="min-h-screen bg-[#18151f] text-white">
+        <div className={isLight ? "min-h-screen bg-white text-gray-900" : "min-h-screen bg-[#18151f] text-white"}>
             <Header />
-            <div className="max-w-3xl mx-auto py-10 px-4">
-                <h1 className="text-2xl font-bold mb-6 text-white">Settings</h1>
+            <div className={isLight ? "max-w-3xl mx-auto py-10 px-4" : "max-w-3xl mx-auto py-10 px-4"}>
+                <h1 className={isLight ? "text-2xl font-bold mb-6 text-gray-900" : "text-2xl font-bold mb-6 text-white"}>Settings</h1>
                 {/* Tabs */}
-                <div className="flex space-x-2 mb-8 border-b border-white/10">
+                <div className={isLight
+                    ? "flex space-x-2 mb-8 border-b border-gray-200"
+                    : "flex space-x-2 mb-8 border-b border-white/10"
+                }>
                     {TABS.map(t => (
                         <button
                             key={t.key}
@@ -209,8 +218,12 @@ export default function SettingsPage() {
                             className={clsx(
                                 "px-4 py-2 font-medium transition-colors border-b-2",
                                 tab === t.key
-                                    ? "border-blue-500 text-blue-400"
-                                    : "border-transparent text-white/60 hover:text-white"
+                                    ? isLight
+                                        ? "border-blue-600 text-blue-600"
+                                        : "border-blue-500 text-blue-400"
+                                    : isLight
+                                        ? "border-transparent text-gray-500 hover:text-gray-900"
+                                        : "border-transparent text-white/60 hover:text-white"
                             )}
                         >
                             {t.label}
@@ -222,9 +235,12 @@ export default function SettingsPage() {
                 {tab === "profile" && (
                     <form onSubmit={handleSave} className="space-y-8">
                         {/* Your Profile */}
-                        <div className="bg-[#23202b] rounded-xl p-6 space-y-4 shadow-lg">
-                            <h2 className="font-semibold text-lg mb-2 text-white">Your Profile</h2>
-                            <p className="text-white/70 text-sm mb-4">
+                        <div className={isLight
+                            ? "bg-white rounded-xl p-6 space-y-4 shadow-lg border border-gray-200"
+                            : "bg-[#23202b] rounded-xl p-6 space-y-4 shadow-lg"
+                        }>
+                            <h2 className={isLight ? "font-semibold text-lg mb-2 text-gray-900" : "font-semibold text-lg mb-2 text-white"}>Your Profile</h2>
+                            <p className={isLight ? "text-gray-600 text-sm mb-4" : "text-white/70 text-sm mb-4"}>
                                 Choose how you are displayed as a host or guest.
                             </p>
                             <div className="flex items-center space-x-4">
@@ -946,7 +962,7 @@ export default function SettingsPage() {
                     <div className="bg-[#23202b] rounded-xl p-6 shadow-lg text-white/70">
                         <h2 className="font-semibold text-lg mb-2 text-white">Payment</h2>
                         <p className="text-white/70 text-sm">
-                            Payment content goes here (customize as needed).
+                            Pay with Slush.
                         </p>
                     </div>
                 )}

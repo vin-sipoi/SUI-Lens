@@ -16,6 +16,8 @@ type User = {
   username?: string
   walletAddress?: string
   emails: { address: string; primary: boolean; verified: boolean }[]
+  eventsAttended?: number;
+  poapsCollected?: number;
 }
 
 type UserContextType = {
