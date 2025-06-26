@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from "react"
 type User = {
   name: string
   email: string
-  avatarUrl: string
+  
   bio?: string
   instagram?: string
   twitter?: string
@@ -18,6 +18,7 @@ type User = {
   emails: { address: string; primary: boolean; verified: boolean }[]
   eventsAttended?: number;
   poapsCollected?: number;
+  avatarUrl?: string
 }
 
 type UserContextType = {
