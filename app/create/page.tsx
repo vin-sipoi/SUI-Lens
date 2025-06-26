@@ -104,40 +104,13 @@ export default function CreateEventPage() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsCreating(true)
-
-    try {
-      // Generate unique event ID
-      const eventId = Date.now().toString()
-      
-      // Generate QR code
-      const qrData = await generateQRCode(eventId)
-      
-      // Create event object with QR data
-      const newEvent = {
-        ...eventData,
-        id: eventId,
-        attendees: 0,
-        qrCodeUrl: qrData.qrCodeUrl,
-        eventUrl: qrData.eventUrl,
-        qrCodeImage: qrData.qrCodeImage,
-        createdAt: new Date().toISOString(),
-      }
-      addEvent(newEvent)
-      // Store event data in localStorage for the success page
-      localStorage.setItem('currentEvent', JSON.stringify(newEvent))
-      
-      // Navigate to success page
-      router.push('/event-created')
-      
-    } catch (error) {
-      console.error('Error creating event:', error)
-      alert('Failed to create event. Please try again.')
-    } finally {
-      setIsCreating(false)
-    }
+  const handleSubmit = async (data: FormData) => {
+    const response = await fetch('/api/events', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    })
+    const result = await response.json()
+    // Handle success/redirect
   }
 
   

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { FaTelegram, FaXTwitter } from 'react-icons/fa6' 
 import { FaTelegramPlane } from "react-icons/fa";
 
-const EventSuccessPage = () => {
+const EventSuccessPage = async ({ params }: { params: { id: string }}) => {
   const [showCustomInput, setShowCustomInput] = useState(false)
   const [customUrl, setCustomUrl] = useState('')
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('')
