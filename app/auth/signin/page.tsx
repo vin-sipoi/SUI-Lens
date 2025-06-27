@@ -1,173 +1,214 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { Wallet, Mail, Lock, Eye, EyeOff, Sparkles, Shield, Zap } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
+import { FcGoogle } from "react-icons/fc"
+import { FaApple } from "react-icons/fa"
+import { Mail, Lock, Eye, EyeOff } from "lucide-react"
 import { ConnectButton } from "@mysten/dapp-kit"
 
+const wallets = [
+	{ name: "Slush", icon: "/placeholder-logo.svg" },
+	{ name: "Nightly", icon: "/placeholder-logo.svg" },
+	{ name: "Backpack", icon: "/placeholder-logo.svg" },
+	{ name: "Hana Wallet", icon: "/placeholder-logo.svg" },
+	{ name: "OKX Wallet", icon: "/placeholder-logo.svg" },
+]
+
 export default function SignInPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+	const [showPassword, setShowPassword] = useState(false)
+	const [email, setEmail] = useState("")
+	const [password, setPassword] = useState("")
 
-  const handleWalletConnect = () => {
-    console.log("Connecting wallet...")
-  }
+	const handleEmailSignIn = (e: React.FormEvent) => {
+		e.preventDefault()
+		console.log("Signing in with email:", email)
+	}
 
-  const handleEmailSignIn = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Signing in with email:", email)
-  }
+	return (
+		<div className="min-h-screen bg-white">
+			{/* Header */}
+			<header className="border-b border-gray-200">
+				<div className="container mx-auto px-4 py-4 flex items-center justify-between">
+					<Link href="/" className="flex items-center space-x-3">
+						<div className="w-10 h-10 bg-[#56A8FF] rounded-2xl flex items-center justify-center shadow-lg">
+							<Image
+								src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png"
+								alt="SuiLens Logo"
+								width={40}
+								height={40}
+								unoptimized
+							/>
+						</div>
+						<span className="text-3xl font-bold text-gray-900">Suilens</span>
+					</Link>
+					<div className="flex items-center space-x-4">
+						<Link
+							href="/discover"
+							className="text-gray-600 hover:text-gray-900 transition-colors"
+						>
+							Discover Events
+						</Link>
+						<ConnectButton className="base-button-secondary" />
+					</div>
+				</div>
+			</header>
 
-  return (
-    <div className="min-h-screen" style={{ background: "#201a28" }}>
-      {/* Floating Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="floating-orb floating-orb-1 w-32 h-32 top-20 left-10 animate-float-elegant"></div>
-        <div
-          className="floating-orb floating-orb-2 w-24 h-24 top-40 right-20 animate-float-elegant"
-          style={{ animationDelay: "2s" }}
-        ></div>
-        <div
-          className="floating-orb floating-orb-3 w-40 h-40 bottom-40 left-20 animate-float-elegant"
-          style={{ animationDelay: "4s" }}
-        ></div>
-        <div
-          className="floating-orb floating-orb-4 w-28 h-28 bottom-20 right-10 animate-float-elegant"
-          style={{ animationDelay: "6s" }}
-        ></div>
-      </div>
-
-      {/* Header */}
-      <header className="border-b border-white/10 glass-dark">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3">
-            <div className="w-10 h-10 suilens-gradient-blue rounded-2xl flex items-center justify-center shadow-lg animate-glow-pulse">
-              <span className="text-white font-bold text-lg">S</span>
-            </div>
-            <span className="text-3xl font-bold gradient-text">Suilens</span>
-          </Link>
-          <div className="flex items-center space-x-4">
-            <Link href="/discover" className="text-white/70 hover:text-white transition-colors">
-              Discover Events
-            </Link>
-           <ConnectButton className="base-button-secondary"/>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-16 max-w-md relative z-10">
-        {/* Welcome Section */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center space-x-3 glass-dark rounded-full px-6 py-3 mb-6 shadow-xl">
-            <Sparkles className="w-5 h-5 text-blue-400 animate-sparkle" />
-            <span className="text-blue-300 font-semibold">Welcome Back</span>
-          </div>
-          <h1 className="text-4xl font-bold text-white mb-3">Sign In</h1>
-          <p className="text-white/70 text-lg">Continue on your Web3 event journey</p>
-        </div>
-
-        <Card className="base-card-light shadow-2xl">
-          <CardHeader className="text-center pb-6">
-            
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Wallet Connect */}
-
-            
-
-            {/* Email Sign In */}
-            <form onSubmit={handleEmailSignIn} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-700 font-semibold">
-                  Email Address
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="pl-10 py-3 text-lg rounded-xl border-2 focus:border-blue-400"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-700 font-semibold">
-                  Password
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="pl-10 pr-12 py-3 text-lg rounded-xl border-2 focus:border-blue-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input type="checkbox" className="rounded border-gray-300" />
-                  <span className="text-sm text-gray-600">Remember me</span>
-                </label>
-                <Link href="/auth/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 font-semibold">
-                  Forgot password?
-                </Link>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full py-4 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
-              >
-                Sign In to Suilens
-              </Button>
-            </form>
-
-            <div className="text-center pt-4">
-              <p className="text-gray-600">
-                Don't have an account?{" "}
-                <Link href="/auth/signup" className="text-blue-600 hover:text-blue-700 font-semibold">
-                  Create one now
-                </Link>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Features */}
-        <div className="mt-12 grid grid-cols-1 gap-4">
-          <div className="glass-dark rounded-2xl p-6 text-center">
-            <div className="w-12 h-12 suilens-gradient-blue rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
-            <h3 className="font-bold text-white mb-2">Secure & Private</h3>
-            <p className="text-white/70 text-sm">Your data is protected with enterprise-grade security</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+			{/* Main Content */}
+			<div className="min-h-[calc(100vh-80px)] flex items-stretch">
+				{/* Left: Auth Card */}
+				<div className="flex-1 flex flex-col justify-center px-8 py-12 max-w-xl mx-auto">
+					<div className="mb-10">
+						<h1 className="text-2xl font-bold mb-2">
+							Welcome Back to Suilens
+						</h1>
+						<p className="text-gray-500">
+							Login with your socials, wallet, or email to continue
+						</p>
+					</div>
+					<div className="flex gap-4 mb-6">
+						<Button
+							variant="outline"
+							className="flex-1 flex items-center justify-center gap-2 py-6 text-base font-medium"
+						>
+							<FcGoogle className="w-5 h-5" /> Sign in with Google
+						</Button>
+						<Button
+							variant="outline"
+							className="flex-1 flex items-center justify-center gap-2 py-6 text-base font-medium"
+						>
+							<FaApple className="w-5 h-5" /> Sign in with Apple ID
+						</Button>
+					</div>
+					<div className="flex items-center my-6">
+						<div className="flex-1 h-px bg-gray-200" />
+						<span className="mx-4 text-gray-400 text-sm">
+							or continue with
+						</span>
+						<div className="flex-1 h-px bg-gray-200" />
+					</div>
+					<div className="space-y-3 mb-6">
+						{wallets.map((wallet) => (
+							<Button
+								key={wallet.name}
+								variant="outline"
+								className="w-full flex items-center gap-3 py-5 text-base font-medium justify-start"
+							>
+								<Image
+									src={wallet.icon}
+									alt={wallet.name}
+									width={24}
+									height={24}
+									className="rounded"
+								/>
+								{wallet.name}
+							</Button>
+						))}
+						<ConnectButton className="w-full flex items-center justify-center gap-2 py-5 text-base font-medium" />
+					</div>
+					<form onSubmit={handleEmailSignIn} className="space-y-6">
+						<div className="space-y-2">
+							<Label
+								htmlFor="email"
+								className="text-gray-700 font-semibold"
+							>
+								Email Address
+							</Label>
+							<div className="relative">
+								<Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+								<Input
+									id="email"
+									type="email"
+									placeholder="your@email.com"
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+									required
+									className="pl-10 py-3 text-lg rounded-xl border-2 focus:border-blue-400"
+								/>
+							</div>
+						</div>
+						<div className="space-y-2">
+							<Label
+								htmlFor="password"
+								className="text-gray-700 font-semibold"
+							>
+								Password
+							</Label>
+							<div className="relative">
+								<Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+								<Input
+									id="password"
+									type={showPassword ? "text" : "password"}
+									placeholder="Enter your password"
+									value={password}
+									onChange={(e) => setPassword(e.target.value)}
+									required
+									className="pl-10 pr-12 py-3 text-lg rounded-xl border-2 focus:border-blue-400"
+								/>
+								<button
+									type="button"
+									onClick={() => setShowPassword(!showPassword)}
+									className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+								>
+									{showPassword ? (
+										<EyeOff className="w-5 h-5" />
+									) : (
+										<Eye className="w-5 h-5" />
+									)}
+								</button>
+							</div>
+						</div>
+						<div className="flex items-center justify-between">
+							<label className="flex items-center space-x-2 cursor-pointer">
+								<input
+									type="checkbox"
+									className="rounded border-gray-300"
+								/>
+								<span className="text-sm text-gray-600">
+									Remember me
+								</span>
+							</label>
+							<Link
+								href="/auth/forgot-password"
+								className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
+							>
+								Forgot password?
+							</Link>
+						</div>
+						<Button
+							type="submit"
+							className="w-full py-4 text-lg font-semibold bg-blue-500 hover:bg-blue-600 text-white rounded-xl"
+						>
+							Sign In to Suilens
+						</Button>
+					</form>
+					<div className="text-center pt-4">
+						<p className="text-gray-600">
+							Don't have an account?{" "}
+							<Link
+								href="/auth/signup"
+								className="text-blue-600 hover:text-blue-700 font-semibold"
+							>
+								Create one now
+							</Link>
+						</p>
+					</div>
+				</div>
+				{/* Right: Logo Section */}
+				<div className="hidden md:flex flex-1 items-center justify-center bg-[#56A8FF] rounded-l-3xl">
+					<Image
+						src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png"
+						alt="SuiLens Logo"
+						width={200}
+						height={200}
+						unoptimized
+					/>
+				</div>
+			</div>
+		</div>
+	)
 }
