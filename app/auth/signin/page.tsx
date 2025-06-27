@@ -10,6 +10,7 @@ import { FcGoogle } from "react-icons/fc"
 import { FaApple } from "react-icons/fa"
 import { Mail, Lock, Eye, EyeOff } from "lucide-react"
 import { ConnectButton } from "@mysten/dapp-kit"
+import { useRouter } from "next/navigation"
 
 const wallets = [
 	{ name: "Slush", icon: "/placeholder-logo.svg" },
@@ -23,18 +24,21 @@ export default function SignInPage() {
 	const [showPassword, setShowPassword] = useState(false)
 	const [email, setEmail] = useState("")
 	const [password, setPassword] = useState("")
+	const router = useRouter();
 
 	const handleEmailSignIn = (e: React.FormEvent) => {
-		e.preventDefault()
-		console.log("Signing in with email:", email)
-	}
+		e.preventDefault();
+		// Simulate successful sign in
+		console.log("Signing in with email:", email);
+		router.push("/dashboard");
+	};
 
 	return (
 		<div className="min-h-screen bg-white">
 			{/* Header */}
 			<header className="border-b border-gray-200">
 				<div className="container mx-auto px-4 py-4 flex items-center justify-between">
-					<Link href="/" className="flex items-center space-x-3">
+					<Link href="/landing" className="flex items-center space-x-3">
 						<div className="w-10 h-10 bg-[#56A8FF] rounded-2xl flex items-center justify-center shadow-lg">
 							<Image
 								src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png"
