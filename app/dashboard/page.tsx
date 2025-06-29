@@ -11,6 +11,8 @@ import { ConnectButton } from "@mysten/dapp-kit"
 import { useEventStore } from "@/store/EventStore"
 import Image from "next/image"
 import GuestList from "@/components/GuestList"
+import { useUser } from "../landing/UserContext"
+import { ProfileDropdown } from "../landing/ProfileDropDown"
 
 export default function DashboardPage() {
   type Event = {
@@ -21,6 +23,8 @@ export default function DashboardPage() {
   const [registeredEvents, setRegisteredEvents] = useState<Event[]>([])
   const [activeTab, setActiveTab] = useState("my-events")
   const [sidebarSection, setSidebarSection] = useState<string>("overview")
+  const { user, logout } = useUser()
+  const [showDropdown, setShowDropdown] = useState(false)
 
   return (
     <div className="min-h-screen flex bg-white">
@@ -31,30 +35,62 @@ export default function DashboardPage() {
           <span className="ml-2 text-lg font-bold text-white">Suilens</span>
         </div>
         <nav className="flex-1 flex flex-col gap-4">
-          <button onClick={() => setSidebarSection('overview')} className={`flex items-center gap-2 font-medium hover:text-gray-300 ${sidebarSection === 'overview' ? 'text-white' : 'text-gray-400'}`}> {/* Overview */}
-            <svg width="20" height="20" fill="none"><rect width="20" height="20" rx="4" fill="#fff" fillOpacity="0.1"/><rect x="4" y="4" width="4" height="4" rx="1" fill="#fff"/><rect x="12" y="4" width="4" height="4" rx="1" fill="#fff"/><rect x="4" y="12" width="4" height="4" rx="1" fill="#fff"/><rect x="12" y="12" width="4" height="4" rx="1" fill="#fff"/></svg>
+          <button
+            onClick={() => setSidebarSection("overview")}
+            className={`flex items-center gap-2 font-medium hover:text-gray-300 ${sidebarSection === "overview" ? "text-white" : "text-gray-400"}`}
+          >
+            <svg width="20" height="20" fill="none">
+              <rect width="20" height="20" rx="4" fill="#fff" fillOpacity="0.1" />
+              <rect x="4" y="4" width="4" height="4" rx="1" fill="#fff" />
+              <rect x="12" y="4" width="4" height="4" rx="1" fill="#fff" />
+              <rect x="4" y="12" width="4" height="4" rx="1" fill="#fff" />
+              <rect x="12" y="12" width="4" height="4" rx="1" fill="#fff" />
+            </svg>
             Overview
           </button>
-          <button onClick={() => setSidebarSection('guests')} className={`flex items-center gap-2 font-medium hover:text-white ${sidebarSection === 'guests' ? 'text-white' : 'text-gray-400'}`}> {/* Guests */}
-            <svg width="20" height="20" fill="none"><path d="M10 10a3 3 0 100-6 3 3 0 000 6zM10 12c-3.314 0-6 1.343-6 3v1a1 1 0 001 1h10a1 1 0 001-1v-1c0-1.657-2.686-3-6-3z" fill="currentColor"/></svg>
+          <button
+            onClick={() => setSidebarSection("guests")}
+            className={`flex items-center gap-2 font-medium hover:text-white ${sidebarSection === "guests" ? "text-white" : "text-gray-400"}`}
+          >
+            <svg width="20" height="20" fill="none">
+              <path d="M10 10a3 3 0 100-6 3 3 0 000 6zM10 12c-3.314 0-6 1.343-6 3v1a1 1 0 001 1h10a1 1 0 001-1v-1c0-1.657-2.686-3-6-3z" fill="currentColor" />
+            </svg>
             Guests
           </button>
-          <button onClick={() => setSidebarSection('registration')} className="flex items-center gap-2 text-gray-400 hover:text-white">
-            <svg width="20" height="20" fill="none"><rect x="3" y="7" width="14" height="10" rx="2" fill="currentColor" fillOpacity=".2"/><rect x="7" y="3" width="6" height="4" rx="1" fill="currentColor"/></svg>
+          <button
+            onClick={() => setSidebarSection("registration")}
+            className="flex items-center gap-2 text-gray-400 hover:text-white"
+          >
+            <svg width="20" height="20" fill="none">
+              <rect x="3" y="7" width="14" height="10" rx="2" fill="currentColor" fillOpacity=".2" />
+              <rect x="7" y="3" width="6" height="4" rx="1" fill="currentColor" />
+            </svg>
             Registration
           </button>
-          <button onClick={() => setSidebarSection('blast')} className="flex items-center gap-2 text-gray-400 hover:text-white">
-            <svg width="20" height="20" fill="none"><rect x="3" y="7" width="14" height="10" rx="2" fill="currentColor" fillOpacity=".2"/><rect x="7" y="3" width="6" height="4" rx="1" fill="currentColor"/></svg>
+          <button
+            onClick={() => setSidebarSection("blast")}
+            className="flex items-center gap-2 text-gray-400 hover:text-white"
+          >
+            <svg width="20" height="20" fill="none">
+              <rect x="3" y="7" width="14" height="10" rx="2" fill="currentColor" fillOpacity=".2" />
+              <rect x="7" y="3" width="6" height="4" rx="1" fill="currentColor" />
+            </svg>
             Blast
           </button>
           <div className="mt-6">
             <span className="text-gray-500 text-xs mb-2 block">Insight</span>
             <button className="flex items-center gap-2 text-gray-400 hover:text-white mb-2">
-              <svg width="20" height="20" fill="none"><rect x="3" y="3" width="14" height="14" rx="2" fill="currentColor" fillOpacity=".2"/><rect x="7" y="7" width="6" height="6" rx="1" fill="currentColor"/></svg>
+              <svg width="20" height="20" fill="none">
+                <rect x="3" y="3" width="14" height="14" rx="2" fill="currentColor" fillOpacity=".2" />
+                <rect x="7" y="7" width="6" height="6" rx="1" fill="currentColor" />
+              </svg>
               Statistics
             </button>
             <Link href="/bounties" className="flex items-center gap-2 text-gray-400 hover:text-white">
-              <svg width="20" height="20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="2" fill="none"/><rect x="8" y="8" width="4" height="4" rx="1" fill="currentColor"/></svg>
+              <svg width="20" height="20" fill="none">
+                <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="2" fill="none" />
+                <rect x="8" y="8" width="4" height="4" rx="1" fill="currentColor" />
+              </svg>
               Bounties
             </Link>
           </div>
@@ -65,15 +101,17 @@ export default function DashboardPage() {
         {/* Top Nav */}
         <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <nav className="flex items-center gap-6">
-            {['Home', 'Communities', 'Discover Events', 'Bounties', 'Dashboard'].map((item) => (
+            {["Home", "Communities", "Discover Events", "Bounties", "Dashboard"].map((item) => (
               <Link
                 key={item}
                 href={
-                  item === 'Home' ? '/' :
-                  item === 'Discover Events' ? '/discover' :
-                  `/${item.toLowerCase().replace(/ /g, '')}`
+                  item === "Home"
+                    ? "/landing"
+                    : item === "Discover Events"
+                    ? "/discover"
+                    : `/${item.toLowerCase().replace(/ /g, "")}`
                 }
-                className={`text-sm font-medium ${item === 'Dashboard' ? 'text-black font-bold' : 'text-gray-500 hover:text-black'} transition-colors`}
+                className={`text-sm font-medium ${item === "Dashboard" ? "text-black font-bold" : "text-gray-500 hover:text-black"} transition-colors`}
               >
                 {item}
               </Link>
@@ -83,13 +121,42 @@ export default function DashboardPage() {
             <Link href="/create">
               <Button className="bg-[#56A8FF] text-white px-4 py-2 rounded-full">Create Event</Button>
             </Link>
-            <Image src="/placeholder-user.jpg" alt="User" width={32} height={32} className="rounded-full" />
+            {user && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowDropdown((v) => !v)}
+                  className="focus:outline-none"
+                  aria-label="Open profile menu"
+                >
+                  <Image
+                    src={user.avatarUrl || "/placeholder-user.jpg"}
+                    alt="User"
+                    width={32}
+                    height={32}
+                    className="rounded-full cursor-pointer border-2 border-blue-500"
+                  />
+                </button>
+                {showDropdown && (
+                  <div className="absolute right-0 mt-2 z-50">
+                    <ProfileDropdown
+                      walletAddress={user.walletAddress ?? ""}
+                      onLogout={() => {
+                        setShowDropdown(false)
+                        logout()
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </header>
         {/* Main Dashboard Content */}
         <main className="flex-1 p-6">
-          {sidebarSection === 'guests' ? (
-            <div className="pt-8"><GuestList /></div>
+          {sidebarSection === "guests" ? (
+            <div className="pt-8">
+              <GuestList />
+            </div>
           ) : (
             <div className="grid md:grid-cols-4 gap-6 mb-8">
               <Card className="overflow-hidden border-0 shadow-xl bg-[#56A8FF] text-white rounded-2xl">

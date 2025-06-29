@@ -61,7 +61,7 @@ export default function EventPage() {
       {/* Enhanced Header */}
       <header className="border-b border-white/10 glass-dark sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3">
+          <Link href="/landing" className="flex items-center space-x-3">
             <div className="w-10 h-10 suilens-gradient-blue rounded-2xl flex items-center justify-center shadow-lg animate-glow-pulse">
               <span className="text-white font-bold text-lg">S</span>
             </div>

@@ -134,30 +134,13 @@ export default function HomePage() {
             {!user ? (
               <ConnectButton />
             ) : (
-              <div className="relative">
-                <button
-                  onClick={() => setShowDropdown((v) => !v)}
-                  className="focus:outline-none"
-                  aria-label="Open profile menu"
-                >
-                  <img
-                    src={user.avatarUrl || "https://via.placeholder.com/100"}
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer"
-                  />
-                </button>
-                {showDropdown && (
-                  <div className="absolute right-0 mt-2 z-50">
-                    <ProfileDropdown
-                      walletAddress={user.walletAddress ?? ""}
-                      onLogout={() => {
-                        setShowDropdown(false);
-                        logout();
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+              <Link href="/profile">
+                <img
+                  src={user.avatarUrl || "https://via.placeholder.com/100"}
+                  alt="Profile"
+                  className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer"
+                />
+              </Link>
             )}
           </div>
         </div>

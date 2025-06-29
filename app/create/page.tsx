@@ -104,10 +104,13 @@ export default function CreateEventPage() {
     }
   }
 
-  const handleSubmit = async (data: FormData) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const data = new FormData(form);
     const response = await fetch('/api/events', {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: data
     })
     const result = await response.json()
     // Handle success/redirect
@@ -148,7 +151,7 @@ export default function CreateEventPage() {
       {/* Header */}
       <header className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3 ">
+          <Link href="/landing" className="flex items-center space-x-3 ">
           <div className="w-10 h-10 rounded-lg flex items-center justify-center">
             <Image 
               src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
@@ -162,12 +165,12 @@ export default function CreateEventPage() {
           </Link>
 
           <nav className="hidden lg:flex text-sm font-inter items-center space-x-8">
-            <Link href='/' className="text-gray-800 font-semibold "></Link>
-            {["Communities", "Discover", "Dashboard","Bounties"].map((item) => (
+            <Link href='/landing' className="text-gray-800 font-semibold ">Home</Link>
+            {['Communities', 'Discover', 'Dashboard', 'Bounties'].map((item) => (
               <Link
                 key={item}
                 href={`/${item.toLowerCase().replace(' ', '-')}`}
-                className="text-gray-600  font-medium transition-colors"
+                className="text-gray-600 font-medium transition-colors"
               >
                 {item}
               </Link>
