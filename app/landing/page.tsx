@@ -26,6 +26,21 @@ export default function HomePage() {
   const account = useCurrentAccount();
 
   const [events, setEvents] = useState<Event[]>([])
+
+  useEffect(() => {
+    // Fetch events from backend API
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch('/api/events')
+        if (!res.ok) throw new Error('Failed to fetch events')
+        const data = await res.json()
+        setEvents(data.events || [])
+      } catch (error) {
+        console.error('Error fetching events:', error)
+      }
+    }
+    fetchEvents()
+  }, [])
   const [email, setEmail] = useState("")
   const [showDropdown, setShowDropdown] = useState(false)
 
@@ -251,6 +266,21 @@ export default function HomePage() {
                       Create your event
                     </button>
                   </Link>
+
+                  {/* Dynamic Event Claim Links */}
+                  <div className="mt-6">
+                    <h4 className="text-3xl font-semibold mb-4">Claim Your POAPs</h4>
+                    <ul className="list-disc list-inside space-y-2 text-lg">
+                      {events.length === 0 && <li>No events available for claiming POAPs.</li>}
+                      {events.map((event) => (
+                        <li key={event.id}>
+                          <Link href={`/claim-poap/${event.id}`}>
+                            <a className="text-blue-400 hover:underline">{event.title}</a>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                   
                 </div>
                 

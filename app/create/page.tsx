@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -16,7 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import  Image  from "next/image"
+import Image from "next/image"
 import {
   ArrowLeft,
   Edit3,
@@ -27,11 +27,13 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEventContext } from "@/context/EventContext"
+
 export default function CreateEventPage() {
   const [eventData, setEventData] = useState({
     title: "",
     description: "",
     date: "",
+    endDate: "",
     time: "",
     endTime: "",
     location: "",
@@ -56,21 +58,28 @@ export default function CreateEventPage() {
   const [tempCapacityData, setTempCapacityData] = useState({
     capacity: eventData.capacity,
   })
-  const {addEvent} = useEventContext();
-  
+  const { addEvent } = useEventContext()
+
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+
+  // POAP data state
+  const [poapData, setPoapData] = useState({
+    name: "",
+    description: "",
+    image: null as File | null,
+  })
 
   // Generate QR code using Qrfy API
   const generateQRCode = async (eventId: string) => {
     try {
-      // Create the URL that will capture wallet addresses
       const eventUrl = `${window.location.origin}/event/${eventId}/register`
-      
+
       const response = await fetch('https://qrfy.com/api/v1/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          // Add API key if required: 'Authorization': 'Bearer YOUR_API_KEY',
         },
         body: JSON.stringify({
           qr_data: eventUrl,
@@ -90,30 +99,91 @@ export default function CreateEventPage() {
       return {
         qrCodeUrl: result.qr_code_url,
         eventUrl: eventUrl,
-        qrCodeImage: result.image_url
+        qrCodeImage: result.image_url,
       }
     } catch (error) {
       console.error('Error generating QR code:', error)
-      // Fallback: create a simple QR code URL
       const eventUrl = `${window.location.origin}/event/${eventId}/register`
       return {
         qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`,
         eventUrl: eventUrl,
-        qrCodeImage: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`
+        qrCodeImage: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`,
       }
     }
   }
 
-  const handleSubmit = async (data: FormData) => {
-    const response = await fetch('/api/events', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    })
-    const result = await response.json()
-    // Handle success/redirect
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsCreating(true)
+
+    try {
+      // Validate required fields
+      if (!eventData.title || !eventData.description || !eventData.date || !eventData.time || !eventData.location) {
+        alert('Please fill in all required fields')
+        setIsCreating(false)
+        return
+      }
+
+      // Create FormData for file upload
+      const formData = new FormData()
+      formData.append('title', eventData.title)
+      formData.append('description', eventData.description)
+      formData.append('date', eventData.date)
+      formData.append('endDate', eventData.endDate || eventData.date)
+      formData.append('time', eventData.time)
+      formData.append('endTime', eventData.endTime)
+      formData.append('location', eventData.location)
+      formData.append('capacity', eventData.capacity)
+      formData.append('ticketPrice', eventData.ticketPrice)
+      formData.append('isFree', eventData.isFree.toString())
+      formData.append('requiresApproval', eventData.requiresApproval.toString())
+      formData.append('isPrivate', eventData.isPrivate.toString())
+
+      if (imageFile) {
+        formData.append('image', imageFile)
+      }
+
+      // Add POAP data if provided
+      if (poapData.name) {
+        formData.append('poapName', poapData.name)
+        formData.append('poapDescription', poapData.description)
+        if (poapData.image) {
+          formData.append('poapImage', poapData.image)
+        }
+      }
+
+      const response = await fetch('/api/events', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create event')
+      }
+
+      const result = await response.json()
+
+      // Generate QR code for the event
+      const qrData = await generateQRCode(result.eventId)
+
+      // Add event to context
+      addEvent({
+        id: result.eventId,
+        ...eventData,
+        qrCode: qrData.qrCodeImage,
+        eventUrl: qrData.eventUrl,
+      })
+
+      // Redirect to success page
+      router.push(`/event-created?id=${result.eventId}`)
+    } catch (error) {
+      console.error('Error creating event:', error)
+      alert('Failed to create event. Please try again.')
+    } finally {
+      setIsCreating(false)
+    }
   }
 
-  
   const handleTicketSave = () => {
     setEventData({
       ...eventData,
@@ -143,31 +213,42 @@ export default function CreateEventPage() {
     }
   }
 
+  const handlePoapImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setPoapData({ ...poapData, image: file })
+    }
+  }
+
+  const handlePoapSave = () => {
+    setPoapDialogOpen(false)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3 ">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-            <Image 
-              src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
-              alt="Suilens Logo" 
-              width={60}
-              height={60}
-              className="object-contain"
-            />
-          </div>
-          <span className="text-2xl font-bold text-[#020B15]">Suilens</span>
+          <Link href="/" className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+              <Image
+                src="https://i.ibb.co/PZHSkCV/Suilens-Logo-Mark-Suilens-Black.png"
+                alt="Suilens Logo"
+                width={60}
+                height={60}
+                className="object-contain"
+              />
+            </div>
+            <span className="text-2xl font-bold text-[#020B15]">Suilens</span>
           </Link>
 
           <nav className="hidden lg:flex text-sm font-inter items-center space-x-8">
-            <Link href='/' className="text-gray-800 font-semibold "></Link>
-            {["Communities", "Discover", "Dashboard","Bounties"].map((item) => (
+            <Link href="/" className="text-gray-800 font-semibold"></Link>
+            {["Communities", "Discover", "Dashboard", "Bounties"].map((item) => (
               <Link
                 key={item}
                 href={`/${item.toLowerCase().replace(' ', '-')}`}
-                className="text-gray-600  font-medium transition-colors"
+                className="text-gray-600 font-medium transition-colors"
               >
                 {item}
               </Link>
@@ -175,18 +256,16 @@ export default function CreateEventPage() {
           </nav>
 
           <div className="flex text-sm items-center space-x-4">
-            <Link href='/auth/signin'>
+            <Link href="/auth/signin">
               <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-              Sign In
+                Sign In
               </Button>
             </Link>
-            
-            <Link href='/create'>
+            <Link href="/create">
               <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-              Create Event
+                Create Event
               </Button>
             </Link>
-            
           </div>
         </div>
       </header>
@@ -196,9 +275,9 @@ export default function CreateEventPage() {
           {/* Image Upload Section */}
           <div className="bg-gray-900 rounded-lg h-32 flex items-center justify-center relative overflow-hidden">
             {imagePreview ? (
-              <img 
-                src={imagePreview} 
-                alt="Event preview" 
+              <img
+                src={imagePreview}
+                alt="Event preview"
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -227,7 +306,7 @@ export default function CreateEventPage() {
           {/* Event Name */}
           <div>
             <Label htmlFor="eventName" className="text-sm font-medium text-gray-700 mb-2 block">
-              Event Name
+              Event Name *
             </Label>
             <Input
               id="eventName"
@@ -241,7 +320,7 @@ export default function CreateEventPage() {
 
           {/* Start Date & Time */}
           <div>
-            <Label className="text-sm font-medium text-gray-700 mb-2 block">Start</Label>
+            <Label className="text-sm font-medium text-gray-700 mb-2 block">Start *</Label>
             <div className="grid grid-cols-2 gap-3">
               <Input
                 type="date"
@@ -266,8 +345,8 @@ export default function CreateEventPage() {
             <div className="grid grid-cols-2 gap-3">
               <Input
                 type="date"
-                value={eventData.date}
-                onChange={(e) => setEventData({ ...eventData, date: e.target.value })}
+                value={eventData.endDate}
+                onChange={(e) => setEventData({ ...eventData, endDate: e.target.value })}
                 className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
               />
               <Input
@@ -282,7 +361,7 @@ export default function CreateEventPage() {
           {/* Event Location */}
           <div>
             <Label htmlFor="location" className="text-sm font-medium text-gray-700 mb-2 block">
-              Event Location
+              Event Location *
             </Label>
             <Input
               id="location"
@@ -297,7 +376,7 @@ export default function CreateEventPage() {
           {/* Add Description */}
           <div>
             <Label htmlFor="description" className="text-sm font-medium text-gray-700 mb-2 block">
-              Add Description
+              Add Description *
             </Label>
             <Textarea
               id="description"
@@ -315,9 +394,9 @@ export default function CreateEventPage() {
             <Label className="text-sm font-medium text-gray-700 mb-2 block">Tickets</Label>
             <Dialog open={ticketDialogOpen} onOpenChange={setTicketDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
+                  variant="outline"
                   className="w-full justify-between border-gray-300 hover:border-gray-400"
                   onClick={() => {
                     setTempTicketData({
@@ -339,7 +418,7 @@ export default function CreateEventPage() {
                     <Switch
                       id="free-ticket"
                       checked={tempTicketData.isFree}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         setTempTicketData({ ...tempTicketData, isFree: checked })
                       }
                     />
@@ -355,7 +434,7 @@ export default function CreateEventPage() {
                         type="number"
                         placeholder="0.00"
                         value={tempTicketData.ticketPrice}
-                        onChange={(e) => 
+                        onChange={(e) =>
                           setTempTicketData({ ...tempTicketData, ticketPrice: e.target.value })
                         }
                         className="col-span-3"
@@ -364,8 +443,8 @@ export default function CreateEventPage() {
                   )}
                 </div>
                 <DialogFooter>
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     onClick={handleTicketSave}
                     className="bg-blue-500 hover:bg-blue-600"
                   >
@@ -393,9 +472,9 @@ export default function CreateEventPage() {
             <Label className="text-sm font-medium text-gray-700 mb-2 block">Maximum Capacity</Label>
             <Dialog open={capacityDialogOpen} onOpenChange={setCapacityDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
+                  variant="outline"
                   className="w-full justify-between border-gray-300 hover:border-gray-400"
                   onClick={() => {
                     setTempCapacityData({
@@ -421,7 +500,7 @@ export default function CreateEventPage() {
                       type="number"
                       placeholder="Unlimited"
                       value={tempCapacityData.capacity}
-                      onChange={(e) => 
+                      onChange={(e) =>
                         setTempCapacityData({ ...tempCapacityData, capacity: e.target.value })
                       }
                       className="col-span-3"
@@ -432,8 +511,8 @@ export default function CreateEventPage() {
                   </p>
                 </div>
                 <DialogFooter>
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     onClick={handleCapacitySave}
                     className="bg-blue-500 hover:bg-blue-600"
                   >
@@ -451,9 +530,9 @@ export default function CreateEventPage() {
             </Label>
             <Dialog open={poapDialogOpen} onOpenChange={setPoapDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
+                  variant="outline"
                   className="w-full justify-center border-dashed border-2 border-gray-300 hover:border-gray-400 py-6"
                 >
                   <Plus className="w-5 h-5 mr-2" />
@@ -474,6 +553,8 @@ export default function CreateEventPage() {
                       <Input
                         id="poap-name"
                         placeholder="Enter POAP name"
+                        value={poapData.name}
+                        onChange={(e) => setPoapData({ ...poapData, name: e.target.value })}
                         className="mt-1"
                       />
                     </div>
@@ -483,6 +564,8 @@ export default function CreateEventPage() {
                         id="poap-description"
                         placeholder="Describe your POAP"
                         rows={3}
+                        value={poapData.description}
+                        onChange={(e) => setPoapData({ ...poapData, description: e.target.value })}
                         className="mt-1"
                       />
                     </div>
@@ -492,23 +575,24 @@ export default function CreateEventPage() {
                         id="poap-image"
                         type="file"
                         accept="image/*"
+                        onChange={handlePoapImageUpload}
                         className="mt-1"
                       />
                     </div>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => setPoapDialogOpen(false)}
                   >
                     Cancel
                   </Button>
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     className="bg-blue-500 hover:bg-blue-600"
-                    onClick={() => setPoapDialogOpen(false)}
+                    onClick={handlePoapSave}
                   >
                     Add POAP
                   </Button>
@@ -518,7 +602,7 @@ export default function CreateEventPage() {
           </div>
 
           {/* Create Event Button */}
-          <Button 
+          <Button
             type="submit"
             disabled={isCreating}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium disabled:opacity-50"
@@ -534,6 +618,6 @@ export default function CreateEventPage() {
           </Button>
         </form>
       </div>
-    </div>
+                      </div>
   )
 }
