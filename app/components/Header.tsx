@@ -11,7 +11,7 @@ export default function Header() {
   const { user, logout } = useUser();
   const [showDropdown, setShowDropdown] = useState(false);
   const account = useCurrentAccount();
-  const { disconnect } = useDisconnectWallet();
+  const disconnectWallet = useDisconnectWallet();
 
   return (
     <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
@@ -63,7 +63,7 @@ export default function Header() {
                     avatarUrl={user?.avatarUrl}
                     onLogout={() => {
                       setShowDropdown(false);
-                      disconnect();
+                      disconnectWallet.mutate();
                       logout?.();
                     }}
                   />
