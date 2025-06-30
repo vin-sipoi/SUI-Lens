@@ -30,7 +30,7 @@ const EventSuccessPage = () => {
         } else {
           setQrCodeDataUrl("");
         }
-        const regUrl = `http://localhost:3000/events/${id}/register`;
+        const regUrl = `https://sui-lens-7ofh.vercel.app/events/${id}/register`;
         setRegistrationUrl(regUrl);
       });
     }
