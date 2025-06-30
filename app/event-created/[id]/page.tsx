@@ -24,7 +24,7 @@ const EventSuccessPage = () => {
 
         // Only set QR and registration URLs if POAP exists
         if (eventData?.poap) {
-          const checkinUrl = `http://localhost:3000/events/${id}/checkin`;
+          const checkinUrl = `https://sui-lens-7ofh.vercel.app/events/${id}/checkin`;
           const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(checkinUrl)}`;
           setQrCodeDataUrl(qrUrl);
         } else {
