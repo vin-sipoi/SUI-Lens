@@ -2,6 +2,8 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useUser } from "../landing/UserContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -25,9 +27,21 @@ import {
   Loader2,
 } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useEventContext } from "@/context/EventContext"
 export default function CreateEventPage() {
+  const { user } = useUser();
+  const router = useRouter();
+
+  // Redirect to signin if not logged in
+  useEffect(() => {
+    if (!user) {
+      const timeoutId = setTimeout(() => {
+        router.push('/auth/signin');
+      }, 100); // delay of 100ms to allow any async user state updates
+      return () => clearTimeout(timeoutId);
+    }
+  }, [user, router]);
+
   const [eventData, setEventData] = useState({
     title: "",
     description: "",
@@ -44,7 +58,6 @@ export default function CreateEventPage() {
     timezone: "GMT+03:00 Nairobi",
   })
 
-  const router = useRouter()
   const [isCreating, setIsCreating] = useState(false)
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false)
   const [capacityDialogOpen, setCapacityDialogOpen] = useState(false)
