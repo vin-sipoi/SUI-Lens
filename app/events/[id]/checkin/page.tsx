@@ -5,19 +5,20 @@ import { useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
+import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
 
 export default function CheckinPage() {
   const { id } = useParams();
   const [checkedIn, setCheckedIn] = useState(false);
+  const account = useCurrentAccount();
 
-  // Replace with real wallet connect logic
   const handleCheckIn = async () => {
-    if (!id || Array.isArray(id)) {
-      throw new Error("Invalid event id");
+    if (!id || Array.isArray(id) || !account) {
+      alert("Please connect your wallet.");
+      return;
     }
-    const fakeWalletAddress = "0x123...abc";
     await addDoc(collection(db, "events", id, "attendees"), {
-      address: fakeWalletAddress,
+      address: account.address,
       checkedInAt: new Date(),
     });
     setCheckedIn(true);
@@ -26,13 +27,18 @@ export default function CheckinPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <h1>Event Check-In</h1>
-      {!checkedIn ? (
+      <ConnectButton />
+      {account && (
+        <div className="mb-4 text-sm text-gray-600">
+          Connected wallet: <span className="font-mono">{account.address}</span>
+        </div>
+      )}
+      {!account ? null : !checkedIn ? (
         <Button onClick={handleCheckIn}>
-          Connect Wallet & Check In
+          Check In with Wallet
         </Button>
       ) : (
         <p>Checked in! Enjoy the event.</p>
       )}
     </div>
   );
-}
