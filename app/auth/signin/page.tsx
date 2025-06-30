@@ -13,11 +13,11 @@ import { ConnectButton } from "@mysten/dapp-kit"
 import { useRouter } from "next/navigation"
 
 const wallets = [
-	{ name: "Slush", icon: "/placeholder-logo.svg" },
-	{ name: "Nightly", icon: "/placeholder-logo.svg" },
-	{ name: "Backpack", icon: "/placeholder-logo.svg" },
-	{ name: "Hana Wallet", icon: "/placeholder-logo.svg" },
-	{ name: "OKX Wallet", icon: "/placeholder-logo.svg" },
+	{ name: "Slush", icon: "/download (2) 1.png" },
+	{ name: "Nightly", icon: "/download (3) 1.png" },
+	{ name: "Backpack", icon: "/download (3) 2.png" },
+	{ name: "Hana Wallet", icon: "/download (4) 1.png" },
+	{ name: "OKX Wallet", icon: "/download (2) 2.png" },
 ]
 
 export default function SignInPage() {
@@ -55,10 +55,10 @@ export default function SignInPage() {
 					<div className="w-full max-w-md mx-auto lg:max-w-lg xl:max-w-xl">
 						<div className="mb-8 lg:mb-10">
 							<h1 className="text-[#1C1C1C] text-xl sm:text-2xl lg:text-2xl font-medium mb-2 text-center lg:text-left">
-								Get Started on Suilens
+								Login to Suilens
 							</h1>
 							<p className="text-[#888888] text-sm sm:text-base text-center lg:text-left">
-								A wallet will be assigned to you when you create an account.
+								Login with either socials or email.
 							</p>
 						</div>
 
@@ -85,8 +85,8 @@ export default function SignInPage() {
 						{/* Divider */}
 						<div className="flex items-center my-6">
 							<div className="flex-1 h-px bg-gray-200" />
-							<span className="mx-4 text-[#FFFFFF] text-xs sm:text-sm">
-								or 
+							<span className="mx-4 text-[#101928] text-xs sm:text-lg font-normal">
+								or continue with
 							</span>
 							<div className="flex-1 h-px bg-gray-200" />
 						</div>
@@ -141,7 +141,6 @@ export default function SignInPage() {
 								)}
 							</div>
 
-							<ConnectButton className="w-full flex items-center justify-center gap-2 py-4 sm:py-5 text-sm sm:text-base font-medium" />
 						</div>
 
 						{/* Email/Password Form */}
@@ -246,14 +245,7 @@ export default function SignInPage() {
 							className="xl:w-52 xl:h-52 2xl:w-64 2xl:h-64"
 							unoptimized
 						/>
-						<div className="mt-8 text-white/90 max-w-md">
-							<h2 className="text-xl xl:text-2xl font-semibold mb-3">
-								Welcome to the Future
-							</h2>
-							<p className="text-sm xl:text-base opacity-90">
-								Connect with the decentralized world through Suilens
-							</p>
-						</div>
+						
 					</div>
 				</div>
 			</div>
