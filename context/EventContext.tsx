@@ -18,6 +18,10 @@ interface Event {
   isPrivate: boolean
   qrCode?: string
   eventUrl?: string
+  type: string
+  rsvps?: string[]
+  attendance?: string[]
+  image?: string
 }
 
 interface EventContextType {
@@ -26,6 +30,7 @@ interface EventContextType {
   getEvent: (id: string) => Event | undefined
   updateEvent: (id: string, updates: Partial<Event>) => void
   deleteEvent: (id: string) => void
+  markAttendance: (eventId: string, attendee: string) => void
 }
 
 const EventContext = createContext<EventContextType | undefined>(undefined)
@@ -53,13 +58,28 @@ export function EventProvider({ children }: { children: ReactNode }) {
     setEvents(prev => prev.filter(event => event.id !== id))
   }
 
+  const markAttendance = (eventId: string, attendee: string) => {
+    setEvents(prev =>
+      prev.map(event => {
+        if (event.id === eventId) {
+          const attendance = event.attendance || []
+          if (!attendance.includes(attendee)) {
+            return { ...event, attendance: [...attendance, attendee] }
+          }
+        }
+        return event
+      })
+    )
+  }
+
   return (
     <EventContext.Provider value={{
       events,
       addEvent,
       getEvent,
       updateEvent,
-      deleteEvent
+      deleteEvent,
+      markAttendance
     }}>
       {children}
     </EventContext.Provider>

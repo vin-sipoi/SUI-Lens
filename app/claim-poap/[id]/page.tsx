@@ -7,6 +7,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useCurrentAccount, ConnectButton, useSignAndExecuteTransaction } from '@mysten/dapp-kit'
 import { mintPOAP } from '@/lib/sui-client'
+import { useEventContext } from '@/context/EventContext'
+import { useUser } from '@/app/landing/UserContext'
 
 interface ClaimPOAPPageProps {
   params: { id: string }
@@ -21,27 +23,29 @@ export default function ClaimPOAPPage({ params }: ClaimPOAPPageProps) {
   const currentAccount = useCurrentAccount()
   const signAndExecuteTransaction = useSignAndExecuteTransaction()
 
+  const { getEvent } = useEventContext()
+  const { user } = useUser()
+
   useEffect(() => {
-    // Fetch event data
-    fetchEventData()
-  }, [params.id])
-
-  const fetchEventData = async () => {
-    try {
-      // Fetch event data from backend API
-      const res = await fetch(`/api/events?id=${params.id}`)
-      if (!res.ok) throw new Error('Failed to load event data')
-      const data = await res.json()
-      setEventData(data.event)
-    } catch (error) {
-      console.error('Error fetching event data:', error)
-      setError('Failed to load event data')
+    // Get event data from EventContext by ID
+    const event = getEvent(params.id)
+    if (event) {
+      setEventData(event)
+    } else {
+      setError('Event not found')
     }
-  }
+  }, [params.id, getEvent])
 
-  const handleClaimPOAP = async () => {
+  const { markAttendance } = useEventContext()
+
+  const handleCheckInAndClaim = async () => {
     if (!currentAccount) {
       alert('Please connect your wallet first')
+      return
+    }
+
+    if (!eventData) {
+      setError('Event data not available')
       return
     }
 
@@ -49,10 +53,14 @@ export default function ClaimPOAPPage({ params }: ClaimPOAPPageProps) {
     setError(null)
 
     try {
+      // Mark attendance first
+      markAttendance(params.id, currentAccount.address)
+
+      // Then mint POAP
       const txb = await mintPOAP(
         params.id,
-        eventData?.name || 'Event Attendance POAP',
-        eventData?.poapTemplate || '',
+        eventData.title || 'Event Attendance POAP',
+        eventData.poapTemplate || '',
         JSON.stringify({ eventId: params.id, claimedAt: new Date().toISOString() }),
         currentAccount.address
       )
@@ -113,7 +121,7 @@ export default function ClaimPOAPPage({ params }: ClaimPOAPPageProps) {
                 />
               </div>
               <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                {eventData.name}
+                {eventData.title}
               </h2>
               <p className="text-gray-600 mb-6">
                 {eventData.description}
@@ -129,7 +137,7 @@ export default function ClaimPOAPPage({ params }: ClaimPOAPPageProps) {
                     </p>
                   </div>
                   <Button
-                    onClick={handleClaimPOAP}
+                    onClick={handleCheckInAndClaim}
                     disabled={claiming}
                     className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-8 py-3 rounded-xl text-lg disabled:opacity-50"
                   >
@@ -139,7 +147,7 @@ export default function ClaimPOAPPage({ params }: ClaimPOAPPageProps) {
                         Claiming POAP...
                       </>
                     ) : (
-                      'Claim POAP NFT'
+                      'Check In & Claim POAP'
                     )}
                   </Button>
                 </div>

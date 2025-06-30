@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -24,58 +24,33 @@ import {
 import Link from "next/link"
 import Image from "next/image"
 import { ConnectButton } from "@mysten/dapp-kit"
+import { useEventContext } from '@/context/EventContext'
+import { useUser } from '@/app/landing/UserContext'
 
 const EventDashboard: React.FC = () => {
-  const events = [
-    {
-      title: 'Game Night',
-      type: 'Sub Community Meetup',
-      date: 'June 24, 2025, 6:10 PM EAT',
-      image: 'https://i.ibb.co/mrLgZcFz/Whats-App-Image-2025-04-27-at-2-43-18-PM.jpg',
-    },
-    {
-      title: 'CONTENT CREATORS BOOTCAMP',
-      type: 'Content Creators Bootcamp',
-      date: 'June 25, 2025, 6:00 PM',
-      image: 'https://via.placeholder.com/300x200?text=Content+Creators+Bootcamp',
-    },
-    {
-      title: 'Sui Community Meetup',
-      type: 'Sub Community Meetup',
-      date: 'June 25, 2025, 6:00 PM',
-      image: 'https://via.placeholder.com/300x200?text=Sui+Community+Meetup',
-    },
-    {
-      title: 'Developers Night',
-      type: 'Developers Night',
-      date: 'June 25, 2025, 6:00 PM',
-      image: 'https://via.placeholder.com/300x200?text=Developers+Night',
-    },
-    {
-      title: 'Sui Community Meetup',
-      type: 'Sub Community Meetup',
-      date: 'June 24, 2025, 6:10 PM EAT',
-      image: 'https://via.placeholder.com/300x200?text=Sui+Community+Meetup',
-    },
-    {
-      title: 'Developer Meetup',
-      type: 'Developers Night',
-      date: 'June 26, 2025, 6:00 PM',
-      image: 'https://via.placeholder.com/300x200?text=Developer+Meetup',
-    },
-    {
-      title: 'Developers Night',
-      type: 'Developers Night',
-      date: 'June 25, 2025, 6:00 PM',
-      image: 'https://via.placeholder.com/300x200?text=Developers+Night',
-    },
-    {
-      title: 'CONTENT CREATORS BOOTCAMP',
-      type: 'Content Creators Bootcamp',
-      date: 'June 26, 2025, 6:00 PM',
-      image: 'https://via.placeholder.com/300x200?text=Content+Creators+Bootcamp',
-    },
-  ];
+  const { events, updateEvent } = useEventContext()
+  const { user } = useUser()
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const filteredEvents = events.filter(event =>
+    event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    event.type.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const handleRegister = (eventId: string) => {
+    if (!user) {
+      alert('Please login to register for events.')
+      return
+    }
+    // Update RSVP status in EventContext
+    const event = events.find(e => e.id === eventId)
+    if (event && user.walletAddress) {
+      const rsvps = event.rsvps || []
+      if (!rsvps.includes(user.walletAddress)) {
+        updateEvent(eventId, { rsvps: [...rsvps, user.walletAddress] })
+      }
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
@@ -115,21 +90,38 @@ const EventDashboard: React.FC = () => {
           type="text"
           placeholder="Search for community or event..."
           className="w-full max-w-xl p-2 border rounded"
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
         />
       </div>
 
       {/* Event Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-6">
-        {events.map((event, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
+        {filteredEvents.map((event) => (
+          <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden">
             <img src={event.image} alt={event.title} className="w-full h-48 object-cover" />
             <div className="p-4">
               <h3 className="text-lg font-bold">{event.title}</h3>
               <p className="text-sm text-gray-600">{event.type}</p>
               <p className="text-sm text-gray-500">{event.date}</p>
-              <button className="mt-2 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-                Register
-              </button>
+              {event.rsvps && event.rsvps.includes(user?.walletAddress || '') ? (
+                <button 
+                  className="mt-2 w-full bg-gray-400 text-white py-2 rounded cursor-not-allowed"
+                  disabled
+                >
+                  Registered
+                </button>
+              ) : (
+                <button 
+                  className="mt-2 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+                  onClick={() => handleRegister(event.id)}
+                >
+                  Register
+                </button>
+              )}
+              {event.attendance && event.attendance.includes(user?.walletAddress || '') && (
+                <p className="mt-1 text-green-600 font-semibold text-center">Checked In</p>
+              )}
             </div>
           </div>
         ))}
