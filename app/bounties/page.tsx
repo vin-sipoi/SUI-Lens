@@ -177,4 +177,3 @@ const CommunityBounties: React.FC = () => {
 };
 
 export default CommunityBounties;
-
