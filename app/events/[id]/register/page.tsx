@@ -45,16 +45,11 @@ export default function RegisterPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md border border-blue-400">
-        <h1 className="text-3xl font-semibold text-center mb-8">Register</h1>
+      <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg border border-blue-400">
+        <h1 className="text-3xl font-semibold text-center mb-6">Register</h1>
         <ConnectButton />
-        {account && (
-          <div className="mb-6 text-sm text-gray-600 text-center">
-            Connected wallet: <span className="font-mono">{account.address}</span>
-          </div>
-        )}
         {!account ? null : !registered ? (
-          <form className="space-y-5" onSubmit={handleRegister}>
+          <form className="space-y-4 mt-6" onSubmit={handleRegister}>
             <div>
               <label className="block text-sm mb-1 font-medium">Full Name</label>
               <input
