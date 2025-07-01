@@ -1,5 +1,4 @@
 'use client'
-
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
@@ -13,42 +12,39 @@ import { isMobile } from "react-device-detect";
 export default function CheckinPage() {
   const { id } = useParams();
   const [checkedIn, setCheckedIn] = useState(false);
-  const [walletConnectUri, setWalletConnectUri] = useState<string | null>(null);
+  const [mobileDeepLink, setMobileDeepLink] = useState<string | null>(null);
   const account = useCurrentAccount();
 
-  // Generate WalletConnect URI or Slush deep link for QR code
-  useEffect(() => {
-    if (!account && !isMobile) {
-      // Placeholder for WalletConnect URI generation
-      // Replace with actual WalletConnect integration or Slush deep link
-      const generateWalletConnectUri = async () => {
-        try {
-          // Hypothetical WalletConnect URI (verify with Slush documentation)
-          const uri = `wc:connect@2?eventId=${id}&dapp=checkin`;
-          // Alternative: Slush deep link (verify format with Slush support)
-          // const uri = `slush://connect?eventId=${id}&dapp=checkin`;
-          setWalletConnectUri(uri);
-        } catch (error) {
-          console.error("Failed to generate connection URI:", error);
-        }
-      };
-      generateWalletConnectUri();
-    }
-  }, [account, id]);
-
-  // Handle mobile deep link redirect
+  // Generate mobile deep link for QR code
+  // In your checkin page at app/events/[id]/checkin/page.tsx
+useEffect(() => {
+  if (!account && !isMobile) {
+    const baseUrl = window.location.origin;
+    const mobileRedirectUrl = `${baseUrl}/connect-mobile?eventId=${id}`;
+    setMobileDeepLink(mobileRedirectUrl);
+  }
+}, [account, id]);
+  // Handle mobile deep link redirect (when user is already on mobile)
   useEffect(() => {
     if (isMobile && !account) {
-      // Attempt to open Slush wallet app
-      const deepLink = `slush://connect?eventId=${id}&dapp=checkin`; // Verify format with Slush
+      // Attempt to open Slush wallet app directly
+      const deepLink = `slush://connect?eventId=${id}&dapp=checkin&returnUrl=${encodeURIComponent(window.location.href)}`;
+      
+      // Try to open the app immediately
       window.location.href = deepLink;
+      
       // Fallback to app store if Slush app is not installed
       setTimeout(() => {
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        window.location.href = isIOS
+        const appStoreUrl = isIOS
           ? "https://apps.apple.com/app/slush-a-sui-wallet/id1660851379"
           : "https://play.google.com/store/apps/details?id=com.slush.app";
-      }, 1000);
+        
+        // Only redirect to app store if still on the page (app didn't open)
+        if (document.visibilityState === 'visible') {
+          window.location.href = appStoreUrl;
+        }
+      }, 2000);
     }
   }, [account, id]);
 
@@ -57,6 +53,7 @@ export default function CheckinPage() {
       alert("Please connect your wallet.");
       return;
     }
+
     try {
       await addDoc(collection(db, "events", id, "attendees"), {
         address: account.address,
@@ -70,26 +67,41 @@ export default function CheckinPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <h1>Event Check-In</h1>
-      <ConnectButton />
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <h1 className="text-2xl font-bold mb-6">Event Check-In</h1>
+      
+      <div className="mb-6">
+        <ConnectButton />
+      </div>
+
       {account && (
-        <div className="mb-4 text-sm text-gray-600">
+        <div className="mb-4 text-sm text-gray-600 text-center max-w-md break-all">
           Connected wallet: <span className="font-mono">{account.address}</span>
         </div>
       )}
-      {!account && !isMobile && walletConnectUri && (
-        <div className="my-4">
-          <p>Scan with Slush wallet app to connect:</p>
-          <QRCode value={walletConnectUri} size={256} />
+
+      {!account && !isMobile && mobileDeepLink && (
+        <div className="my-6 text-center">
+          <p className="mb-4 text-lg">Scan with your mobile device to connect with Slush wallet:</p>
+          <div className="bg-white p-4 rounded-lg shadow-lg inline-block">
+            <QRCode value={mobileDeepLink} size={256} />
+          </div>
+          <p className="mt-4 text-sm text-gray-600 max-w-md">
+            This QR code will open on your mobile device and redirect to the Slush wallet app
+          </p>
         </div>
       )}
-      {!account ? null : !checkedIn ? (
-        <Button onClick={handleCheckIn}>
+
+      {account && !checkedIn && (
+        <Button onClick={handleCheckIn} className="mt-4">
           Check In with Wallet
         </Button>
-      ) : (
-        <p>Checked in! Enjoy the event.</p>
+      )}
+
+      {checkedIn && (
+        <div className="text-center mt-4">
+          <p className="text-green-600 font-semibold">✅ Checked in! Enjoy the event.</p>
+        </div>
       )}
     </div>
   );
