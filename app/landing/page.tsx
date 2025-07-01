@@ -5,7 +5,7 @@ import { ProfileDropdown } from "./ProfileDropDown"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Wallet, Award, Coins, ArrowRight, Play, Calendar, MapPin, Users, Clock, Mail, Shield } from "lucide-react"
+import { ArrowRight, Play, Calendar, MapPin, Users, Clock, Mail, Shield } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
