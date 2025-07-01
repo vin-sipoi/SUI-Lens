@@ -144,157 +144,181 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "#201a28" }}>
-      {/* Floating Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="floating-orb floating-orb-1 w-32 h-32 top-20 left-10 animate-float-elegant"></div>
-        <div
-          className="floating-orb floating-orb-2 w-24 h-24 top-40 right-20 animate-float-elegant"
-          style={{ animationDelay: "2s" }}
-        ></div>
-        <div
-          className="floating-orb floating-orb-3 w-40 h-40 bottom-40 left-20 animate-float-elegant"
-          style={{ animationDelay: "4s" }}
-        ></div>
-        <div
-          className="floating-orb floating-orb-4 w-28 h-28 bottom-20 right-10 animate-float-elegant"
-          style={{ animationDelay: "6s" }}
-        ></div>
-      </div>
-
-      {/* Header */}
-      <header className="border-b border-white/10 glass-dark">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/landing" className="flex items-center space-x-3">
-            <div className="w-10 h-10 suilens-gradient-blue rounded-2xl flex items-center justify-center shadow-lg animate-glow-pulse">
-              <span className="text-white font-bold text-lg">S</span>
-            </div>
-            <span className="text-3xl font-bold gradient-text">Suilens Admin</span>
-          </Link>
-          <div className="flex items-center space-x-4">
-            <Badge className="bg-green-500/20 text-green-300 border border-green-400/30 rounded-full">
-              🟢 Connected to Sui Mainnet
-            </Badge>
-            <Button className="base-button-secondary">
-              <Download className="w-4 h-4 mr-2" />
-              Export Data
-            </Button>
-          </div>
+    <div className="min-h-screen flex flex-col bg-white">
+      {/* Top Navigation */}
+      <header className="w-full bg-white border-b border-gray-100 flex items-center justify-between px-8 py-4">
+        <div className="flex items-center gap-4">
+          <img src="/placeholder-logo.svg" alt="Suilens" className="h-7 w-auto" />
+        </div>
+        <nav className="flex-1 flex justify-center">
+          <ul className="flex gap-8 text-sm font-medium text-gray-500">
+            <li><a href="/" className="text-black font-semibold">Home</a></li>
+            <li><a href="/communities">Communities</a></li>
+            <li><a href="/discover">Discover Events</a></li>
+            <li><a href="/bounties">Bounties</a></li>
+            <li><a href="/dashboard">Dashboard</a></li>
+          </ul>
+        </nav>
+        <div className="flex items-center gap-4">
+          <a href="/create" className="bg-blue-400 hover:bg-blue-500 text-white px-5 py-2 rounded-full font-medium text-sm transition">Create Event</a>
+          <img src="/placeholder-user.jpg" alt="User" className="h-8 w-8 rounded-full border border-gray-200" />
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8 relative z-10">
-        {/* Dashboard Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold gradient-text mb-2">Admin Dashboard</h1>
-          <p className="text-xl text-white/70">
-            Monitor events, track POAPs, manage bounties, and analyze community feedback
-          </p>
-        </div>
+      <div className="flex flex-1 min-h-0">
+        {/* Sidebar */}
+        <aside className="w-72 bg-[#0B1620] h-full min-h-screen flex flex-col py-10 px-8">
+          <div className="mb-10">
+            <img src="/placeholder-logo.svg" alt="Suilens" className="h-7 w-auto mb-8" />
+          </div>
+          <nav className="flex-1">
+            <ul className="space-y-2 text-gray-400 text-base">
+              <li className="mb-4">
+                <span className="flex items-center gap-3 font-semibold text-white">
+                  <span className="inline-block w-5 text-center">▦</span> Overview
+                </span>
+              </li>
+              <li>
+                <span className="flex items-center gap-3">
+                  <span className="inline-block w-5 text-center">👥</span> Guests
+                </span>
+              </li>
+              <li>
+                <span className="flex items-center gap-3">
+                  <span className="inline-block w-5 text-center">🧾</span> Registration
+                </span>
+              </li>
+              <li>
+                <span className="flex items-center gap-3">
+                  <span className="inline-block w-5 text-center">🧾</span> Blast
+                </span>
+              </li>
+              <li className="mt-8 mb-2 text-xs text-gray-500 uppercase tracking-widest">Insight</li>
+              <li>
+                <span className="flex items-center gap-3">
+                  <span className="inline-block w-5 text-center">🖼️</span> Statistics
+                </span>
+              </li>
+              <li>
+                <span className="flex items-center gap-3">
+                  <span className="inline-block w-5 text-center">🪙</span> Bounties
+                </span>
+              </li>
+            </ul>
+          </nav>
+        </aside>
 
-        {/* Enhanced Stats Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <Card className="overflow-hidden border-0 shadow-xl suilens-gradient-blue text-white rounded-3xl">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-sm font-medium">Total Events</p>
-                  <p className="text-4xl font-bold">24</p>
-                  <p className="text-blue-100 text-xs mt-1">+3 this month</p>
-                </div>
-                <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center">
-                  <Calendar className="w-8 h-8" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Main Content */}
+        <main className="flex-1 bg-white min-h-screen">
+          <div className="px-10 py-10">
+            {/* Dashboard Header */}
+            <div className="mb-8">
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
+              <p className="text-xl text-gray-500">
+                Monitor events, track POAPs, manage bounties, and analyze community feedback
+              </p>
+            </div>
 
-          <Card className="overflow-hidden border-0 shadow-xl suilens-gradient-emerald text-white rounded-3xl">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-100 text-sm font-medium">POAPs Issued</p>
-                  <p className="text-4xl font-bold">12,450</p>
-                  <p className="text-green-100 text-xs mt-1">+720 this week</p>
-                </div>
-                <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center">
-                  <Award className="w-8 h-8" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Enhanced Stats Cards */}
+            <div className="grid md:grid-cols-4 gap-6 mb-8">
+              <Card className="overflow-hidden border-0 shadow-xl bg-blue-50 text-blue-900 rounded-3xl">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-400 text-sm font-medium">Total Events</p>
+                      <p className="text-4xl font-bold">24</p>
+                      <p className="text-blue-400 text-xs mt-1">+3 this month</p>
+                    </div>
+                    <div className="w-16 h-16 bg-blue-100 rounded-3xl flex items-center justify-center">
+                      <Calendar className="w-8 h-8 text-blue-500" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden border-0 shadow-xl bg-green-50 text-green-900 rounded-3xl">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-green-400 text-sm font-medium">POAPs Issued</p>
+                      <p className="text-4xl font-bold">12,450</p>
+                      <p className="text-green-400 text-xs mt-1">+720 this week</p>
+                    </div>
+                    <div className="w-16 h-16 bg-green-100 rounded-3xl flex items-center justify-center">
+                      <Award className="w-8 h-8 text-green-500" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden border-0 shadow-xl bg-purple-50 text-purple-900 rounded-3xl">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-purple-400 text-sm font-medium">Bounties Paid</p>
+                      <p className="text-4xl font-bold">85,500 SUI</p>
+                      <p className="text-purple-400 text-xs mt-1">+2,550 this week</p>
+                    </div>
+                    <div className="w-16 h-16 bg-purple-100 rounded-3xl flex items-center justify-center">
+                      <Coins className="w-8 h-8 text-purple-500" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden border-0 shadow-xl bg-yellow-50 text-yellow-900 rounded-3xl">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-yellow-400 text-sm font-medium">Avg Rating</p>
+                      <p className="text-4xl font-bold">4.7</p>
+                      <p className="text-yellow-400 text-xs mt-1">+0.2 vs last month</p>
+                    </div>
+                    <div className="w-16 h-16 bg-yellow-100 rounded-3xl flex items-center justify-center">
+                      <Star className="w-8 h-8 text-yellow-500" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-          <Card className="overflow-hidden border-0 shadow-xl suilens-gradient-purple text-white rounded-3xl">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100 text-sm font-medium">Bounties Paid</p>
-                  <p className="text-4xl font-bold">85,500 SUI</p>
-                  <p className="text-purple-100 text-xs mt-1">+2,550 this week</p>
-                </div>
-                <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center">
-                  <Coins className="w-8 h-8" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="overflow-hidden border-0 shadow-xl suilens-gradient-amber text-white rounded-3xl">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-orange-100 text-sm font-medium">Avg Rating</p>
-                  <p className="text-4xl font-bold">4.7</p>
-                  <p className="text-orange-100 text-xs mt-1">+0.2 vs last month</p>
-                </div>
-                <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center">
-                  <Star className="w-8 h-8" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Enhanced Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-8 glass-dark rounded-2xl p-2 border border-white/10">
-            <TabsTrigger
-              value="overview"
-              className="rounded-xl data-[state=active]:bg-white/15 data-[state=active]:text-white text-white/70 font-semibold"
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger
-              value="events"
-              className="rounded-xl data-[state=active]:bg-white/15 data-[state=active]:text-white text-white/70 font-semibold"
-            >
-              Events
-            </TabsTrigger>
-            <TabsTrigger
-              value="poaps"
-              className="rounded-xl data-[state=active]:bg-white/15 data-[state=active]:text-white text-white/70 font-semibold"
-            >
-              POAPs
-            </TabsTrigger>
-            <TabsTrigger
-              value="bounties"
-              className="rounded-xl data-[state=active]:bg-white/15 data-[state=active]:text-white text-white/70 font-semibold"
-            >
-              Bounties
-            </TabsTrigger>
-            <TabsTrigger
-              value="reviews"
-              className="rounded-xl data-[state=active]:bg-white/15 data-[state=active]:text-white text-white/70 font-semibold"
-            >
-              Reviews
-            </TabsTrigger>
-            <TabsTrigger
-              value="reports"
-              className="rounded-xl data-[state=active]:bg-white/15 data-[state=active]:text-white text-white/70 font-semibold"
-            >
-              Reports
-            </TabsTrigger>
-          </TabsList>
+            {/* Enhanced Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="mb-8 bg-gray-50 rounded-2xl p-2 border border-gray-200">
+                <TabsTrigger
+                  value="overview"
+                  className="rounded-xl data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 text-gray-500 font-semibold"
+                >
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger
+                  value="events"
+                  className="rounded-xl data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 text-gray-500 font-semibold"
+                >
+                  Events
+                </TabsTrigger>
+                <TabsTrigger
+                  value="poaps"
+                  className="rounded-xl data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 text-gray-500 font-semibold"
+                >
+                  POAPs
+                </TabsTrigger>
+                <TabsTrigger
+                  value="bounties"
+                  className="rounded-xl data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 text-gray-500 font-semibold"
+                >
+                  Bounties
+                </TabsTrigger>
+                <TabsTrigger
+                  value="reviews"
+                  className="rounded-xl data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 text-gray-500 font-semibold"
+                >
+                  Reviews
+                </TabsTrigger>
+                <TabsTrigger
+                  value="reports"
+                  className="rounded-xl data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 text-gray-500 font-semibold"
+                >
+                  Reports
+                </TabsTrigger>
+              </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid lg:grid-cols-2 gap-6">
@@ -635,17 +659,16 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
-          {/* Other existing tabs content remains the same */}
+          {/* POAPs Tab - UI update for consistency */}
           <TabsContent value="poaps" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-white">POAP Management</h2>
+              <h2 className="text-2xl font-semibold text-white">POAP Management</h2>
               <Button className="base-button-primary">
                 <Award className="w-4 h-4 mr-2" />
                 Bulk Issue POAPs
               </Button>
             </div>
-
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-3 gap-6 mb-6">
               <Card className="base-card">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-white">
@@ -658,7 +681,6 @@ export default function AdminDashboard() {
                   <p className="text-sm text-white/60">Across all events</p>
                 </CardContent>
               </Card>
-
               <Card className="base-card">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-white">
@@ -671,7 +693,6 @@ export default function AdminDashboard() {
                   <p className="text-sm text-white/60">Successful mints</p>
                 </CardContent>
               </Card>
-
               <Card className="base-card">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-white">
@@ -687,52 +708,57 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
+          {/* Bounties Tab - Tweaked to match dashboard design */}
           <TabsContent value="bounties" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-white">Bounty Management</h2>
-              <Button className="base-button-primary">
-                <Coins className="w-4 h-4 mr-2" />
-                Create Bounty
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold gradient-text">Bounty Management</h2>
+              <Button className="base-button-primary flex items-center gap-2">
+                <Coins className="w-4 h-4" />
+                <span>Create Bounty</span>
               </Button>
             </div>
-
-            <div className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-6">
               {bounties.map((bounty) => (
-                <Card key={bounty.id} className="base-card">
-                  <CardContent className="p-6">
-                    <div className="grid lg:grid-cols-5 gap-4 items-center">
-                      <div className="lg:col-span-2">
-                        <h3 className="font-bold text-lg mb-1 text-white">{bounty.title}</h3>
+                <Card key={bounty.id} className="base-card overflow-hidden shadow-lg rounded-2xl glass-dark border border-white/10">
+                  <CardContent className="p-6 flex flex-col h-full justify-between">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="font-bold text-lg text-white mb-1">{bounty.title}</h3>
                         <p className="text-sm text-white/60">{bounty.event}</p>
                       </div>
-
-                      <div className="text-center">
-                        <div className="text-xl font-bold text-purple-400">{bounty.reward}</div>
-                        <div className="text-xs text-white/60">Reward</div>
+                      <Badge
+                        variant={bounty.status === "completed" ? "default" : "secondary"}
+                        className={`${bounty.status === "completed" ? "bg-green-500" : "bg-blue-500"} text-white rounded-full px-3 py-1 text-xs font-semibold`}
+                      >
+                        {bounty.status.charAt(0).toUpperCase() + bounty.status.slice(1)}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex flex-col items-start">
+                        <span className="text-xs text-white/50 mb-1">Reward</span>
+                        <span className="text-2xl font-bold text-purple-400">{bounty.reward}</span>
                       </div>
-
-                      <div className="text-center">
+                      <div className="flex flex-col items-end">
+                        <span className="text-xs text-white/50 mb-1">Claimed By</span>
                         {bounty.claimedBy ? (
-                          <div>
-                            <div className="text-sm font-mono text-white">{bounty.claimedBy}</div>
-                            <div className="text-xs text-white/60">{bounty.submissionDate}</div>
-                          </div>
+                          <span className="text-sm font-mono text-white">{bounty.claimedBy}</span>
                         ) : (
-                          <div className="text-sm text-white/50">Not claimed</div>
+                          <span className="text-sm text-white/50">Not claimed</span>
+                        )}
+                        {bounty.submissionDate && (
+                          <span className="text-xs text-white/60">{bounty.submissionDate}</span>
                         )}
                       </div>
-
-                      <div className="flex gap-2 justify-end">
-                        <Badge
-                          variant={bounty.status === "completed" ? "default" : "secondary"}
-                          className={`${bounty.status === "completed" ? "bg-green-500" : "bg-blue-500"} text-white rounded-full`}
-                        >
-                          {bounty.status}
-                        </Badge>
-                        <Button className="base-button-secondary" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </div>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button className="base-button-secondary" size="sm">
+                        <Eye className="w-4 h-4" />
+                        <span className="ml-1">View</span>
+                      </Button>
+                      <Button className="base-button-secondary" size="sm">
+                        <Settings className="w-4 h-4" />
+                        <span className="ml-1">Edit</span>
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -740,6 +766,8 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
         </Tabs>
+          </div>
+        </main>
       </div>
     </div>
   )
