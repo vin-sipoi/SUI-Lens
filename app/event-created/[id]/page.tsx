@@ -1,11 +1,9 @@
 'use client'
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Send as Telegram } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-// You need to implement this function to fetch event data from Firestore
 import { getEventById } from "@/lib/getEventById";
 
 const EventSuccessPage = () => {
@@ -14,15 +12,12 @@ const EventSuccessPage = () => {
   const [registrationUrl, setRegistrationUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const [event, setEvent] = useState<any>(null);
-  const downloadRef = useRef<HTMLAnchorElement | null>(null);
 
   useEffect(() => {
     if (id) {
-      // Fetch event data to check if POAP exists
       getEventById(id as string).then((eventData) => {
         setEvent(eventData);
 
-        // Only set QR and registration URLs if POAP exists
         if (eventData?.poap) {
           const checkinUrl = `https://sui-lens-7ofh.vercel.app/events/${id}/checkin`;
           const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(checkinUrl)}`;
@@ -66,6 +61,24 @@ const EventSuccessPage = () => {
     }
   };
 
+  // Share on X (Twitter)
+  const shareOnX = () => {
+    const text = encodeURIComponent(
+      `Join my event on Suilens! Register here: ${registrationUrl}`
+    );
+    const url = `https://x.com/intent/tweet?text=${text}`;
+    window.open(url, "_blank");
+  };
+
+  // Share on Telegram
+  const shareOnTelegram = () => {
+    const text = encodeURIComponent(
+      `Join my event on Suilens! Register here: ${registrationUrl}`
+    );
+    const url = `https://t.me/share/url?url=${encodeURIComponent(registrationUrl)}&text=${text}`;
+    window.open(url, "_blank");
+  };
+
   if (!event) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -75,29 +88,56 @@ const EventSuccessPage = () => {
   }
 
   return (
-    <div className="min-h-screen font-inter bg-gray-50">
+    <div className="min-h-screen bg-white font-inter">
       <main className="max-w-2xl mx-auto px-4 py-16">
         <div className="text-center">
-          <h1 className="text-3xl font-medium text-gray-900 mb-4">
+          <h1 className="text-3xl font-semibold text-gray-900 mb-2">
             Your Event Is Live
           </h1>
-          <p className="text-[#747474] font-normal text-2xl mb-8">
-            You've successfully created your event on Suilens.<br />
-            Now share the registration link{event.poap && " or QR code"} with your attendees.
+          <p className="text-[#747474] font-normal text-lg mb-8">
+            You&apos;ve successfully created your event on Suilens.<br />
+            Now let&apos;s make it a success.
           </p>
-          <div className="flex flex-wrap text-base justify-center gap-4 mb-12">
+          <div className="flex flex-wrap justify-center gap-4 mb-10">
             <button
               onClick={copyLink}
               className="flex items-center px-6 py-3 border text-[#566773] border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
             >
               {copied ? <Check className="w-4 h-4 mr-2 text-green-600" /> : <Copy className="w-4 h-4 mr-2" />}
-              {copied ? "Copied!" : "Copy registration link"}
+              {copied ? "Copied!" : "Copy link"}
+            </button>
+            <button
+              className="flex items-center px-6 py-3 border text-[#566773] border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+              onClick={shareOnX}
+            >
+              {/* Inline SVG for X icon */}
+              <svg
+                className="w-4 h-4 mr-2"
+                viewBox="0 0 120 120"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M10 110L110 10M10 10l100 100"
+                  stroke="black"
+                  strokeWidth="16"
+                  strokeLinecap="round"
+                />
+              </svg>
+              Share on X
+            </button>
+            <button
+              className="flex items-center px-6 py-3 border text-[#566773] border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+              onClick={shareOnTelegram}
+            >
+              <Telegram className="w-4 h-4 mr-2" />
+              Share on Telegram
             </button>
           </div>
-          {event.poap ? (
+          {event.poap && (
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-[#2C2C2C] mb-6">
-                SHARE THIS QR CODE (FOR EVENT CHECK-IN/POAP)
+                SAVE YOUR POAP IMAGE
               </h2>
               <div className="flex flex-col items-center justify-center mb-6">
                 <div className="bg-white p-8 rounded-xl shadow-lg border mb-4">
@@ -115,22 +155,10 @@ const EventSuccessPage = () => {
                 </div>
                 {qrCodeDataUrl && (
                   <Button onClick={downloadQrCode} variant="outline">
-                    Download QR Code
+                    Download image
                   </Button>
                 )}
               </div>
-              <p className="text-gray-500 text-sm">
-                Attendees must scan this QR code at the event to check in and be eligible for POAPs.
-              </p>
-            </div>
-          ) : (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-[#2C2C2C] mb-6">
-                No POAP for this event
-              </h2>
-              <p className="text-gray-500 text-sm">
-                This event does not require QR check-in for POAPs.
-              </p>
             </div>
           )}
         </div>
