@@ -1,12 +1,11 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
-import { isMobile } from "react-device-detect";
 
 export default function RegisterPage() {
   const params = useParams();
@@ -26,23 +25,6 @@ export default function RegisterPage() {
     email: "",
     x: "",
   });
-
-  useEffect(() => {
-    if (isMobile && !account) {
-      const deepLink = `slush://connect?eventId=${id}&dapp=register&returnUrl=${encodeURIComponent(window.location.href)}`;
-      window.location.href = deepLink;
-
-      setTimeout(() => {
-        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const appStoreUrl = isIOS
-          ? "https://apps.apple.com/app/slush-a-sui-wallet/id1660851379"
-          : "https://play.google.com/store/apps/details?id=com.slush.app";
-        if (document.visibilityState === 'visible') {
-          window.location.href = appStoreUrl;
-        }
-      }, 2000);
-    }
-  }, [account, id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -79,7 +61,11 @@ export default function RegisterPage() {
         {error && (
           <p className="text-center text-red-600 font-medium mt-2">{error}</p>
         )}
-        {!account ? null : !registered ? (
+        {!account ? (
+          <p className="text-center text-gray-500 mt-4">
+            Connect your wallet to register for this event.
+          </p>
+        ) : !registered ? (
           <form className="space-y-4 mt-6" onSubmit={handleRegister}>
             <div>
               <label className="block text-sm mb-1 font-medium">Full Name</label>
