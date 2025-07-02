@@ -5,12 +5,12 @@ import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 
 // --- CONFIGURE THESE VALUES ---
 const ORGANIZER_PRIVATE_KEY = process.env.ORGANIZER_PRIVATE_KEY!; // base64 string
-const PACKAGE_ID = "0xYOUR_PACKAGE_ID"; // Replace with your deployed package ID on testnet
+const PACKAGE_ID = "0xYOUR_PACKAGE_ID"; // <-- Replace with your deployed package ID
 const MODULE_NAME = "poap";
 const FUNCTION_NAME = "batch_mint_and_transfer";
 // ------------------------------
 
-const suiClient = new SuiClient({ url: getFullnodeUrl("testnet") }); // Changed to testnet
+const suiClient = new SuiClient({ url: getFullnodeUrl("testnet") }); // or "mainnet"
 
 export async function POST(req: NextRequest) {
   try {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       target: `${PACKAGE_ID}::${MODULE_NAME}::${FUNCTION_NAME}`,
       arguments: [
         tx.pure.string(eventName),
-        tx.pure.u64(eventDate),
+        tx.pure.u64(Number(eventDate)), // Make sure eventDate is a unix timestamp (u64)
         tx.pure.string(description),
         tx.pure.vector("address", recipients),
       ],
@@ -69,6 +69,6 @@ export async function POST(req: NextRequest) {
     }
   } catch (e: any) {
     console.error("Mint POAPs error:", e);
-    return NextResponse.json({ error: "Internal server error.", details: e.message }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error", details: e.message }, { status: 500 });
   }
 }
