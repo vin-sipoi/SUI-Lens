@@ -1,32 +1,33 @@
-import type { Metadata } from 'next'
-import './globals.css'
-//import WalletProviderWrapper from '@/components/WalletProvider'
-import { Inter } from 'next/font/google'
-import Providers from "./providers"
-import { EventProvider } from '@/context/EventContext'
-import { UserProvider } from '@/app/landing/UserContext'
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { EventProvider } from '@/context/EventContext';
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import Providers from './providers';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
-  title: 'Sui Lens',
-  description: 'all Sui events in one',
-  generator: 'v0.dev',
-}
+	title: 'Sui Lens',
+	description: 'all Sui events in one',
+	generator: 'v0.dev',
+};
 
 export default function RootLayout({
-  children,
+	children,
 }: Readonly<{
-  children: React.ReactNode
+	children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en" className={inter.className}>
-      <body>
-        <UserProvider>
-          <EventProvider>
-            <Providers>{children}</Providers>
-          </EventProvider>
-        </UserProvider>     
-      </body>
-    </html>
-  )
+	return (
+		<html lang="en" className={inter.className}>
+			<body>
+				<ErrorBoundary>
+					<Providers>
+						<ErrorBoundary>
+							<EventProvider>{children}</EventProvider>
+						</ErrorBoundary>
+					</Providers>
+				</ErrorBoundary>
+			</body>
+		</html>
+	);
 }

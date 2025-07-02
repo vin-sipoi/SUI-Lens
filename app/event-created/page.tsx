@@ -100,41 +100,43 @@ const EventSuccessPage: React.FC<EventSuccessPageProps> = ({ params }) => {
     <div className="min-h-screen font-inter bg-gray-50">
       {/* Header */}
       <header className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-              <Image 
-                src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
-                alt="Suilens Logo" 
-                width={60}
-                height={60}
-                className="object-contain"
-              />
-            </div>
-            <span className="text-2xl font-bold text-[#020B15]">Suilens</span>
-          </Link>
-
-          <nav className="hidden lg:flex text-sm font-inter items-center space-x-8">
-            {["Communities", "Discover", "Dashboard","Bounties"].map((item) => (
-              <Link
-                key={item}
-                href={`/${item.toLowerCase().replace(' ', '-')}`}
-                className="text-gray-600 font-medium transition-colors"
-              >
-                {item}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex text-sm items-center space-x-4">
-            <Link href='/create'>
-              <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-                Create Event
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+              <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+                <Link href="/landing" className="flex items-center space-x-3 ">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+                  <Image 
+                    src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
+                    alt="Suilens Logo" 
+                    width={60}
+                    height={60}
+                    className="object-contain"
+                  />
+                </div>
+                <span className="text-2xl font-bold text-[#020B15]">Suilens</span>
+                </Link>
+      
+                <nav className="hidden lg:flex text-sm font-inter items-center space-x-8">
+                  <Link href='/' className="text-gray-800 font-semibold "></Link>
+                  {["Communities", "Discover", "Dashboard","Bounties"].map((item) => (
+                    <Link
+                      key={item}
+                      href={`/${item.toLowerCase().replace(' ', '-')}`}
+                      className="text-gray-600  font-medium transition-colors"
+                    >
+                      {item}
+                    </Link>
+                  ))}
+                </nav>
+      
+                <div className="flex text-sm items-center space-x-4">                            
+                  <Link href='/create'>
+                    <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
+                    Create Event
+                    </Button>
+                  </Link>
+                  
+                </div>
+              </div>
+            </header>
 
       {/* Main Content */}
       <main className="max-w-2xl mx-auto px-4 py-16">
