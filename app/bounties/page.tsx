@@ -3,9 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Search, Filter, Coins, Calendar, Users, ExternalLink, Award, Plus, X, Clock, Trophy, DollarSign, Menu } from "lucide-react"
+import { Calendar, DollarSign, Menu } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { ConnectButton } from "@mysten/dapp-kit"
@@ -123,7 +121,7 @@ const BountyCard: React.FC<BountyCardProps> = ({ bounty }) => {
 };
 
 const CommunityBounties: React.FC = () => {
-  const { login, user, logout } = useUser();
+  const {  user } = useUser();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
  
   const [bounties, setBounties] = useState<Bounty[]>([
