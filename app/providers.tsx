@@ -28,6 +28,7 @@ export default function Providers({ children }: { children: ReactNode }) {
 		setTheme(initialTheme);
 
 		const applyTheme = (themeValue: string) => {
+         
 			if (themeValue === 'light') {
 				body.classList.add('theme-light');
 				body.classList.remove('theme-dark');
