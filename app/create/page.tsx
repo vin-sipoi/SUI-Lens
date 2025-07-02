@@ -27,6 +27,7 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEventContext } from "@/context/EventContext"
+import { mintPOAP, suilensService } from "@/lib/sui-client"
 
 export default function CreateEventPage() {
   const [eventData, setEventData] = useState({
@@ -124,58 +125,65 @@ export default function CreateEventPage() {
         return
       }
 
-      // Create FormData for file upload
-      const formData = new FormData()
-      formData.append('title', eventData.title)
-      formData.append('description', eventData.description)
-      formData.append('date', eventData.date)
-      formData.append('endDate', eventData.endDate || eventData.date)
-      formData.append('time', eventData.time)
-      formData.append('endTime', eventData.endTime)
-      formData.append('location', eventData.location)
-      formData.append('capacity', eventData.capacity)
-      formData.append('ticketPrice', eventData.ticketPrice)
-      formData.append('isFree', eventData.isFree.toString())
-      formData.append('requiresApproval', eventData.requiresApproval.toString())
-      formData.append('isPrivate', eventData.isPrivate.toString())
-
-      if (imageFile) {
-        formData.append('image', imageFile)
-      }
-
-      // Add POAP data if provided
-      if (poapData.name) {
-        formData.append('poapName', poapData.name)
-        formData.append('poapDescription', poapData.description)
-        if (poapData.image) {
-          formData.append('poapImage', poapData.image)
-        }
-      }
-
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to create event')
-      }
-
-      const result = await response.json()
+      // Create event ID locally
+      const eventId = `event_${Date.now()}`
 
       // Generate QR code for the event
-      const qrData = await generateQRCode(result.eventId)
+      // const qrData = await generateQRCode(eventId)
 
-      // Add event to context
-      addEvent({
-        id: result.eventId,
+      // Add event to context including requiresApproval and poapEnabled
+      console.log("Adding event to context:", {
+        id: eventId,
+        type: "", // Add a default or appropriate type value here
         ...eventData,
-        qrCode: qrData.qrCodeImage,
-        eventUrl: qrData.eventUrl,
+        requiresApproval: eventData.requiresApproval,
+        poapEnabled: poapData.name ? true : false,
+        qrCode: '', // qrData.qrCodeImage,
+        eventUrl: '', // qrData.eventUrl,
+      })
+      addEvent({
+        id: eventId,
+        type: "", // Add a default or appropriate type value here
+        ...eventData,
+        requiresApproval: eventData.requiresApproval,
+        poapEnabled: poapData.name ? true : false,
+        qrCode: '', // qrData.qrCodeImage,
+        eventUrl: '', // qrData.eventUrl,
       })
 
-      // Redirect to success page
-      router.push(`/event-created?id=${result.eventId}`)
+      // Call smart contract to create event
+      const tx = await suilensService.createEvent({
+        name: eventData.title,
+        description: eventData.description,
+        startTime: new Date(`${eventData.date} ${eventData.time}`).getTime(),
+        endTime: new Date(`${eventData.date} ${eventData.endTime}`).getTime(),
+        maxAttendees: parseInt(eventData.capacity) || 100,
+        poapTemplate: poapData.name || '',
+      })
+      // TODO: Submit transaction and handle confirmation
+      console.log('Create event transaction:', tx)
+
+      // Mint POAP on smart contract if POAP data provided
+      // Disabled POAP minting here to move it to event details page after check-in
+      // if (poapData.name) {
+      //   try {
+      //     const mintTx = await mintPOAP(
+      //       eventId,
+      //       poapData.name,
+      //       poapData.image ? URL.createObjectURL(poapData.image) : '',
+      //       poapData.description,
+      //       '' // attendeeAddress to be filled on claim
+      //     )
+      //     // TODO: Submit transaction and handle confirmation
+      //     console.log('POAP mint transaction:', mintTx)
+      //   } catch (mintError) {
+      //     console.error('Error minting POAP:', mintError)
+      //     alert('Failed to mint POAP. Please try again.')
+      //   }
+      // }
+
+      // Redirect to discover page instead of event-created page
+      router.push(`/discover`)
     } catch (error) {
       console.error('Error creating event:', error)
       alert('Failed to create event. Please try again.')
@@ -273,7 +281,7 @@ export default function CreateEventPage() {
       <div className="max-w-md mx-auto px-6 py-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Image Upload Section */}
-          <div className="bg-gray-900 rounded-lg h-32 flex items-center justify-center relative overflow-hidden">
+          <div className="bg-gray-100 rounded-lg h-32 flex items-center justify-center relative overflow-hidden">
             {imagePreview ? (
               <img
                 src={imagePreview}
@@ -282,8 +290,8 @@ export default function CreateEventPage() {
               />
             ) : (
               <div className="text-center">
-                <Camera className="w-6 h-6 text-white mx-auto mb-2" />
-                <span className="text-white text-sm">Add Event Image</span>
+                <Camera className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+                <span className="text-gray-500 text-sm">Add Event Image</span>
               </div>
             )}
             <input
@@ -618,6 +626,6 @@ export default function CreateEventPage() {
           </Button>
         </form>
       </div>
-                      </div>
+    </div>
   )
 }

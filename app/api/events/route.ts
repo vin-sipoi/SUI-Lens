@@ -1,21 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { suilensService } from '@/lib/sui-client'
+import formidable from 'formidable'
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const eventData = await request.json()
-    
+    const form = new formidable.IncomingForm()
+    const data = await new Promise((resolve, reject) => {
+      form.parse(request as any, (err: any, fields: any, files: any) => {
+        if (err) reject(err)
+        else resolve({ fields, files })
+      })
+    })
+
+    const { fields, files } = data as any
+
     // Generate a temporary event ID (you'll replace this with DB logic)
     const eventId = `event_${Date.now()}`
-    
+
+    // Handle file upload if any
+    let poapImageUrl = ''
+    if (files.poapImage) {
+      const file = files.poapImage
+      // Save file to disk or cloud storage here, for now just use file path
+      poapImageUrl = file.filepath || ''
+    }
+
     // Create transaction block for event creation
     const txb = await suilensService.createEvent({
-      name: eventData.title, // Note: using 'title' from your form
-      description: eventData.description,
-      startTime: new Date(`${eventData.date} ${eventData.time}`).getTime(),
-      endTime: new Date(`${eventData.date} ${eventData.endTime}`).getTime(),
-      maxAttendees: parseInt(eventData.capacity) || 100,
-      poapTemplate: eventData.poapImageUrl || '',
+      name: fields.title as string,
+      description: fields.description as string,
+      startTime: new Date(`${fields.date} ${fields.time}`).getTime(),
+      endTime: new Date(`${fields.date} ${fields.endTime}`).getTime(),
+      maxAttendees: parseInt(fields.capacity as string) || 100,
+      poapTemplate: poapImageUrl,
     })
 
     return NextResponse.json({
@@ -32,7 +55,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const eventId = searchParams.get('id')
-  
+
   if (eventId) {
     // For now, return mock data - replace with real DB query
     return NextResponse.json({
@@ -44,6 +67,6 @@ export async function GET(request: NextRequest) {
       },
     })
   }
-  
+
   return NextResponse.json({ events: [] })
 }

@@ -25,7 +25,7 @@ export default function HomePage() {
   const { login, user, logout } = useUser();
   const account = useCurrentAccount();
 
-  const [events, setEvents] = useState<Event[]>([])
+  const [events, setEvents] = useState<Event[] | null>(null) // null means loading
 
   useEffect(() => {
     // Fetch events from backend API
@@ -37,6 +37,7 @@ export default function HomePage() {
         setEvents(data.events || [])
       } catch (error) {
         console.error('Error fetching events:', error)
+        setEvents([]) // fallback to empty array on error
       }
     }
     fetchEvents()
@@ -61,14 +62,14 @@ export default function HomePage() {
     if (!user) setShowDropdown(false);
   }, [user]);
 
-  // Function to add a new event (you can call this from elsewhere in your app)
+  // Function to add an event
   const addEvent = (newEvent: Omit<Event, "id">) => {
-    setEvents(prevEvents => [...prevEvents, { ...newEvent, id: Date.now() }])
+    setEvents(prevEvents => prevEvents ? [...prevEvents, { ...newEvent, id: Date.now() }] : [{ ...newEvent, id: Date.now() }])
   }
 
   // Function to remove an event
   const removeEvent = (eventId: number): void => {
-    setEvents((prevEvents: Event[]) => prevEvents.filter((event: Event) => event.id !== eventId))
+    setEvents((prevEvents: Event[] | null) => prevEvents ? prevEvents.filter((event: Event) => event.id !== eventId) : null)
   }
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
@@ -82,42 +83,37 @@ export default function HomePage() {
     {
       name: "Sui Kenya",
       image: "https://i.ibb.co/YBvqHqsp/Screenshot-2025-06-24-030451.png",
-      
     },
     {
       name: "Sui Ghana", 
       image: "https://i.ibb.co/LDDGGYdF/Screenshot-2025-06-24-141355.png",
-     
     },
     {
       name: "Sui Nigeria",
       image: "https://i.ibb.co/W4zMd77q/Screenshot-2025-06-24-030948.png", 
-      
     },
     {
       name: "Sui in Paris",
       image: "https://i.ibb.co/ZpKnvQQ1/Screenshot-2025-06-24-031327.png",
-      
     }
   ]
 
   return (
-    
     <div className="min-h-screen font-inter bg-gradient-to-b from-blue-400 via-blue-100 to-blue-50">
       {/* Header */}
       <header className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <Link href="/landing" className="flex items-center space-x-3 ">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-            <Image 
-              src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
-              alt="Suilens Logo" 
-              width={60}
-              height={60}
-              className="object-contain"
-            />
-          </div>
-          <span className="text-2xl font-bold text-[#020B15]">Suilens</span>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+              <Image 
+                src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
+                alt="Suilens Logo" 
+                width={60}
+                height={60}
+                className="object-contain"
+              />
+            </div>
+            <span className="text-2xl font-bold text-[#020B15]">Suilens</span>
           </Link>
 
           <nav className="hidden lg:flex text-sm font-inter items-center space-x-8">
@@ -136,13 +132,13 @@ export default function HomePage() {
           <div className="flex text-sm items-center space-x-4">
             <Link href='/auth/signin'>
               <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-              Sign In
+                Sign In
               </Button>
             </Link>
             
             <Link href='/create'>
               <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-              Create Event
+                Create Event
               </Button>
             </Link>
             {/* Only show ConnectButton if not logged in */}
@@ -271,8 +267,9 @@ export default function HomePage() {
                   <div className="mt-6">
                     <h4 className="text-3xl font-semibold mb-4">Claim Your POAPs</h4>
                     <ul className="list-disc list-inside space-y-2 text-lg">
-                      {events.length === 0 && <li>No events available for claiming POAPs.</li>}
-                      {events.map((event) => (
+                      {events === null && <li>Loading events...</li>}
+                      {events !== null && events.length === 0 && <li>No events available for claiming POAPs.</li>}
+                      {events !== null && events.map((event) => (
                         <li key={event.id}>
                           <Link href={`/claim-poap/${event.id}`}>
                             <a className="text-blue-400 hover:underline">{event.title}</a>
@@ -345,12 +342,12 @@ export default function HomePage() {
                   width={319}
                   height={56}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-14 border-gray-300 focus:border-blue-500 focus:ring-blue-500" // Changed py-3 to h-14
+                  className="pl-10 h-14 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
               </div>
               <Link href="/discover">
-                <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white font-inter px-10 h-14 text-lg font-semibold rounded-xl shadow-lg"> {/* Changed py-7 to h-14 */}
+                <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white font-inter px-10 h-14 text-lg font-semibold rounded-xl shadow-lg">
                   Subscribe
                 </Button>
               </Link>
@@ -362,10 +359,8 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="bg-gray-100 py-8">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            {/* Left side - Logo and Links */}
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-8">
             <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-8">
-              {/* Logo */}
               <div className="flex items-center space-x-3">
                 <Link href="/landing" className="flex items-center space-x-3">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center">
@@ -381,14 +376,12 @@ export default function HomePage() {
                 </Link>
               </div>
 
-              {/* Links */}
               <div className="flex space-x-6 font-medium text-sm text-gray-600">
                 <Link href="/privacy" className=" hover:text-gray-900">Privacy Policy</Link>  
                 <Link href="/terms" className="hover:text-gray-900">Terms of Use</Link>
               </div>
             </div>
 
-            {/* Right side - Copyright */}
             <p className="text-sm font-medium text-gray-600">
               © 2025 Suilens. All Rights Reserved.
             </p>
@@ -397,7 +390,7 @@ export default function HomePage() {
       </footer>
 
       {/* Dynamic Events Section (Hidden when no events, preserving functionality) */}
-      {events.length > 0 && (
+      {events !== null && events.length > 0 && (
         <section className="py-16 relative bg-white/10 backdrop-blur-sm">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-6xl mx-auto">
@@ -436,7 +429,7 @@ export default function HomePage() {
                     <div className="space-y-3 mb-6">
                       <div className="flex items-center text-gray-600 text-sm">
                         <Calendar className="w-4 h-4 mr-2" />
-                        <span>{new Date(event.date).toLocaleDateString()}</span>
+                        <span>{new Date(event.date).toLocaleDateString("en-US")}</span>
                       </div>
                       <div className="flex items-center text-gray-600 text-sm">
                         <MapPin className="w-4 h-4 mr-2" />

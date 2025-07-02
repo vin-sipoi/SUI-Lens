@@ -14,14 +14,24 @@ interface Event {
   capacity?: string
   ticketPrice?: string
   isFree: boolean
-  requiresApproval: boolean
+  requiresApproval?: boolean
   isPrivate: boolean
+  poapEnabled?: boolean
   qrCode?: string
   eventUrl?: string
   type: string
   rsvps?: string[]
   attendance?: string[]
   image?: string
+  tags?: string[]
+  registered?: number
+  organizer?: {
+    name: string
+    avatar?: string
+    title?: string
+  }
+  price?: string
+  category?: string
 }
 
 interface EventContextType {

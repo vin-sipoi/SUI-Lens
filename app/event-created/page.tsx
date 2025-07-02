@@ -42,18 +42,9 @@ const EventSuccessPage: React.FC<EventSuccessPageProps> = ({ params }) => {
   }, [params.id])
 
   // Mock mint POAP function (replace with actual wallet integration)
+  // Disabled POAP minting here to move it to event details page after check-in
   const handleMintPOAP = async () => {
-    setMinting(true)
-    try {
-      // Simulate minting process
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      setPoapMinted(true)
-    } catch (error) {
-      console.error('Error minting POAP:', error)
-      alert('Failed to mint POAP. Please try again.')
-    } finally {
-      setMinting(false)
-    }
+    alert("POAP minting is disabled on this page. Please claim your POAP after check-in on the event details page.")
   }
 
   // Download QR code as PNG
