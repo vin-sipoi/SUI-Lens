@@ -58,11 +58,24 @@ export default function CheckinPage() {
     setChecking(false);
   };
 
+  // Get the current page URL for user to copy
+  const [pageUrl, setPageUrl] = useState("");
+  useEffect(() => {
+    setPageUrl(window.location.href);
+  }, []);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <h1 className="text-2xl font-bold mb-6">Event Check-In</h1>
       <div className="mb-6">
         <ConnectButton />
+      </div>
+      {/* Mobile wallet browser instruction */}
+      <div className="mb-6 text-center text-sm text-gray-600 max-w-md">
+        <p>
+          <b>On mobile?</b> Copy this link and open it in your wallet app’s browser (e.g., Slush Wallet) to check in:
+        </p>
+        <div className="bg-gray-100 rounded p-2 mt-2 break-all select-all">{pageUrl}</div>
       </div>
       {account && (
         <div className="mb-4 text-sm text-gray-600 text-center max-w-md break-all">
