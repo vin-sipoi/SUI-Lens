@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
@@ -76,18 +76,29 @@ export default function RegisterPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
         <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg border border-blue-400 text-center">
-          <h1 className="text-3xl font-semibold mb-6">Register</h1>
-          <p className="mb-4 text-gray-700">
-            To register on mobile, please open this page in the <b>Slush wallet app's browser</b>.
+          <h1 className="text-3xl font-bold mb-6 text-blue-700">Register</h1>
+          <p className="mb-4 text-lg font-semibold text-gray-800">
+            📱 To register on mobile:
           </p>
+          <ol className="mb-4 text-base text-gray-700 text-left mx-auto max-w-xs list-decimal list-inside">
+            <li>
+              <span className="font-bold text-blue-600">Tap "Copy Link"</span> below.
+            </li>
+            <li>
+              <span className="font-bold text-blue-600">Open the Slush wallet app</span> on your phone.
+            </li>
+            <li>
+              Go to the <span className="font-bold text-blue-600">Browser</span> tab and paste the link.
+            </li>
+          </ol>
           <Button
             onClick={handleCopyLink}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded mb-2"
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded mb-2 text-lg"
           >
-            {copied ? "Link Copied!" : "Copy Link"}
+            {copied ? "✅ Link Copied!" : "Copy Link"}
           </Button>
-          <p className="text-xs text-gray-500 mt-2">
-            Open the Slush app, go to the browser tab, and paste this link to continue registration.
+          <p className="text-xs text-gray-500 mt-4">
+            This ensures you can connect your wallet and register seamlessly.
           </p>
         </div>
       </div>
