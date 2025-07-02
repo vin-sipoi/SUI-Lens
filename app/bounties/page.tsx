@@ -112,7 +112,8 @@ const BountyCard: React.FC<BountyCardProps> = ({ bounty }) => {
               
               {/* View Bounty Link */}
               <button className="bg-[white] text-blue-400 px-4 sm:px-6 py-2 sm:py-3 rounded-3xl border border-[#4DA2FF] text-sm font-medium transition-colors w-full sm:w-auto">
-                View on X</button>
+                View on X
+              </button>
             </div>
           </div>
         </div>
