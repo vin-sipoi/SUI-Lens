@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -17,6 +17,7 @@ export default function RegisterPage() {
       ? params.id[0]
       : undefined;
   const [registered, setRegistered] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const account = useCurrentAccount();
 
   const [form, setForm] = useState({
@@ -26,7 +27,6 @@ export default function RegisterPage() {
     x: "",
   });
 
-  // Mobile deep link to Slush wallet app if not connected
   useEffect(() => {
     if (isMobile && !account) {
       const deepLink = `slush://connect?eventId=${id}&dapp=register&returnUrl=${encodeURIComponent(window.location.href)}`;
@@ -50,16 +50,25 @@ export default function RegisterPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id || !account) return;
-    await addDoc(collection(db, "events", id, "registrations"), {
-      address: account.address,
-      registeredAt: new Date(),
-      name: form.name,
-      mobile: form.mobile,
-      email: form.email,
-      x: form.x,
-    });
-    setRegistered(true);
+    setError(null);
+    if (!id || !account) {
+      setError("Please connect your wallet.");
+      return;
+    }
+    try {
+      await addDoc(collection(db, "events", id, "registrations"), {
+        address: account.address,
+        registeredAt: new Date(),
+        name: form.name,
+        mobile: form.mobile,
+        email: form.email,
+        x: form.x,
+      });
+      setRegistered(true);
+    } catch (err) {
+      setError("Failed to register. Please try again.");
+      console.error("Registration error:", err);
+    }
   };
 
   return (
@@ -67,6 +76,9 @@ export default function RegisterPage() {
       <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg border border-blue-400">
         <h1 className="text-3xl font-semibold text-center mb-6">Register</h1>
         <ConnectButton />
+        {error && (
+          <p className="text-center text-red-600 font-medium mt-2">{error}</p>
+        )}
         {!account ? null : !registered ? (
           <form className="space-y-4 mt-6" onSubmit={handleRegister}>
             <div>
