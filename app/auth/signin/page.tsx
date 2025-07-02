@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,6 +25,22 @@ export default function SignInPage() {
 	const [email, setEmail] = useState("")
 	const [password, setPassword] = useState("")
 	const router = useRouter();
+	// Add state to handle client-side rendering
+	const [isMobile, setIsMobile] = useState(false)
+	const [mounted, setMounted] = useState(false)
+
+	// Use useEffect to safely access window object after component mounts
+	useEffect(() => {
+		setMounted(true)
+		setIsMobile(window.innerWidth < 640)
+		
+		const handleResize = () => {
+			setIsMobile(window.innerWidth < 640)
+		}
+		
+		window.addEventListener('resize', handleResize)
+		return () => window.removeEventListener('resize', handleResize)
+	}, [])
 
 	const handleEmailSignIn = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -93,8 +109,8 @@ export default function SignInPage() {
 
 						{/* Wallet Options */}
 						<div className="space-y-2 sm:space-y-3 mb-6">
-							{/* Show all wallets on larger screens, only first 3 on mobile */}
-							{wallets.slice(0, window?.innerWidth >= 640 ? wallets.length : 3).map((wallet) => (
+							{/* Only render wallets after component is mounted and browser is available */}
+							{mounted && wallets.slice(0, isMobile ? 3 : wallets.length).map((wallet) => (
 								<Button
 									key={wallet.name}
 									variant="outline"
@@ -112,35 +128,32 @@ export default function SignInPage() {
 							))}
 							
 							{/* Show remaining wallets on mobile in a collapsible way */}
-							<div className="sm:hidden">
-								{wallets.length > 3 && (
-									<details className="group">
-										<summary className="cursor-pointer text-blue-600 text-sm font-medium py-2 list-none">
-											<span className="group-open:hidden">Show more wallets</span>
-											<span className="hidden group-open:inline">Show less</span>
-										</summary>
-										<div className="space-y-2 mt-2">
-											{wallets.slice(3).map((wallet) => (
-												<Button
-													key={wallet.name}
-													variant="outline"
-													className="w-full flex items-center gap-3 py-4 text-sm font-medium justify-start"
-												>
-													<Image
-														src={wallet.icon}
-														alt={wallet.name}
-														width={20}
-														height={20}
-														className="rounded"
-													/>
-													{wallet.name}
-												</Button>
-											))}
-										</div>
-									</details>
-								)}
-							</div>
-
+							{mounted && isMobile && wallets.length > 3 && (
+								<details className="group">
+									<summary className="cursor-pointer text-blue-600 text-sm font-medium py-2 list-none">
+										<span className="group-open:hidden">Show more wallets</span>
+										<span className="hidden group-open:inline">Show less</span>
+									</summary>
+									<div className="space-y-2 mt-2">
+										{wallets.slice(3).map((wallet) => (
+											<Button
+												key={wallet.name}
+												variant="outline"
+												className="w-full flex items-center gap-3 py-4 text-sm font-medium justify-start"
+											>
+												<Image
+													src={wallet.icon}
+													alt={wallet.name}
+													width={20}
+													height={20}
+													className="rounded"
+												/>
+												{wallet.name}
+											</Button>
+										))}
+									</div>
+								</details>
+							)}
 						</div>
 
 						{/* Email/Password Form */}
