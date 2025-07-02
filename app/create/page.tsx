@@ -50,6 +50,7 @@ export default function CreateEventPage() {
     title: "",
     description: "",
     date: "",
+    endDate: "",
     time: "",
     endTime: "",
     location: "",
@@ -78,16 +79,23 @@ export default function CreateEventPage() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
 
+  // POAP data state
+  const [poapData, setPoapData] = useState({
+    name: "",
+    description: "",
+    image: null as File | null,
+  })
+
   // Generate QR code using Qrfy API
   const generateQRCode = async (eventId: string) => {
     try {
-      // Create the URL that will capture wallet addresses
       const eventUrl = `${window.location.origin}/event/${eventId}/register`
-      
+
       const response = await fetch('https://qrfy.com/api/v1/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          // Add API key if required: 'Authorization': 'Bearer YOUR_API_KEY',
         },
         body: JSON.stringify({
           qr_data: eventUrl,
@@ -107,16 +115,15 @@ export default function CreateEventPage() {
       return {
         qrCodeUrl: result.qr_code_url,
         eventUrl: eventUrl,
-        qrCodeImage: result.image_url
+        qrCodeImage: result.image_url,
       }
     } catch (error) {
       console.error('Error generating QR code:', error)
-      // Fallback: create a simple QR code URL
       const eventUrl = `${window.location.origin}/event/${eventId}/register`
       return {
         qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`,
         eventUrl: eventUrl,
-        qrCodeImage: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`
+        qrCodeImage: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`,
       }
     }
   }
@@ -179,6 +186,17 @@ export default function CreateEventPage() {
       }
       reader.readAsDataURL(file)
     }
+  }
+
+  const handlePoapImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setPoapData({ ...poapData, image: file })
+    }
+  }
+
+  const handlePoapSave = () => {
+    setPoapDialogOpen(false)
   }
 
   return (
@@ -320,9 +338,9 @@ export default function CreateEventPage() {
           {/* Image Upload Section */}
           <div className="bg-gray-900 rounded-lg h-32 sm:h-40 flex items-center justify-center relative overflow-hidden">
             {imagePreview ? (
-              <img 
-                src={imagePreview} 
-                alt="Event preview" 
+              <img
+                src={imagePreview}
+                alt="Event preview"
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -351,7 +369,7 @@ export default function CreateEventPage() {
           {/* Event Name */}
           <div>
             <Label htmlFor="eventName" className="text-sm font-medium text-gray-700 mb-2 block">
-              Event Name
+              Event Name *
             </Label>
             <Input
               id="eventName"
@@ -365,7 +383,7 @@ export default function CreateEventPage() {
 
           {/* Start Date & Time */}
           <div>
-            <Label className="text-sm font-medium text-gray-700 mb-2 block">Start</Label>
+            <Label className="text-sm font-medium text-gray-700 mb-2 block">Start *</Label>
             <div className="grid grid-cols-2 gap-3">
               <Input
                 type="date"
@@ -390,8 +408,8 @@ export default function CreateEventPage() {
             <div className="grid grid-cols-2 gap-3">
               <Input
                 type="date"
-                value={eventData.date}
-                onChange={(e) => setEventData({ ...eventData, date: e.target.value })}
+                value={eventData.endDate}
+                onChange={(e) => setEventData({ ...eventData, endDate: e.target.value })}
                 className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
               />
               <Input
@@ -406,7 +424,7 @@ export default function CreateEventPage() {
           {/* Event Location */}
           <div>
             <Label htmlFor="location" className="text-sm font-medium text-gray-700 mb-2 block">
-              Event Location
+              Event Location *
             </Label>
             <Input
               id="location"
@@ -421,7 +439,7 @@ export default function CreateEventPage() {
           {/* Add Description */}
           <div>
             <Label htmlFor="description" className="text-sm font-medium text-gray-700 mb-2 block">
-              Add Description
+              Add Description *
             </Label>
             <Textarea
               id="description"
@@ -439,9 +457,9 @@ export default function CreateEventPage() {
             <Label className="text-sm font-medium text-gray-700 mb-2 block">Tickets</Label>
             <Dialog open={ticketDialogOpen} onOpenChange={setTicketDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
+                  variant="outline"
                   className="w-full justify-between border-gray-300 hover:border-gray-400"
                   onClick={() => {
                     setTempTicketData({
@@ -463,7 +481,7 @@ export default function CreateEventPage() {
                     <Switch
                       id="free-ticket"
                       checked={tempTicketData.isFree}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         setTempTicketData({ ...tempTicketData, isFree: checked })
                       }
                     />
@@ -479,7 +497,7 @@ export default function CreateEventPage() {
                         type="number"
                         placeholder="0.00"
                         value={tempTicketData.ticketPrice}
-                        onChange={(e) => 
+                        onChange={(e) =>
                           setTempTicketData({ ...tempTicketData, ticketPrice: e.target.value })
                         }
                         className="col-span-3"
@@ -488,8 +506,8 @@ export default function CreateEventPage() {
                   )}
                 </div>
                 <DialogFooter>
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     onClick={handleTicketSave}
                     className="bg-blue-500 hover:bg-blue-600"
                   >
@@ -517,9 +535,9 @@ export default function CreateEventPage() {
             <Label className="text-sm font-medium text-gray-700 mb-2 block">Maximum Capacity</Label>
             <Dialog open={capacityDialogOpen} onOpenChange={setCapacityDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
+                  variant="outline"
                   className="w-full justify-between border-gray-300 hover:border-gray-400"
                   onClick={() => {
                     setTempCapacityData({
@@ -545,7 +563,7 @@ export default function CreateEventPage() {
                       type="number"
                       placeholder="Unlimited"
                       value={tempCapacityData.capacity}
-                      onChange={(e) => 
+                      onChange={(e) =>
                         setTempCapacityData({ ...tempCapacityData, capacity: e.target.value })
                       }
                       className="col-span-3"
@@ -556,8 +574,8 @@ export default function CreateEventPage() {
                   </p>
                 </div>
                 <DialogFooter>
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     onClick={handleCapacitySave}
                     className="bg-blue-500 hover:bg-blue-600"
                   >
@@ -575,9 +593,9 @@ export default function CreateEventPage() {
             </Label>
             <Dialog open={poapDialogOpen} onOpenChange={setPoapDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
+                  variant="outline"
                   className="w-full justify-center border-dashed border-2 border-gray-300 hover:border-gray-400 py-6"
                 >
                   <Plus className="w-5 h-5 mr-2" />
@@ -598,6 +616,8 @@ export default function CreateEventPage() {
                       <Input
                         id="poap-name"
                         placeholder="Enter POAP name"
+                        value={poapData.name}
+                        onChange={(e) => setPoapData({ ...poapData, name: e.target.value })}
                         className="mt-1"
                       />
                     </div>
@@ -607,6 +627,8 @@ export default function CreateEventPage() {
                         id="poap-description"
                         placeholder="Describe your POAP"
                         rows={3}
+                        value={poapData.description}
+                        onChange={(e) => setPoapData({ ...poapData, description: e.target.value })}
                         className="mt-1"
                       />
                     </div>
@@ -616,6 +638,7 @@ export default function CreateEventPage() {
                         id="poap-image"
                         type="file"
                         accept="image/*"
+                        onChange={handlePoapImageUpload}
                         className="mt-1"
                       />
                     </div>
@@ -643,7 +666,7 @@ export default function CreateEventPage() {
           </div>
 
           {/* Create Event Button */}
-          <Button 
+          <Button
             type="submit"
             disabled={isCreating}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium disabled:opacity-50"

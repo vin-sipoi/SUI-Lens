@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -25,7 +25,9 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { ConnectButton } from "@mysten/dapp-kit"
+import EventDetails from "@/components/EventDetails"
+import { useEventContext } from '@/context/EventContext'
+import { useUser } from '@/app/landing/UserContext'
 
 const EventDashboard: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -293,7 +295,7 @@ const EventDashboard: React.FC = () => {
         }
       `}</style>
     </div>
-  );
-};
+  )
+}
 
-export default EventDashboard;
+export default EventDashboard

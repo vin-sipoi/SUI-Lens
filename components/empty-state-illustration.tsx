@@ -31,12 +31,12 @@ export function EmptyStateIllustration({ type, title, description, actionText, o
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
       <div className="mb-8 transform hover:scale-105 transition-transform duration-300">{renderIllustration()}</div>
-      <h3 className="text-2xl font-bold text-gray-200 mb-3">{title}</h3>
+      <h3 className="text-2xl font-bold text-[#101928] mb-3">{title}</h3>
       <p className="text-gray-600 max-w-md mb-8 leading-relaxed">{description}</p>
       {actionText && onAction && (
         <Button
           onClick={onAction}
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+          className="bg-[#4DA2FF] rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
         >
           {actionText}
         </Button>
