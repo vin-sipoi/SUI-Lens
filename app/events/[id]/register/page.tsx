@@ -62,9 +62,39 @@ export default function RegisterPage() {
           <p className="text-center text-red-600 font-medium mt-2">{error}</p>
         )}
         {!account ? (
-          <p className="text-center text-gray-500 mt-4">
-            Connect your wallet to register for this event.
-          </p>
+          <div className="text-center text-gray-500 mt-4">
+            <p>Connect your wallet to register for this event.</p>
+            <p className="mt-2 text-xs">
+              On mobile? Install a Sui wallet app like{" "}
+              <a
+                href="https://apps.apple.com/app/slush-a-sui-wallet/id1660851379"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 underline"
+              >
+                Slush
+              </a>
+              ,{" "}
+              <a
+                href="https://apps.apple.com/app/suiet/id6446209466"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 underline"
+              >
+                Suiet
+              </a>
+              , or{" "}
+              <a
+                href="https://play.google.com/store/apps/details?id=com.surf.wallet"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 underline"
+              >
+                Surf
+              </a>
+              .
+            </p>
+          </div>
         ) : !registered ? (
           <form className="space-y-4 mt-6" onSubmit={handleRegister}>
             <div>
