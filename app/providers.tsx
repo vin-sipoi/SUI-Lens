@@ -67,7 +67,7 @@ export default function Providers({ children }: { children: ReactNode }) {
   return (
     <UserProvider>
       <QueryClientProvider client={queryClient}>
-        <SuiClientProvider networks={networks} defaultNetwork="devnet">
+        <SuiClientProvider networks={networks} defaultNetwork="testnet">
           <WalletProvider>{children}</WalletProvider>
         </SuiClientProvider>
       </QueryClientProvider>
