@@ -18,19 +18,23 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import  Image  from "next/image"
+import Image from "next/image"
 import {
   ArrowLeft,
   Edit3,
   Camera,
   Plus,
   Loader2,
+  Menu,
+  X,
 } from "lucide-react"
 import Link from "next/link"
 import { useEventContext } from "@/context/EventContext"
+
 export default function CreateEventPage() {
   const { user } = useUser();
   const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Redirect to signin if not logged in
   useEffect(() => {
@@ -69,7 +73,7 @@ export default function CreateEventPage() {
   const [tempCapacityData, setTempCapacityData] = useState({
     capacity: eventData.capacity,
   })
-  const {addEvent} = useEventContext();
+  const { addEvent } = useEventContext();
   
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -119,16 +123,34 @@ export default function CreateEventPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const form = e.currentTarget;
-    const data = new FormData(form);
-    const response = await fetch('/api/events', {
-      method: 'POST',
-      body: data
-    })
-    const result = await response.json()
-    // Handle success/redirect
+    try {
+      setIsCreating(true);
+      // For demonstration, we're just using setTimeout to simulate API call
+      setTimeout(() => {
+        router.push('/event-created');
+        setIsCreating(false);
+      }, 1500);
+      
+      // Actual implementation would look like:
+      /*
+      const form = e.currentTarget;
+      const data = new FormData(form);
+      const response = await fetch('/api/events', {
+        method: 'POST',
+        body: data
+      })
+      const result = await response.json()
+      if (response.ok) {
+        router.push('/event-created');
+      } else {
+        throw new Error(result.message || 'Failed to create event');
+      }
+      */
+    } catch (error) {
+      console.error('Error creating event:', error);
+      setIsCreating(false);
+    }
   }
-
   
   const handleTicketSave = () => {
     setEventData({
@@ -164,53 +186,139 @@ export default function CreateEventPage() {
       {/* Header */}
       <header className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/landing" className="flex items-center space-x-3 ">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-            <Image 
-              src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
-              alt="Suilens Logo" 
-              width={60}
-              height={60}
-              className="object-contain"
-            />
-          </div>
-          <span className="text-2xl font-bold text-[#020B15]">Suilens</span>
+          <Link href="/landing" className="flex items-center space-x-2 sm:space-x-3 z-20">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center">
+              <Image 
+                src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
+                alt="Suilens Logo" 
+                width={60}
+                height={60}
+                className="object-contain"
+              />
+            </div>
+            <span className="text-xl sm:text-2xl font-bold text-[#020B15]">Suilens</span>
           </Link>
 
-          <nav className="hidden lg:flex text-sm font-inter items-center space-x-8">
-            <Link href='/landing' className="text-gray-800 font-semibold ">Home</Link>
-            {['Communities', 'Discover', 'Dashboard', 'Bounties'].map((item) => (
-              <Link
-                key={item}
-                href={`/${item.toLowerCase().replace(' ', '-')}`}
-                className="text-gray-600 font-medium transition-colors"
-              >
-                {item}
-              </Link>
-            ))}
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex text-sm font-inter items-center space-x-8">
+            <Link href='/landing' className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+              Home
+            </Link>
+            <Link href='/communities' className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+              Communities
+            </Link>
+            <Link href='/discover' className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+              Discover
+            </Link>
+            <Link href='/dashboard' className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+              Dashboard
+            </Link>
+            <Link href='/bounties' className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+              Bounties
+            </Link>
           </nav>
 
-          <div className="flex text-sm items-center space-x-4">
-            <Link href='/auth/signin'>
-              <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-              Sign In
-              </Button>
-            </Link>
-            
-            <Link href='/create'>
-              <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-              Create Event
-              </Button>
-            </Link>
-            
+          {/* Mobile menu button */}
+          <button 
+            className="md:hidden p-2 text-gray-600 hover:text-gray-900 focus:outline-none z-20"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+
+          {/* Desktop Actions */}
+          <div className="hidden md:flex text-sm items-center space-x-4">
+            {!user ? (
+              <Link href='/auth/signin'>
+                <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
+                  Sign In
+                </Button>
+              </Link>
+            ) : (
+              <Link href='/create'>
+                <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
+                  Create Event
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
+        
+        {/* Mobile Navigation Menu */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-10 bg-white pt-16 pb-6 px-4">
+            <nav className="flex flex-col space-y-6">
+              <Link
+                href="/landing"
+                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Home
+              </Link>
+              <Link
+                href="/communities"
+                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Communities
+              </Link>
+              <Link
+                href="/discover"
+                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Discover
+              </Link>
+              <Link
+                href="/dashboard"
+                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/bounties"
+                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Bounties
+              </Link>
+              
+              {/* Mobile Actions */}
+              <div className="flex flex-col space-y-4 pt-4">
+                {!user ? (
+                  <Link href='/auth/signin' onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="w-full bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white py-2 rounded-xl">
+                      Sign In
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href='/create' onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="w-full bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white py-2 rounded-xl">
+                      Create Event
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </nav>
+          </div>
+        )}
       </header>
 
-      <div className="max-w-md mx-auto px-6 py-8">
+      {/* Form Section with Back Button */}
+      <div className="max-w-md mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="mb-6">
+          <Link href="/landing" className="inline-flex items-center text-gray-600 hover:text-gray-900">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Link>
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Create Event</h1>
+        
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Image Upload Section */}
-          <div className="bg-gray-900 rounded-lg h-32 flex items-center justify-center relative overflow-hidden">
+          <div className="bg-gray-900 rounded-lg h-32 sm:h-40 flex items-center justify-center relative overflow-hidden">
             {imagePreview ? (
               <img 
                 src={imagePreview} 
@@ -220,7 +328,7 @@ export default function CreateEventPage() {
             ) : (
               <div className="text-center">
                 <Camera className="w-6 h-6 text-white mx-auto mb-2" />
-                <span className="text-white text-sm">Add Event Image</span>
+                <span className="text-white text-xs sm:text-sm">Add Event Image</span>
               </div>
             )}
             <input
@@ -233,9 +341,9 @@ export default function CreateEventPage() {
               <Button
                 type="button"
                 size="sm"
-                className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 h-auto"
+                className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 sm:px-3 py-1 h-auto"
               >
-                Upload Event Image
+                Upload Image
               </Button>
             </div>
           </div>
@@ -346,7 +454,7 @@ export default function CreateEventPage() {
                   <Edit3 className="w-4 h-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px] bg-white">
+              <DialogContent className="w-[95%] max-w-md mx-auto bg-white">
                 <DialogHeader>
                   <DialogTitle>Edit Tickets</DialogTitle>
                 </DialogHeader>
@@ -423,7 +531,7 @@ export default function CreateEventPage() {
                   <Edit3 className="w-4 h-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px] bg-white">
+              <DialogContent className="w-[95%] max-w-md mx-auto bg-white">
                 <DialogHeader>
                   <DialogTitle>Edit Capacity</DialogTitle>
                 </DialogHeader>
@@ -476,7 +584,7 @@ export default function CreateEventPage() {
                   Add POAP
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px] bg-white">
+              <DialogContent className="w-[95%] max-w-md mx-auto bg-white">
                 <DialogHeader>
                   <DialogTitle>Add POAP to Event</DialogTitle>
                 </DialogHeader>
@@ -513,17 +621,18 @@ export default function CreateEventPage() {
                     </div>
                   </div>
                 </div>
-                <DialogFooter>
+                <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
                   <Button 
                     type="button" 
                     variant="outline" 
                     onClick={() => setPoapDialogOpen(false)}
+                    className="w-full sm:w-auto"
                   >
                     Cancel
                   </Button>
                   <Button 
                     type="button" 
-                    className="bg-blue-500 hover:bg-blue-600"
+                    className="bg-blue-500 hover:bg-blue-600 w-full sm:w-auto"
                     onClick={() => setPoapDialogOpen(false)}
                   >
                     Add POAP

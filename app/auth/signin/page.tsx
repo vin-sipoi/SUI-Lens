@@ -1,56 +1,55 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import Link from "next/link"
-import Image from "next/image"
-import { FcGoogle } from "react-icons/fc"
-import { FaApple } from "react-icons/fa"
-import { Mail, Lock, Eye, EyeOff } from "lucide-react"
-import { ConnectButton } from "@mysten/dapp-kit"
-import { useRouter } from "next/navigation"
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { FaApple } from 'react-icons/fa';
+import { FcGoogle } from 'react-icons/fc';
 
 const wallets = [
-	{ name: "Slush", icon: "/download (2) 1.png" },
-	{ name: "Nightly", icon: "/download (3) 1.png" },
-	{ name: "Backpack", icon: "/download (3) 2.png" },
-	{ name: "Hana Wallet", icon: "/download (4) 1.png" },
-	{ name: "OKX Wallet", icon: "/download (2) 2.png" },
-]
+	{ name: 'Slush', icon: '/download (2) 1.png' },
+	{ name: 'Nightly', icon: '/download (3) 1.png' },
+	{ name: 'Backpack', icon: '/download (3) 2.png' },
+	{ name: 'Hana Wallet', icon: '/download (4) 1.png' },
+	{ name: 'OKX Wallet', icon: '/download (2) 2.png' },
+];
 
 export default function SignInPage() {
-	const [showPassword, setShowPassword] = useState(false)
-	const [email, setEmail] = useState("")
-	const [password, setPassword] = useState("")
+	const [showPassword, setShowPassword] = useState(false);
+	const [email, setEmail] = useState('');
+	const [password, setPassword] = useState('');
 	const router = useRouter();
 	// Add state to handle client-side rendering
-	const [isMobile, setIsMobile] = useState(false)
-	const [mounted, setMounted] = useState(false)
+	const [isMobile, setIsMobile] = useState(false);
+	const [mounted, setMounted] = useState(false);
 
 	// Use useEffect to safely access window object after component mounts
 	useEffect(() => {
-		setMounted(true)
-		setIsMobile(window.innerWidth < 640)
-		
+		setMounted(true);
+		setIsMobile(window.innerWidth < 640);
+
 		const handleResize = () => {
-			setIsMobile(window.innerWidth < 640)
-		}
-		
-		window.addEventListener('resize', handleResize)
-		return () => window.removeEventListener('resize', handleResize)
-	}, [])
+			setIsMobile(window.innerWidth < 640);
+		};
+
+		window.addEventListener('resize', handleResize);
+		return () => window.removeEventListener('resize', handleResize);
+	}, []);
 
 	const handleEmailSignIn = (e: React.FormEvent) => {
 		e.preventDefault();
 		// Simulate successful sign in
-		console.log("Signing in with email:", email);
-		router.push("/dashboard");
+		console.log('Signing in with email:', email);
+		router.push('/dashboard');
 	};
 
 	return (
-		<div className="min-h-screen font-inter bg-white">			
+		<div className="min-h-screen font-inter bg-white">
 			{/* Main Content */}
 			<div className="min-h-screen flex flex-col lg:flex-row">
 				{/* Left: Auth Card */}
@@ -84,16 +83,20 @@ export default function SignInPage() {
 								variant="outline"
 								className="flex-1 flex items-center justify-center gap-2 py-4 sm:py-6 text-sm sm:text-base font-medium"
 							>
-								<FcGoogle className="w-4 h-4 sm:w-5 sm:h-5" /> 
-								<span className="hidden sm:inline text-sm font-medium">Sign in with Google</span>
+								<FcGoogle className="w-4 h-4 sm:w-5 sm:h-5" />
+								<span className="hidden sm:inline text-sm font-medium">
+									Sign in with Google
+								</span>
 								<span className="sm:hidden">Google</span>
 							</Button>
 							<Button
 								variant="outline"
 								className="flex-1 flex items-center justify-center gap-2 py-4 sm:py-6 text-sm sm:text-base font-medium"
 							>
-								<FaApple className="w-4 h-4 sm:w-5 sm:h-5 text-sm font-medium" /> 
-								<span className="hidden sm:inline text-sm font-medium">Sign in with Apple ID</span>
+								<FaApple className="w-4 h-4 sm:w-5 sm:h-5 text-sm font-medium" />
+								<span className="hidden sm:inline text-sm font-medium">
+									Sign in with Apple ID
+								</span>
 								<span className="sm:hidden">Apple ID</span>
 							</Button>
 						</div>
@@ -110,23 +113,26 @@ export default function SignInPage() {
 						{/* Wallet Options */}
 						<div className="space-y-2 sm:space-y-3 mb-6">
 							{/* Only render wallets after component is mounted and browser is available */}
-							{mounted && wallets.slice(0, isMobile ? 3 : wallets.length).map((wallet) => (
-								<Button
-									key={wallet.name}
-									variant="outline"
-									className="w-full flex items-center gap-3 py-4 sm:py-5 text-sm sm:text-base font-medium justify-start"
-								>
-									<Image
-										src={wallet.icon}
-										alt={wallet.name}
-										width={20}
-										height={20}
-										className="sm:w-6 sm:h-6 rounded"
-									/>
-									{wallet.name}
-								</Button>
-							))}
-							
+							{mounted &&
+								wallets
+									.slice(0, isMobile ? 3 : wallets.length)
+									.map((wallet) => (
+										<Button
+											key={wallet.name}
+											variant="outline"
+											className="w-full flex items-center gap-3 py-4 sm:py-5 text-sm sm:text-base font-medium justify-start"
+										>
+											<Image
+												src={wallet.icon}
+												alt={wallet.name}
+												width={20}
+												height={20}
+												className="sm:w-6 sm:h-6 rounded"
+											/>
+											{wallet.name}
+										</Button>
+									))}
+
 							{/* Show remaining wallets on mobile in a collapsible way */}
 							{mounted && isMobile && wallets.length > 3 && (
 								<details className="group">
@@ -157,7 +163,10 @@ export default function SignInPage() {
 						</div>
 
 						{/* Email/Password Form */}
-						<form onSubmit={handleEmailSignIn} className="space-y-4 sm:space-y-6">
+						<form
+							onSubmit={handleEmailSignIn}
+							className="space-y-4 sm:space-y-6"
+						>
 							<div className="space-y-2">
 								<Label
 									htmlFor="email"
@@ -189,7 +198,7 @@ export default function SignInPage() {
 									<Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
 									<Input
 										id="password"
-										type={showPassword ? "text" : "password"}
+										type={showPassword ? 'text' : 'password'}
 										placeholder="Enter your password"
 										value={password}
 										onChange={(e) => setPassword(e.target.value)}
@@ -211,10 +220,7 @@ export default function SignInPage() {
 							</div>
 							<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
 								<label className="flex items-center space-x-2 cursor-pointer">
-									<input
-										type="checkbox"
-										className="rounded border-gray-300"
-									/>
+									<input type="checkbox" className="rounded border-gray-300" />
 									<span className="text-xs sm:text-sm text-gray-600">
 										Remember me
 									</span>
@@ -235,7 +241,7 @@ export default function SignInPage() {
 						</form>
 						<div className="text-center pt-4">
 							<p className="text-gray-600 text-xs sm:text-sm">
-								Don't have an account?{" "}
+								Don't have an account?{' '}
 								<Link
 									href="/auth/signup"
 									className="text-blue-600 hover:text-blue-700 font-semibold"
@@ -258,10 +264,9 @@ export default function SignInPage() {
 							className="xl:w-52 xl:h-52 2xl:w-64 2xl:h-64"
 							unoptimized
 						/>
-						
 					</div>
 				</div>
 			</div>
 		</div>
-	)
+	);
 }

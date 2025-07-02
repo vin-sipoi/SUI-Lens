@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { Calendar, MapPin, Users, Plus, BarChart3 } from "lucide-react"
+import { Calendar, MapPin, Users, Plus, BarChart3, Menu, X, Home, Users as UsersIcon, FileText, BarChart2, Target } from "lucide-react"
 import Link from "next/link"
 import { EmptyStateIllustration } from "@/components/empty-state-illustration"
 import { ConnectButton } from "@mysten/dapp-kit"
@@ -25,18 +25,72 @@ export default function DashboardPage() {
   const [sidebarSection, setSidebarSection] = useState<string>("overview")
   const { user, logout } = useUser()
   const [showDropdown, setShowDropdown] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Handle responsive behavior
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+    
+    // Check on initial load
+    checkMobile();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Close sidebar when clicking outside on mobile
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isMobile && sidebarOpen) {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar && !sidebar.contains(event.target as Node)) {
+          setSidebarOpen(false);
+        }
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMobile, sidebarOpen]);
 
   return (
-    <div className="min-h-screen flex bg-white">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-white relative">
+      {/* Mobile Sidebar Toggle */}
+      <button 
+        onClick={() => setSidebarOpen(!sidebarOpen)} 
+        className="lg:hidden fixed bottom-6 right-6 z-30 w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg"
+        aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+      >
+        {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
       {/* Sidebar */}
-      <aside className="w-64 min-h-screen bg-[#0B1620] py-6 px-4 flex flex-col gap-6">
+      <aside 
+        id="sidebar"
+        className={`${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        } fixed lg:static top-0 left-0 z-20 w-64 min-h-screen bg-[#0B1620] py-6 px-4 flex flex-col gap-6 transition-transform duration-300 ease-in-out`}
+      >
         <div className="flex items-center mb-8">
           <Image src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" alt="Suilens Logo" width={24} height={24} unoptimized />
           <span className="ml-2 text-lg font-bold text-white">Suilens</span>
         </div>
         <nav className="flex-1 flex flex-col gap-4">
           <button
-            onClick={() => setSidebarSection("overview")}
+            onClick={() => {
+              setSidebarSection("overview");
+              if (isMobile) setSidebarOpen(false);
+            }}
             className={`flex items-center gap-2 font-medium hover:text-gray-300 ${sidebarSection === "overview" ? "text-white" : "text-gray-400"}`}
           >
             <svg width="20" height="20" fill="none">
@@ -49,7 +103,10 @@ export default function DashboardPage() {
             Overview
           </button>
           <button
-            onClick={() => setSidebarSection("guests")}
+            onClick={() => {
+              setSidebarSection("guests");
+              if (isMobile) setSidebarOpen(false);
+            }}
             className={`flex items-center gap-2 font-medium hover:text-white ${sidebarSection === "guests" ? "text-white" : "text-gray-400"}`}
           >
             <svg width="20" height="20" fill="none">
@@ -58,7 +115,10 @@ export default function DashboardPage() {
             Guests
           </button>
           <button
-            onClick={() => setSidebarSection("registration")}
+            onClick={() => {
+              setSidebarSection("registration");
+              if (isMobile) setSidebarOpen(false);
+            }}
             className="flex items-center gap-2 text-gray-400 hover:text-white"
           >
             <svg width="20" height="20" fill="none">
@@ -68,7 +128,10 @@ export default function DashboardPage() {
             Registration
           </button>
           <button
-            onClick={() => setSidebarSection("blast")}
+            onClick={() => {
+              setSidebarSection("blast");
+              if (isMobile) setSidebarOpen(false);
+            }}
             className="flex items-center gap-2 text-gray-400 hover:text-white"
           >
             <svg width="20" height="20" fill="none">
@@ -79,14 +142,25 @@ export default function DashboardPage() {
           </button>
           <div className="mt-6">
             <span className="text-gray-500 text-xs mb-2 block">Insight</span>
-            <button className="flex items-center gap-2 text-gray-400 hover:text-white mb-2">
+            <button 
+              onClick={() => {
+                if (isMobile) setSidebarOpen(false);
+              }}
+              className="flex items-center gap-2 text-gray-400 hover:text-white mb-2"
+            >
               <svg width="20" height="20" fill="none">
                 <rect x="3" y="3" width="14" height="14" rx="2" fill="currentColor" fillOpacity=".2" />
                 <rect x="7" y="7" width="6" height="6" rx="1" fill="currentColor" />
               </svg>
               Statistics
             </button>
-            <Link href="/bounties" className="flex items-center gap-2 text-gray-400 hover:text-white">
+            <Link 
+              href="/bounties" 
+              className="flex items-center gap-2 text-gray-400 hover:text-white"
+              onClick={() => {
+                if (isMobile) setSidebarOpen(false);
+              }}
+            >
               <svg width="20" height="20" fill="none">
                 <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="2" fill="none" />
                 <rect x="8" y="8" width="4" height="4" rx="1" fill="currentColor" />
@@ -96,11 +170,21 @@ export default function DashboardPage() {
           </div>
         </nav>
       </aside>
+
+      {/* Overlay for mobile when sidebar is open */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-10"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Top Nav */}
-        <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <nav className="flex items-center gap-6">
+        <header className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 overflow-x-auto">
+          {/* Navigation Links - Scrollable on mobile */}
+          <nav className="flex items-center gap-3 sm:gap-6">
             {["Home", "Communities", "Discover Events", "Bounties", "Dashboard"].map((item) => (
               <Link
                 key={item}
@@ -111,15 +195,15 @@ export default function DashboardPage() {
                     ? "/discover"
                     : `/${item.toLowerCase().replace(/ /g, "")}`
                 }
-                className={`text-sm font-medium ${item === "Dashboard" ? "text-black font-bold" : "text-gray-500 hover:text-black"} transition-colors`}
+                className={`whitespace-nowrap text-xs sm:text-sm font-medium ${item === "Dashboard" ? "text-black font-bold" : "text-gray-500 hover:text-black"} transition-colors`}
               >
                 {item}
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Link href="/create">
-              <Button className="bg-[#56A8FF] text-white px-4 py-2 rounded-full">Create Event</Button>
+              <Button className="bg-[#56A8FF] text-white px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm rounded-full">Create Event</Button>
             </Link>
             {user && (
               <div className="relative">
@@ -151,14 +235,15 @@ export default function DashboardPage() {
             )}
           </div>
         </header>
+        
         {/* Main Dashboard Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 sm:p-6">
           {sidebarSection === "guests" ? (
-            <div className="pt-8">
+            <div className="pt-4 sm:pt-8">
               <GuestList />
             </div>
           ) : (
-            <div className="grid md:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
               <Card className="overflow-hidden border-0 shadow-xl bg-[#56A8FF] text-white rounded-2xl">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
@@ -220,10 +305,10 @@ export default function DashboardPage() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsContent value="my-events" className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-gray-900">My Events</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">My Events</h2>
               </div>
               {myEvents.length > 0 ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {myEvents.map((event) => (
                     <Card
                       key={event.id}
@@ -234,19 +319,21 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : (
-                <EmptyStateIllustration
-                  type="no-created-events"
-                  title="No events created yet"
-                  description="Start creating amazing events and connect with your audience. Your first event is just a click away!"
-                  actionText="Create Your First Event"
-                  onAction={() => (window.location.href = "/create")}
-                />
+                <div className="p-4">
+                  <EmptyStateIllustration
+                    type="no-created-events"
+                    title="No events created yet"
+                    description="Start creating amazing events and connect with your audience. Your first event is just a click away!"
+                    actionText="Create Your First Event"
+                    onAction={() => (window.location.href = "/create")}
+                  />
+                </div>
               )}
             </TabsContent>
             <TabsContent value="registered" className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900">Registered Events</h2>
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Registered Events</h2>
               {registeredEvents.length > 0 ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {registeredEvents.map((event) => (
                     <Card key={event.id} className="base-card-light overflow-hidden rounded-2xl">
                       {/* ...registered event card rendering... */}
@@ -254,13 +341,15 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : (
-                <EmptyStateIllustration
-                  type="no-registered-events"
-                  title="No registered events"
-                  description="Discover exciting events happening around you and register to join the fun!"
-                  actionText="Explore Events"
-                  onAction={() => (window.location.href = "/discover")}
-                />
+                <div className="p-4">
+                  <EmptyStateIllustration
+                    type="no-registered-events"
+                    title="No registered events"
+                    description="Discover exciting events happening around you and register to join the fun!"
+                    actionText="Explore Events"
+                    onAction={() => (window.location.href = "/discover")}
+                  />
+                </div>
               )}
             </TabsContent>
           </Tabs>
