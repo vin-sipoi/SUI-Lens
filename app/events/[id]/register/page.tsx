@@ -1,11 +1,21 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
+
+function isMobileDevice() {
+  if (typeof navigator === "undefined") return false;
+  return /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+function isSlushInAppBrowser() {
+  if (typeof navigator === "undefined") return false;
+  return /Slush/i.test(navigator.userAgent);
+}
 
 export default function RegisterPage() {
   const params = useParams();
@@ -18,6 +28,7 @@ export default function RegisterPage() {
   const [registered, setRegistered] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const account = useCurrentAccount();
+  const [copied, setCopied] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -25,6 +36,13 @@ export default function RegisterPage() {
     email: "",
     x: "",
   });
+
+  // Copy current URL to clipboard
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -53,6 +71,30 @@ export default function RegisterPage() {
     }
   };
 
+  // Show instructions if on mobile and not in Slush browser
+  if (isMobileDevice() && !isSlushInAppBrowser()) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg border border-blue-400 text-center">
+          <h1 className="text-3xl font-semibold mb-6">Register</h1>
+          <p className="mb-4 text-gray-700">
+            To register on mobile, please open this page in the <b>Slush wallet app's browser</b>.
+          </p>
+          <Button
+            onClick={handleCopyLink}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded mb-2"
+          >
+            {copied ? "Link Copied!" : "Copy Link"}
+          </Button>
+          <p className="text-xs text-gray-500 mt-2">
+            Open the Slush app, go to the browser tab, and paste this link to continue registration.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Normal flow (desktop or in-app browser)
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
       <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg border border-blue-400">
