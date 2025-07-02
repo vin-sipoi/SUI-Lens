@@ -96,138 +96,54 @@ export default function CommunityEventsPage(){
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/landing" className="flex items-center space-x-2 sm:space-x-3 z-20">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center">
-              <Image 
-                src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
-                alt="Suilens Logo" 
-                width={60}
-                height={60}
-                className="object-contain"
-              />
-            </div>
-            <span className="text-xl sm:text-2xl font-bold text-[#020B15]">Suilens</span>
-          </Link>
-  
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex text-sm font-inter items-center space-x-8">
-            <Link href='/landing' className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-              Home
-            </Link>
-            <Link href='/communities' className="text-gray-900 font-semibold">
-              Communities
-            </Link>
-            <Link href='/discover' className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-              Discover
-            </Link>
-            <Link href='/dashboard' className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-              Dashboard
-            </Link>
-            <Link href='/bounties' className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-              Bounties
-            </Link>
-          </nav>
-  
-          {/* Mobile menu button */}
-          <button 
-            className="lg:hidden p-2 text-gray-600 hover:text-gray-900 focus:outline-none z-20"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-  
-          {/* Desktop Actions */}
-          <div className="hidden lg:flex text-sm items-center space-x-4">                                    
-            <Link href='/create'>
-              <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-                Create Event
-              </Button>
-            </Link>
-            {/* Only show ConnectButton if not logged in */}
-            {!user ? (
-              <ConnectButton />
-            ) : (
-              <Link href="/profile">
-                <img
-                  src={user.avatarUrl || "https://via.placeholder.com/100"}
-                  alt="Profile"
-                  className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer"
-                />
-              </Link>
-            )}
-          </div>
-        </div>
-        
-        {/* Mobile Navigation Menu */}
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-10 bg-white pt-16 pb-6 px-4">
-            <nav className="flex flex-col space-y-6">
-              <Link
-                href="/landing"
-                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link
-                href="/communities"
-                className="text-lg font-bold text-blue-600 py-2 border-b border-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Communities
-              </Link>
-              <Link
-                href="/discover"
-                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Discover Events
-              </Link>
-              <Link
-                href="/bounties"
-                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Bounties
-              </Link>
-              <Link
-                href="/dashboard"
-                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
-              
-              {/* Mobile Actions */}
-              <div className="flex flex-col space-y-4 pt-4">
-                <Link href='/create' onClick={() => setMobileMenuOpen(false)}>
-                  <Button className="w-full bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white py-2 rounded-xl">
-                    Create Event
-                  </Button>
+              <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+                <Link href="/landing" className="flex items-center space-x-3 ">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+                  <Image 
+                    src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
+                    alt="Suilens Logo" 
+                    width={60}
+                    height={60}
+                    className="object-contain"
+                  />
+                </div>
+                <span className="text-2xl font-bold text-[#020B15]">Suilens</span>
                 </Link>
-                {/* Only show ConnectButton if not logged in */}
-                {!user ? (
-                  <div className="flex justify-center" onClick={() => setMobileMenuOpen(false)}>
+      
+                <nav className="hidden lg:flex text-sm font-inter items-center space-x-8">
+                  <Link href='/' className="text-gray-800 font-semibold "></Link>
+                  {["Communities", "Discover", "Dashboard","Bounties"].map((item) => (
+                    <Link
+                      key={item}
+                      href={`/${item.toLowerCase().replace(' ', '-')}`}
+                      className="text-gray-600  font-medium transition-colors"
+                    >
+                      {item}
+                    </Link>
+                  ))}
+                </nav>
+      
+                <div className="flex text-sm items-center space-x-4">                                    
+                  <Link href='/create'>
+                    <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
+                    Create Event
+                    </Button>
+                  </Link>
+                  {/* Only show ConnectButton if not logged in */}
+                  {!user ? (
                     <ConnectButton />
-                  </div>
-                ) : (
-                  <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
-                    <Button className="w-full flex items-center justify-center gap-2 bg-transparent text-gray-700 hover:bg-gray-100 border border-gray-300">
+                  ) : (
+                    <Link href="/profile">
                       <img
                         src={user.avatarUrl || "https://via.placeholder.com/100"}
                         alt="Profile"
-                        className="w-6 h-6 rounded-full border border-blue-500"
+                        className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer"
                       />
-                      My Profile
-                    </Button>
-                  </Link>
-                )}
+                    </Link>
+                  )}
+                </div>
               </div>
-            </nav>
-          </div>
-        )}
-      </header>
+            </header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
