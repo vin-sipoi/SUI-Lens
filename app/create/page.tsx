@@ -30,26 +30,29 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useEventContext } from "@/context/EventContext"
+import { mintPOAP, suilensService } from "@/lib/sui-client"
 
 export default function CreateEventPage() {
-  const { user } = useUser();
-  const router = useRouter();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user } = useUser()
+  const router = useRouter()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { addEvent } = useEventContext()
 
   // Redirect to signin if not logged in
   useEffect(() => {
     if (!user) {
       const timeoutId = setTimeout(() => {
-        router.push('/auth/signin');
-      }, 100); // delay of 100ms to allow any async user state updates
-      return () => clearTimeout(timeoutId);
+        router.push('/auth/signin')
+      }, 100)
+      return () => clearTimeout(timeoutId)
     }
-  }, [user, router]);
+  }, [user, router])
 
   const [eventData, setEventData] = useState({
     title: "",
     description: "",
     date: "",
+    endDate: "",
     time: "",
     endTime: "",
     location: "",
@@ -73,21 +76,26 @@ export default function CreateEventPage() {
   const [tempCapacityData, setTempCapacityData] = useState({
     capacity: eventData.capacity,
   })
-  const { addEvent } = useEventContext();
-  
+
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+
+  // POAP data state
+  const [poapData, setPoapData] = useState({
+    name: "",
+    description: "",
+    image: null as File | null,
+  })
 
   // Generate QR code using Qrfy API
   const generateQRCode = async (eventId: string) => {
     try {
-      // Create the URL that will capture wallet addresses
       const eventUrl = `${window.location.origin}/event/${eventId}/register`
-      
       const response = await fetch('https://qrfy.com/api/v1/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          // Add API key if required: 'Authorization': 'Bearer YOUR_API_KEY',
         },
         body: JSON.stringify({
           qr_data: eventUrl,
@@ -107,51 +115,86 @@ export default function CreateEventPage() {
       return {
         qrCodeUrl: result.qr_code_url,
         eventUrl: eventUrl,
-        qrCodeImage: result.image_url
+        qrCodeImage: result.image_url,
       }
     } catch (error) {
       console.error('Error generating QR code:', error)
-      // Fallback: create a simple QR code URL
       const eventUrl = `${window.location.origin}/event/${eventId}/register`
       return {
         qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`,
         eventUrl: eventUrl,
-        qrCodeImage: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`
+        qrCodeImage: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`,
       }
     }
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    e.preventDefault()
+    setIsCreating(true)
+
     try {
-      setIsCreating(true);
-      // For demonstration, we're just using setTimeout to simulate API call
-      setTimeout(() => {
-        router.push('/event-created');
-        setIsCreating(false);
-      }, 1500);
-      
-      // Actual implementation would look like:
-      /*
-      const form = e.currentTarget;
-      const data = new FormData(form);
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        body: data
-      })
-      const result = await response.json()
-      if (response.ok) {
-        router.push('/event-created');
-      } else {
-        throw new Error(result.message || 'Failed to create event');
+      // Validate required fields
+      if (!eventData.title || !eventData.description || !eventData.date || !eventData.time || !eventData.location) {
+        alert('Please fill in all required fields')
+        setIsCreating(false)
+        return
       }
-      */
+
+      // Create event ID locally
+      const eventId = `event_${Date.now()}`
+
+      // Generate QR code for the event
+      const qrData = await generateQRCode(eventId)
+
+      // Add event to context
+      addEvent({
+        id: eventId,
+        type: "",
+        ...eventData,
+        requiresApproval: eventData.requiresApproval,
+        poapEnabled: poapData.name ? true : false,
+        qrCode: qrData.qrCodeImage,
+        eventUrl: qrData.eventUrl,
+      })
+
+      // Call smart contract to create event
+      const tx = await suilensService.createEvent({
+        name: eventData.title,
+        description: eventData.description,
+        startTime: new Date(`${eventData.date} ${eventData.time}`).getTime(),
+        endTime: new Date(`${eventData.endDate || eventData.date} ${eventData.endTime || eventData.time}`).getTime(),
+        maxAttendees: parseInt(eventData.capacity) || 100,
+        poapTemplate: poapData.name || '',
+      })
+      console.log('Create event transaction:', tx)
+
+      // POAP minting is disabled here to move to event details page after check-in
+      // if (poapData.name) {
+      //   try {
+      //     const mintTx = await mintPOAP(
+      //       eventId,
+      //       poapData.name,
+      //       poapData.image ? URL.createObjectURL(poapData.image) : '',
+      //       poapData.description,
+      //       ''
+      //     )
+      //     console.log('POAP mint transaction:', mintTx)
+      //   } catch (mintError) {
+      //     console.error('Error minting POAP:', mintError)
+      //     alert('Failed to mint POAP. Please try again.')
+      //   }
+      // }
+
+      // Redirect to discover page
+      router.push(`/discover`)
     } catch (error) {
-      console.error('Error creating event:', error);
-      setIsCreating(false);
+      console.error('Error creating event:', error)
+      alert('Failed to create event. Please try again.')
+    } finally {
+      setIsCreating(false)
     }
   }
-  
+
   const handleTicketSave = () => {
     setEventData({
       ...eventData,
@@ -181,6 +224,17 @@ export default function CreateEventPage() {
     }
   }
 
+  const handlePoapImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setPoapData({ ...poapData, image: file })
+    }
+  }
+
+  const handlePoapSave = () => {
+    setPoapDialogOpen(false)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -189,7 +243,7 @@ export default function CreateEventPage() {
           <Link href="/landing" className="flex items-center space-x-2 sm:space-x-3 z-20">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center">
               <Image 
-                src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
+                src="https://i.ibb.co/PZHSkCV/Suilens-Logo-Mark-Suilens-Black.png" 
                 alt="Suilens Logo" 
                 width={60}
                 height={60}
@@ -244,7 +298,7 @@ export default function CreateEventPage() {
             )}
           </div>
         </div>
-        
+
         {/* Mobile Navigation Menu */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-10 bg-white pt-16 pb-6 px-4">
@@ -284,7 +338,7 @@ export default function CreateEventPage() {
               >
                 Bounties
               </Link>
-              
+
               {/* Mobile Actions */}
               <div className="flex flex-col space-y-4 pt-4">
                 {!user ? (
@@ -315,14 +369,14 @@ export default function CreateEventPage() {
           </Link>
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Create Event</h1>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Image Upload Section */}
           <div className="bg-gray-900 rounded-lg h-32 sm:h-40 flex items-center justify-center relative overflow-hidden">
             {imagePreview ? (
-              <img 
-                src={imagePreview} 
-                alt="Event preview" 
+              <img
+                src={imagePreview}
+                alt="Event preview"
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -351,7 +405,7 @@ export default function CreateEventPage() {
           {/* Event Name */}
           <div>
             <Label htmlFor="eventName" className="text-sm font-medium text-gray-700 mb-2 block">
-              Event Name
+              Event Name *
             </Label>
             <Input
               id="eventName"
@@ -365,7 +419,7 @@ export default function CreateEventPage() {
 
           {/* Start Date & Time */}
           <div>
-            <Label className="text-sm font-medium text-gray-700 mb-2 block">Start</Label>
+            <Label className="text-sm font-medium text-gray-700 mb-2 block">Start *</Label>
             <div className="grid grid-cols-2 gap-3">
               <Input
                 type="date"
@@ -390,8 +444,8 @@ export default function CreateEventPage() {
             <div className="grid grid-cols-2 gap-3">
               <Input
                 type="date"
-                value={eventData.date}
-                onChange={(e) => setEventData({ ...eventData, date: e.target.value })}
+                value={eventData.endDate}
+                onChange={(e) => setEventData({ ...eventData, endDate: e.target.value })}
                 className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
               />
               <Input
@@ -406,7 +460,7 @@ export default function CreateEventPage() {
           {/* Event Location */}
           <div>
             <Label htmlFor="location" className="text-sm font-medium text-gray-700 mb-2 block">
-              Event Location
+              Event Location *
             </Label>
             <Input
               id="location"
@@ -421,7 +475,7 @@ export default function CreateEventPage() {
           {/* Add Description */}
           <div>
             <Label htmlFor="description" className="text-sm font-medium text-gray-700 mb-2 block">
-              Add Description
+              Add Description *
             </Label>
             <Textarea
               id="description"
@@ -439,9 +493,9 @@ export default function CreateEventPage() {
             <Label className="text-sm font-medium text-gray-700 mb-2 block">Tickets</Label>
             <Dialog open={ticketDialogOpen} onOpenChange={setTicketDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
+                  variant="outline"
                   className="w-full justify-between border-gray-300 hover:border-gray-400"
                   onClick={() => {
                     setTempTicketData({
@@ -463,7 +517,7 @@ export default function CreateEventPage() {
                     <Switch
                       id="free-ticket"
                       checked={tempTicketData.isFree}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         setTempTicketData({ ...tempTicketData, isFree: checked })
                       }
                     />
@@ -479,7 +533,7 @@ export default function CreateEventPage() {
                         type="number"
                         placeholder="0.00"
                         value={tempTicketData.ticketPrice}
-                        onChange={(e) => 
+                        onChange={(e) =>
                           setTempTicketData({ ...tempTicketData, ticketPrice: e.target.value })
                         }
                         className="col-span-3"
@@ -488,8 +542,8 @@ export default function CreateEventPage() {
                   )}
                 </div>
                 <DialogFooter>
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     onClick={handleTicketSave}
                     className="bg-blue-500 hover:bg-blue-600"
                   >
@@ -517,9 +571,9 @@ export default function CreateEventPage() {
             <Label className="text-sm font-medium text-gray-700 mb-2 block">Maximum Capacity</Label>
             <Dialog open={capacityDialogOpen} onOpenChange={setCapacityDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
+                  variant="outline"
                   className="w-full justify-between border-gray-300 hover:border-gray-400"
                   onClick={() => {
                     setTempCapacityData({
@@ -545,7 +599,7 @@ export default function CreateEventPage() {
                       type="number"
                       placeholder="Unlimited"
                       value={tempCapacityData.capacity}
-                      onChange={(e) => 
+                      onChange={(e) =>
                         setTempCapacityData({ ...tempCapacityData, capacity: e.target.value })
                       }
                       className="col-span-3"
@@ -556,8 +610,8 @@ export default function CreateEventPage() {
                   </p>
                 </div>
                 <DialogFooter>
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     onClick={handleCapacitySave}
                     className="bg-blue-500 hover:bg-blue-600"
                   >
@@ -575,9 +629,9 @@ export default function CreateEventPage() {
             </Label>
             <Dialog open={poapDialogOpen} onOpenChange={setPoapDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
+                  variant="outline"
                   className="w-full justify-center border-dashed border-2 border-gray-300 hover:border-gray-400 py-6"
                 >
                   <Plus className="w-5 h-5 mr-2" />
@@ -598,6 +652,8 @@ export default function CreateEventPage() {
                       <Input
                         id="poap-name"
                         placeholder="Enter POAP name"
+                        value={poapData.name}
+                        onChange={(e) => setPoapData({ ...poapData, name: e.target.value })}
                         className="mt-1"
                       />
                     </div>
@@ -607,6 +663,8 @@ export default function CreateEventPage() {
                         id="poap-description"
                         placeholder="Describe your POAP"
                         rows={3}
+                        value={poapData.description}
+                        onChange={(e) => setPoapData({ ...poapData, description: e.target.value })}
                         className="mt-1"
                       />
                     </div>
@@ -616,6 +674,7 @@ export default function CreateEventPage() {
                         id="poap-image"
                         type="file"
                         accept="image/*"
+                        onChange={handlePoapImageUpload}
                         className="mt-1"
                       />
                     </div>
@@ -633,7 +692,7 @@ export default function CreateEventPage() {
                   <Button 
                     type="button" 
                     className="bg-blue-500 hover:bg-blue-600 w-full sm:w-auto"
-                    onClick={() => setPoapDialogOpen(false)}
+                    onClick={handlePoapSave}
                   >
                     Add POAP
                   </Button>
@@ -643,7 +702,7 @@ export default function CreateEventPage() {
           </div>
 
           {/* Create Event Button */}
-          <Button 
+          <Button
             type="submit"
             disabled={isCreating}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium disabled:opacity-50"

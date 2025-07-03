@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+
 import { useCurrentAccount } from '@mysten/dapp-kit';
 import {
 	ArrowRight,
@@ -32,6 +33,19 @@ export default function HomePage() {
 	const account = useCurrentAccount();
 
 	const [events, setEvents] = useState<Event[]>([]);
+	useEffect(() => {
+		const fetchEvents = async () => {
+			try {
+				const res = await fetch('/api/events');
+				const data = await res.json();
+				setEvents(data.events || []);
+			} catch (error) {
+				console.error('Error fetching events:', error);
+				setEvents([]); // fallback to empty array on error
+			}
+		};
+		fetchEvents();
+	}, []);
 	const [email, setEmail] = useState('');
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

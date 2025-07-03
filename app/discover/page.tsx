@@ -5,101 +5,62 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Search,
   Filter,
   Calendar,
-  MapPin,
-  Users,
-  Award,
-  Coins,
-  Wallet,
-  TrendingUp,
-  Globe,
-  Star,
-  ArrowRight,
   Heart,
   Menu,
   X
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { ConnectButton } from "@mysten/dapp-kit"
+import EventDetails from '@/components/EventDetails';
+import { useEventContext } from '@/context/EventContext'
+import { useUser } from '@/app/landing/UserContext'
 
 const EventDashboard: React.FC = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  
-  const events = [
-    {
-      title: 'Game Night',
-      type: 'Sub Community Meetup',
-      date: 'June 24, 2025, 6:10 PM EAT',
-      image: 'https://i.ibb.co/mrLgZcFz/Whats-App-Image-2025-04-27-at-2-43-18-PM.jpg',
-      category: 'community'
-    },
-    {
-      title: 'CONTENT CREATORS BOOTCAMP',
-      type: 'Content Creators Bootcamp',
-      date: 'June 25, 2025, 6:00 PM',
-      image: 'https://via.placeholder.com/300x200?text=Content+Creators+Bootcamp',
-      category: 'creators'
-    },
-    {
-      title: 'Sui Community Meetup',
-      type: 'Sub Community Meetup',
-      date: 'June 25, 2025, 6:00 PM',
-      image: 'https://via.placeholder.com/300x200?text=Sui+Community+Meetup',
-      category: 'community'
-    },
-    {
-      title: 'Developers Night',
-      type: 'Developers Night',
-      date: 'June 25, 2025, 6:00 PM',
-      image: 'https://via.placeholder.com/300x200?text=Developers+Night',
-      category: 'developers'
-    },
-    {
-      title: 'Sui Community Meetup',
-      type: 'Sub Community Meetup',
-      date: 'June 24, 2025, 6:10 PM EAT',
-      image: 'https://via.placeholder.com/300x200?text=Sui+Community+Meetup',
-      category: 'community'
-    },
-    {
-      title: 'Developer Meetup',
-      type: 'Developers Night',
-      date: 'June 26, 2025, 6:00 PM',
-      image: 'https://via.placeholder.com/300x200?text=Developer+Meetup',
-      category: 'developers'
-    },
-    {
-      title: 'Developers Night',
-      type: 'Developers Night',
-      date: 'June 25, 2025, 6:00 PM',
-      image: 'https://via.placeholder.com/300x200?text=Developers+Night',
-      category: 'developers'
-    },
-    {
-      title: 'CONTENT CREATORS BOOTCAMP',
-      type: 'Content Creators Bootcamp',
-      date: 'June 26, 2025, 6:00 PM',
-      image: 'https://via.placeholder.com/300x200?text=Content+Creators+Bootcamp',
-      category: 'creators'
-    },
-  ];
-  
-  const filteredEvents = selectedCategory === "all" 
-    ? events 
-    : events.filter(event => event.category === selectedCategory);
-    
+  const { events, updateEvent } = useEventContext()
+  const { user } = useUser()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [selectedEvent, setSelectedEvent] = useState<any | null>(null)
+
   const categories = [
     { id: "all", label: "All Events" },
     { id: "community", label: "Community" },
     { id: "developers", label: "Developers" },
     { id: "creators", label: "Content Creators" },
-  ];
+  ]
+
+  const filteredEvents = events
+    .filter(event =>
+      (event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       event.type.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (selectedCategory === "all" || event.category === selectedCategory)
+    )
+
+  const handleRegister = (eventId: string) => {
+    if (!user) {
+      alert('Please login to register for events.')
+      return
+    }
+    try {
+      const event = events.find(e => e.id === eventId)
+      if (event && user.walletAddress) {
+        const rsvps = event.rsvps || []
+        if (!rsvps.includes(user.walletAddress)) {
+          updateEvent(eventId, { rsvps: [...rsvps, user.walletAddress] })
+        }
+      }
+      const selected = events.find(e => e.id === eventId)
+      setSelectedEvent(selected || null)
+    } catch (error) {
+      console.error("Error updating RSVP:", error)
+      alert("Failed to register for event. Please try again.")
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
@@ -109,7 +70,7 @@ const EventDashboard: React.FC = () => {
           <Link href="/landing" className="flex items-center space-x-2 sm:space-x-3 group z-20">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
               <Image 
-                src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
+                src="https://i.ibb.co/PZHSkCV/Suilens-Logo-Mark-Suilens-Black.png" 
                 alt="Suilens Logo" 
                 width={60}
                 height={60}
@@ -118,7 +79,7 @@ const EventDashboard: React.FC = () => {
             </div>
             <span className="text-xl sm:text-2xl font-bold text-gray-800">Suilens</span>
           </Link>
- 
+
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
             <Link
@@ -152,7 +113,7 @@ const EventDashboard: React.FC = () => {
               Dashboard
             </Link>
           </nav>
-          
+
           {/* Mobile menu button */}
           <button 
             className="md:hidden p-2 text-gray-600 hover:text-gray-900 focus:outline-none z-20"
@@ -162,7 +123,7 @@ const EventDashboard: React.FC = () => {
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
-        
+
         {/* Mobile Navigation Menu */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-10 bg-white pt-16 pb-6 px-4">
@@ -181,6 +142,7 @@ const EventDashboard: React.FC = () => {
               >
                 Communities
               </Link>
+ Sebastián
               <Link
                 href="/discover"
                 className="text-lg font-bold text-blue-600 py-2 border-b border-gray-100"
@@ -217,16 +179,18 @@ const EventDashboard: React.FC = () => {
               type="text"
               placeholder="Search for community or event..."
               className="w-full pl-10 py-2 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
-          
+
           {/* Filter Button - Only on mobile */}
           <Button className="sm:hidden w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
             <Filter className="h-4 w-4" />
             Filter
           </Button>
         </div>
-        
+
         {/* Category Pills */}
         <div className="flex flex-nowrap overflow-x-auto pb-2 gap-2 sm:gap-3 hide-scrollbar">
           {categories.map((category) => (
@@ -248,8 +212,8 @@ const EventDashboard: React.FC = () => {
       {/* Event Grid */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-          {filteredEvents.map((event, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+          {filteredEvents.map((event) => (
+            <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
               <div className="h-48 relative overflow-hidden">
                 <img 
                   src={event.image} 
@@ -268,21 +232,61 @@ const EventDashboard: React.FC = () => {
                     {event.type}
                   </Badge>
                 </div>
-                <h3 className="text-lg font-bold line-clamp-1">{event.title}</h3>
+                <h3 
+                  className="text-lg font-bold line-clamp-1 cursor-pointer hover:underline"
+                  onClick={() => setSelectedEvent(event)}
+                >
+                  {event.title}
+                </h3>
                 <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
                   <Calendar className="h-3 w-3" />
                   <span className="truncate">{event.date}</span>
                 </div>
-                <Button className="mt-4 w-full bg-blue-600 text-white hover:bg-blue-700 py-2 rounded-lg text-sm">
-                  Register
-                </Button>
+                {event.rsvps && event.rsvps.includes(user?.walletAddress || '') ? (
+                  <>
+                    {event.requiresApproval ? (
+                      <Button
+                        className="mt-4 w-full bg-yellow-400 text-white py-2 rounded-lg cursor-not-allowed"
+                        disabled
+                      >
+                        Pending Approval
+                      </Button>
+                    ) : (
+                      <Button
+                        className="mt-4 w-full bg-green-600 text-white py-2 rounded-lg cursor-not-allowed"
+                        disabled
+                      >
+                        You're In
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <Button
+                    className="mt-4 w-full bg-blue-600 text-white hover:bg-blue-700 py-2 rounded-lg text-sm"
+                    onClick={() => handleRegister(event.id)}
+                  >
+                    Register
+                  </Button>
+                )}
+                {event.attendance && event.attendance.includes(user?.walletAddress || '') && (
+                  <p className="mt-1 text-green-600 font-semibold text-center text-sm">Checked In</p>
+                )}
               </div>
             </div>
           ))}
         </div>
       </div>
-      
-      {/* Add custom CSS for hiding scrollbars but allowing scrolling */}
+
+      {/* Event Details Inline */}
+      {selectedEvent && (
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="bg-white rounded-lg shadow-lg max-w-6xl mx-auto">
+            <EventDetails eventData={selectedEvent} onClose={() => setSelectedEvent(null)} />
+          </div>
+        </div>
+      )}
+
+      {/* Custom CSS for hiding scrollbars */}
       <style jsx global>{`
         .hide-scrollbar {
           -ms-overflow-style: none;  /* IE and Edge */
@@ -293,7 +297,7 @@ const EventDashboard: React.FC = () => {
         }
       `}</style>
     </div>
-  );
-};
+  )
+}
 
-export default EventDashboard;
+export default EventDashboard
