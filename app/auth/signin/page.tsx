@@ -10,15 +10,15 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FaApple } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
-import { useCurrentAccount, ConnectButton } from '@mysten/dapp-kit';
+import { ConnectModal, useCurrentAccount } from '@mysten/dapp-kit';
 import { useUser } from "@/app/landing/UserContext"
 
 const wallets = [
-	{ name: 'Slush', icon: '/download (2) 1.png' },
-	{ name: 'Nightly', icon: '/download (3) 1.png' },
-	{ name: 'Backpack', icon: '/download (3) 2.png' },
-	{ name: 'Hana Wallet', icon: '/download (4) 1.png' },
-	{ name: 'OKX Wallet', icon: '/download (2) 2.png' },
+	{ name: 'Slush', icon: '/download (2) 1.png', status: ''},
+	{ name: 'Nightly', icon: '/download (3) 1.png', status: 'Coming soon'},
+	{ name: 'Backpack', icon: '/download (3) 2.png', status: 'Coming soon'},
+	{ name: 'Hana Wallet', icon: '/download (4) 1.png', status: 'Coming soon'},
+	{ name: 'OKX Wallet', icon: '/download (2) 2.png', status: 'Coming soon'},
 ];
 
 export default function SignInPage() {
@@ -30,6 +30,9 @@ export default function SignInPage() {
 	const [mounted, setMounted] = useState(false);
 	const { login, user } = useUser();
 	const account = useCurrentAccount();
+
+	const [connectModalOpen, setConnectModalOpen] = useState(false);
+
 
 	const handleWalletConnect = async () => {
 		console.log("Starting wallet connection...");
@@ -157,10 +160,11 @@ export default function SignInPage() {
 									.slice(0, isMobile ? 3 : wallets.length)
 									.map((wallet) =>
 										wallet.name === 'Slush' ? (
-											<ConnectButton
+											<Button
 												key={wallet.name}
+												variant="outline"
 												className="w-full flex items-center gap-3 py-4 sm:py-5 text-sm sm:text-base font-medium justify-start"
-												style={{ width: '100%' }}
+												onClick={() => setConnectModalOpen(true)}
 											>
 												<Image
 													src={wallet.icon}
@@ -169,13 +173,19 @@ export default function SignInPage() {
 													height={20}
 													className="sm:w-6 sm:h-6 rounded"
 												/>
-												{wallet.name}
-											</ConnectButton>
+												<span>{wallet.name}</span>
+												{wallet.status && (
+													<span className="text-gray-500 text-xs ml-auto">
+														{wallet.status}
+													</span>
+												)}
+											</Button>
 										) : (
 											<Button
 												key={wallet.name}
 												variant="outline"
 												className="w-full flex items-center gap-3 py-4 sm:py-5 text-sm sm:text-base font-medium justify-start"
+												disabled={wallet.status === 'Coming soon'}
 											>
 												<Image
 													src={wallet.icon}
@@ -184,7 +194,12 @@ export default function SignInPage() {
 													height={20}
 													className="sm:w-6 sm:h-6 rounded"
 												/>
-												{wallet.name}
+												<span>{wallet.name}</span>
+												{wallet.status && (
+													<span className="text-gray-500 text-xs ml-auto">
+														{wallet.status}
+													</span>
+												)}
 											</Button>
 										)
 									)}
@@ -197,25 +212,32 @@ export default function SignInPage() {
 									<div className="space-y-2 mt-2">
 										{wallets.slice(3).map((wallet) =>
 											wallet.name === 'Slush' ? (
-												<ConnectButton
-													key={wallet.name}
-													className="w-full flex items-center gap-3 py-4 text-sm font-medium justify-start"
-													style={{ width: '100%' }}
-												>
-													<Image
-														src={wallet.icon}
-														alt={wallet.name}
-														width={20}
-														height={20}
-														className="rounded"
-													/>
-													{wallet.name}
-												</ConnectButton>
-											) : (
 												<Button
 													key={wallet.name}
 													variant="outline"
+													className="w-full flex items-center gap-3 py-4 sm:py-5 text-sm sm:text-base font-medium justify-start"
+													onClick={() => setConnectModalOpen(true)}
+												>
+													<Image
+														src={wallet.icon}
+														alt={wallet.name}
+														width={20}
+														height={20}
+														className="sm:w-6 sm:h-6 rounded"
+													/>
+													<span>{wallet.name}</span>
+													{wallet.status && (
+														<span className="text-gray-500 text-xs ml-auto">
+															{wallet.status}
+														</span>
+													)}
+												</Button>
+											) : (
+												<Button
+													key={wallet.name + wallet.status}
+													variant="outline"
 													className="w-full flex items-center gap-3 py-4 text-sm font-medium justify-start"
+													disabled={wallet.status === 'Coming soon'}
 												>
 													<Image
 														src={wallet.icon}
@@ -224,7 +246,12 @@ export default function SignInPage() {
 														height={20}
 														className="rounded"
 													/>
-													{wallet.name}
+													<span>{wallet.name}</span>
+													{wallet.status && (
+														<span className="text-gray-500 text-xs ml-auto">
+															{wallet.status}
+														</span>
+													)}
 												</Button>
 											)
 										)}
@@ -232,6 +259,12 @@ export default function SignInPage() {
 								</details>
 							)}
 						</div>
+						<ConnectModal
+							trigger={<div />}
+							open={connectModalOpen}
+							onOpenChange={setConnectModalOpen}
+						/>
+
 						<form
 							onSubmit={handleEmailSignIn}
 							className="space-y-4 sm:space-y-6"
