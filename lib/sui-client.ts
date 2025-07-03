@@ -11,11 +11,15 @@ export class SuilensService {
   private packageId: string;
   private eventRegistryId: string;
   private poapRegistryId: string;
+  private bountyPackageId: string;
+  private bountyRegistryId: string;
 
   constructor() {
     this.packageId = process.env.NEXT_PUBLIC_PACKAGE_ID || '';
     this.eventRegistryId = process.env.NEXT_PUBLIC_EVENT_REGISTRY_ID || '';
     this.poapRegistryId = process.env.NEXT_PUBLIC_POAP_REGISTRY_ID || '';
+    this.bountyPackageId = process.env.NEXT_PUBLIC_BOUNTY_PACKAGE_ID || '';
+    this.bountyRegistryId = process.env.NEXT_PUBLIC_BOUNTY_REGISTRY_ID || '';
   }
 
   async createEvent(eventData: {
@@ -132,6 +136,102 @@ export class SuilensService {
       console.error('Error checking registration:', error);
       throw new Error('Failed to check registration status');
     }
+  }
+
+  async createEventWithRewardPool(eventData: {
+    name: string;
+    description: string;
+    startTime: number;
+    endTime: number;
+    maxAttendees: number;
+    poapTemplate: string;
+  }, rewardPoolData?: {
+    amount: number;
+    maxParticipants: number;
+  }) {
+    const tx = new Transaction();
+    
+    if (rewardPoolData) {
+      // Create event with reward pool using BOUNTY contract
+      tx.moveCall({
+        target: `${this.bountyPackageId}::event_bounty::create_event_with_rewards`,
+        arguments: [
+          tx.pure.string(eventData.name),
+          tx.pure.string(eventData.description),
+          tx.pure.u64(eventData.startTime),
+          tx.pure.u64(eventData.endTime),
+          tx.pure.u64(eventData.maxAttendees),
+          tx.pure.string(eventData.poapTemplate),
+          tx.pure.u64(rewardPoolData.amount),
+          tx.pure.u64(rewardPoolData.maxParticipants),
+          tx.object(this.bountyRegistryId),
+        ],
+      });
+    } else {
+      // Use your existing POAP contract for regular events
+      return this.createEvent(eventData);
+    }
+
+    return tx;
+  }
+
+  async lockRewardPool(eventObjectId: string, amount: number) {
+    const tx = new Transaction();
+    
+    tx.moveCall({
+      target: `${this.bountyPackageId}::reward_pool::lock_funds`,
+      arguments: [
+        tx.object(eventObjectId),
+        tx.pure.u64(amount),
+        tx.object('0x6'), // Clock object
+      ],
+    });
+
+    return tx;
+  }
+
+  async getRewardPoolStatus(eventObjectId: string) {
+    try {
+      return await suiClient.getObject({
+        id: eventObjectId,
+        options: {
+          showContent: true,
+          showType: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching reward pool status:', error);
+      throw new Error('Failed to fetch reward pool status');
+    }
+  }
+
+  async distributeRewards(eventObjectId: string, participants: string[]) {
+    const tx = new Transaction();
+    
+    tx.moveCall({
+      target: `${this.bountyPackageId}::reward_pool::distribute_rewards`,
+      arguments: [
+        tx.object(eventObjectId),
+        tx.pure.vector('address', participants),
+        tx.object('0x6'),
+      ],
+    });
+
+    return tx;
+  }
+
+  async unlockRewardPool(eventObjectId: string) {
+    const tx = new Transaction();
+    
+    tx.moveCall({
+      target: `${this.bountyPackageId}::reward_pool::unlock_funds`,
+      arguments: [
+        tx.object(eventObjectId),
+        tx.object('0x6'),
+      ],
+    });
+
+    return tx;
   }
 }
 

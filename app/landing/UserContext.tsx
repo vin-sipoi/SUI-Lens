@@ -32,17 +32,22 @@ const UserContext = createContext<UserContextType | undefined>(undefined)
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
 
-  const login = (user: User) => setUser(user)
+  const login = async (userData: User) => { // Make login async
+        console.log("Login function called with:", userData); // Log input
+        setUser(userData);
+        console.log("User set in context:", user); // Log after setUser
+    };
   const logout = () => setUser(null)
 
   useEffect(() => {
-    // Any initialization logic can go here
-    // For example, checking localStorage for existing user session
-    // const savedUser = localStorage.getItem('user')
-    // if (savedUser) {
-    //   setUser(JSON.parse(savedUser))
-    // }
-  }, [])
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+      console.log("User saved to local storage:", user); // Log saved user data
+    } else {
+      localStorage.removeItem('user');
+      console.log("User removed from local storage."); // Log removal
+    }
+  }, [user])
 
   return (
     <UserContext.Provider value={{ user, login, logout }}>

@@ -2,6 +2,17 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 
+interface RewardPool {
+  amount: number
+  maxParticipants: number
+  status: 'none' | 'locked' | 'distributed' | 'cancelled'
+  contractEventId?: string
+  distributionMethod: 'attendance' | 'manual'
+  participants: string[]
+  distributedAt?: Date
+  createdAt: Date
+}
+
 interface Event {
   id: string
   title: string
@@ -32,6 +43,7 @@ interface Event {
   }
   price?: string
   category?: string
+  rewardPool?: RewardPool
 }
 
 interface EventContextType {

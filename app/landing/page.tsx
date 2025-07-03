@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+
 import { useCurrentAccount } from '@mysten/dapp-kit';
 import {
 	ArrowRight,
@@ -31,32 +32,23 @@ export default function HomePage() {
 	const { login, user, logout } = useUser();
 	const account = useCurrentAccount();
 
-<<<<<<< HEAD
-  const [events, setEvents] = useState<Event[] | null>(null) // null means loading
-
-  useEffect(() => {
-    // Fetch events from backend API
-    const fetchEvents = async () => {
-      try {
-        const res = await fetch('/api/events')
-        if (!res.ok) throw new Error('Failed to fetch events')
-        const data = await res.json()
-        setEvents(data.events || [])
-      } catch (error) {
-        console.error('Error fetching events:', error)
-        setEvents([]) // fallback to empty array on error
-      }
-    }
-    fetchEvents()
-  }, [])
-  const [email, setEmail] = useState("")
-  const [showDropdown, setShowDropdown] = useState(false)
-=======
 	const [events, setEvents] = useState<Event[]>([]);
+	useEffect(() => {
+		const fetchEvents = async () => {
+			try {
+				const res = await fetch('/api/events');
+				const data = await res.json();
+				setEvents(data.events || []);
+			} catch (error) {
+				console.error('Error fetching events:', error);
+				setEvents([]); // fallback to empty array on error
+			}
+		};
+		fetchEvents();
+	}, []);
 	const [email, setEmail] = useState('');
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
->>>>>>> steve
 
 	// When wallet connects, log in with wallet address
 	useEffect(() => {
@@ -75,17 +67,6 @@ export default function HomePage() {
 		if (!user) setShowDropdown(false);
 	}, [user]);
 
-<<<<<<< HEAD
-  // Function to add an event
-  const addEvent = (newEvent: Omit<Event, "id">) => {
-    setEvents(prevEvents => prevEvents ? [...prevEvents, { ...newEvent, id: Date.now() }] : [{ ...newEvent, id: Date.now() }])
-  }
-
-  // Function to remove an event
-  const removeEvent = (eventId: number): void => {
-    setEvents((prevEvents: Event[] | null) => prevEvents ? prevEvents.filter((event: Event) => event.id !== eventId) : null)
-  }
-=======
 	// Function to add a new event
 	const addEvent = (newEvent: Omit<Event, 'id'>) => {
 		setEvents((prevEvents) => [...prevEvents, { ...newEvent, id: Date.now() }]);
@@ -97,7 +78,6 @@ export default function HomePage() {
 			prevEvents.filter((event: Event) => event.id !== eventId)
 		);
 	};
->>>>>>> steve
 
 	const handleNewsletterSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -105,44 +85,6 @@ export default function HomePage() {
 		setEmail('');
 	};
 
-<<<<<<< HEAD
-  const communities = [
-    {
-      name: "Sui Kenya",
-      image: "https://i.ibb.co/YBvqHqsp/Screenshot-2025-06-24-030451.png",
-    },
-    {
-      name: "Sui Ghana", 
-      image: "https://i.ibb.co/LDDGGYdF/Screenshot-2025-06-24-141355.png",
-    },
-    {
-      name: "Sui Nigeria",
-      image: "https://i.ibb.co/W4zMd77q/Screenshot-2025-06-24-030948.png", 
-    },
-    {
-      name: "Sui in Paris",
-      image: "https://i.ibb.co/ZpKnvQQ1/Screenshot-2025-06-24-031327.png",
-    }
-  ]
-
-  return (
-    <div className="min-h-screen font-inter bg-gradient-to-b from-blue-400 via-blue-100 to-blue-50">
-      {/* Header */}
-      <header className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/landing" className="flex items-center space-x-3 ">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-              <Image 
-                src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
-                alt="Suilens Logo" 
-                width={60}
-                height={60}
-                className="object-contain"
-              />
-            </div>
-            <span className="text-2xl font-bold text-[#020B15]">Suilens</span>
-          </Link>
-=======
 	const communities = [
 		{
 			name: 'Sui Kenya',
@@ -180,7 +122,6 @@ export default function HomePage() {
 							Suilens
 						</span>
 					</Link>
->>>>>>> steve
 
 					{/* Center Nav - Desktop Only */}
 					<nav className="hidden md:flex flex-1 justify-center">
@@ -205,52 +146,6 @@ export default function HomePage() {
 						</ul>
 					</nav>
 
-<<<<<<< HEAD
-          <div className="flex text-sm items-center space-x-4">
-            <Link href='/auth/signin'>
-              <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-                Sign In
-              </Button>
-            </Link>
-            
-            <Link href='/create'>
-              <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-                Create Event
-              </Button>
-            </Link>
-            {/* Only show ConnectButton if not logged in */}
-            {!user ? (
-              <ConnectButton />
-            ) : (
-              <div className="relative">
-                <button
-                  onClick={() => setShowDropdown((v) => !v)}
-                  className="focus:outline-none"
-                  aria-label="Open profile menu"
-                >
-                  <img
-                    src={user.avatarUrl || "https://via.placeholder.com/100"}
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer"
-                  />
-                </button>
-                {showDropdown && (
-                  <div className="absolute right-0 mt-2 z-50">
-                    <ProfileDropdown
-                      walletAddress={user.walletAddress ?? ""}
-                      onLogout={() => {
-                        setShowDropdown(false);
-                        logout();
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-=======
 					{/* Mobile menu button */}
 					<button
 						className="md:hidden p-2 text-gray-600 hover:text-gray-900 focus:outline-none z-20"
@@ -262,7 +157,6 @@ export default function HomePage() {
 							<Menu className="h-6 w-6" aria-hidden="true" />
 						)}
 					</button>
->>>>>>> steve
 
 					{/* Right Side - Desktop */}
 					<div className="hidden md:flex items-center gap-4">
@@ -410,59 +304,6 @@ export default function HomePage() {
 							</p>
 						</div>
 
-<<<<<<< HEAD
-      {/* POAPs Section */}
-      <section className="py-16 relative bg-[#030F1C]">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto space-y-8">
-            
-            {/* POAP Feature - Text Left, Image Right */}
-            <div className=" overflow-hidden  group cursor-pointer min-h-[300px]">
-              <div className="h-full grid grid-cols-1 md:grid-cols-2 gap-8 items-center py-4">
-                <div className="py-5 text-[#EDF6FF]">
-                  <h3 className="text-5xl font-medium mb-4">
-                    Add POAPs to Your <br /> Events
-                  </h3>
-                  <p className="text-gray-300 font-normal mb-6 text-2xl">
-                    Reward attendees with Proof of Attendance Protocol (POAP) NFTs for joining your event.
-                  </p>
-                  <Link href="/create">
-                    <button className="text-blue-100 font-normal underline text-2xl">
-                      Create your event
-                    </button>
-                  </Link>
-
-                  {/* Dynamic Event Claim Links */}
-                  <div className="mt-6">
-                    <h4 className="text-3xl font-semibold mb-4">Claim Your POAPs</h4>
-                    <ul className="list-disc list-inside space-y-2 text-lg">
-                      {events === null && <li>Loading events...</li>}
-                      {events !== null && events.length === 0 && <li>No events available for claiming POAPs.</li>}
-                      {events !== null && events.map((event) => (
-                        <li key={event.id}>
-                          <Link href={`/claim-poap/${event.id}`}>
-                            <a className="text-blue-400 hover:underline">{event.title}</a>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  
-                </div>
-                
-                <div className="flex items-center justify-center">
-                  <div className="w-full max-w-2xl max-h-[245]">
-                    <img 
-                      src="https://i.ibb.co/dwwYhvJW/Screenshot-2025-06-25-022109.png" 
-                      alt="POAP feature"
-                      height={200}
-                      className="w-full h-auto object-contain rounded-lg"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-=======
 						<div className="pt-4">
 							<Link href="/discover">
 								<Button className="w-full sm:w-auto bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white font-inter px-8 sm:px-12 py-6 sm:py-9 text-base sm:text-lg font-semibold rounded-xl shadow-lg">
@@ -473,7 +314,6 @@ export default function HomePage() {
 					</div>
 				</div>
 			</section>
->>>>>>> steve
 
 			{/* Community Events Grid */}
 			<section className="py-12 sm:py-16 relative">
@@ -513,99 +353,6 @@ export default function HomePage() {
 				</div>
 			</section>
 
-<<<<<<< HEAD
-                <div className="py-5 text-[#EDF6FF]">
-                  <h3 className="text-5xl font-medium mb-4">
-                    Bounty & Grant Tracking for Leads Events
-                  </h3>
-                  <p className="text-gray-300 font-normal mb-6 text-2xl">
-                    Community leads can easily track bounties, report progress, and manage grants in one place
-                  </p>
-                  
-                </div>
-                
-                
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      {/* Newsletter Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-4xl font-medium  text-gray-900 mb-4">Subscribe to our Newsletter</h2>
-            <p className="text-2xl font-normal text-gray-600 mb-8">Stay updated with the latest Sui community events and announcements</p>
-            
-            <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <div className="flex-1 relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  width={319}
-                  height={56}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-14 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <Link href="/discover">
-                <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white font-inter px-10 h-14 text-lg font-semibold rounded-xl shadow-lg">
-                  Subscribe
-                </Button>
-              </Link>
-            </form>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-100 py-8">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-8">
-            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-8">
-              <div className="flex items-center space-x-3">
-                <Link href="/landing" className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-                    <Image 
-                      src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
-                      alt="Suilens Logo" 
-                      width={32}
-                      height={32}
-                      className="object-contain"
-                    />
-                  </div>
-                  <span className="text-xl font-bold text-gray-900">Suilens</span>
-                </Link>
-              </div>
-
-              <div className="flex space-x-6 font-medium text-sm text-gray-600">
-                <Link href="/privacy" className=" hover:text-gray-900">Privacy Policy</Link>  
-                <Link href="/terms" className="hover:text-gray-900">Terms of Use</Link>
-              </div>
-            </div>
-
-            <p className="text-sm font-medium text-gray-600">
-              © 2025 Suilens. All Rights Reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
-
-      {/* Dynamic Events Section (Hidden when no events, preserving functionality) */}
-      {events !== null && events.length > 0 && (
-        <section className="py-16 relative bg-white/10 backdrop-blur-sm">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-6xl mx-auto">
-              <div className="flex items-center justify-between mb-12">
-                <div>
-                  <h2 className="text-3xl font-bold text-white mb-2">Your Events</h2>
-                  <p className="text-white/80">Manage your created events</p>
-                </div>
-              </div>
-=======
 			{/* POAPs Section */}
 			<section className="py-12 sm:py-16 relative bg-[#030F1C]">
 				<div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -739,7 +486,6 @@ export default function HomePage() {
 								</Link>
 							</div>
 						</div>
->>>>>>> steve
 
 						{/* Right side - Copyright */}
 						<p className="text-sm font-medium text-gray-600">
@@ -749,41 +495,6 @@ export default function HomePage() {
 				</div>
 			</footer>
 
-<<<<<<< HEAD
-                    <div className="space-y-3 mb-6">
-                      <div className="flex items-center text-gray-600 text-sm">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        <span>{new Date(event.date).toLocaleDateString("en-US")}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600 text-sm">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        <span>{event.location}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600 text-sm">
-                        <Users className="w-4 h-4 mr-2" />
-                        <span>{event.attendees} attendees</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                        {event.category}
-                      </span>
-                      <Button className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg">
-                        View Event
-                        <ArrowRight className="w-4 h-4 ml-1" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-    </div>
-  )
-=======
 			{/* Dynamic Events Section (Hidden when no events, preserving functionality) */}
 			{events.length > 0 && (
 				<section className="py-12 sm:py-16 relative bg-white/10 backdrop-blur-sm">
@@ -858,5 +569,4 @@ export default function HomePage() {
 			)}
 		</div>
 	);
->>>>>>> steve
 }

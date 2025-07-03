@@ -18,7 +18,8 @@ edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
 # Override = { local = "../conflicting/version", override = true }
 
 [addresses]
-sui_lens_poap = "0x0"
+sui_lens_poap = "0x1367d3334d33e884ee369c71b96c8ce03150f197cae428eca7ed314737eda9db"
+
 
 # Named addresses will be accessible in Move as `@name`. They're also exported:
 # for example, `std = "0x1"` is exported by the Standard Library.

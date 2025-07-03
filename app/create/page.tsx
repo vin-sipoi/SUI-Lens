@@ -30,21 +30,23 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useEventContext } from "@/context/EventContext"
+import { mintPOAP, suilensService } from "@/lib/sui-client"
 
 export default function CreateEventPage() {
-  const { user } = useUser();
-  const router = useRouter();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user } = useUser()
+  const router = useRouter()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { addEvent } = useEventContext()
 
   // Redirect to signin if not logged in
   useEffect(() => {
     if (!user) {
       const timeoutId = setTimeout(() => {
-        router.push('/auth/signin');
-      }, 100); // delay of 100ms to allow any async user state updates
-      return () => clearTimeout(timeoutId);
+        router.push('/auth/signin')
+      }, 100)
+      return () => clearTimeout(timeoutId)
     }
-  }, [user, router]);
+  }, [user, router])
 
   const [eventData, setEventData] = useState({
     title: "",
@@ -74,8 +76,7 @@ export default function CreateEventPage() {
   const [tempCapacityData, setTempCapacityData] = useState({
     capacity: eventData.capacity,
   })
-  const { addEvent } = useEventContext();
-  
+
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
 
@@ -90,7 +91,6 @@ export default function CreateEventPage() {
   const generateQRCode = async (eventId: string) => {
     try {
       const eventUrl = `${window.location.origin}/event/${eventId}/register`
-
       const response = await fetch('https://qrfy.com/api/v1/generate', {
         method: 'POST',
         headers: {
@@ -129,36 +129,72 @@ export default function CreateEventPage() {
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    e.preventDefault()
+    setIsCreating(true)
+
     try {
-      setIsCreating(true);
-      // For demonstration, we're just using setTimeout to simulate API call
-      setTimeout(() => {
-        router.push('/event-created');
-        setIsCreating(false);
-      }, 1500);
-      
-      // Actual implementation would look like:
-      /*
-      const form = e.currentTarget;
-      const data = new FormData(form);
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        body: data
-      })
-      const result = await response.json()
-      if (response.ok) {
-        router.push('/event-created');
-      } else {
-        throw new Error(result.message || 'Failed to create event');
+      // Validate required fields
+      if (!eventData.title || !eventData.description || !eventData.date || !eventData.time || !eventData.location) {
+        alert('Please fill in all required fields')
+        setIsCreating(false)
+        return
       }
-      */
+
+      // Create event ID locally
+      const eventId = `event_${Date.now()}`
+
+      // Generate QR code for the event
+      const qrData = await generateQRCode(eventId)
+
+      // Add event to context
+      addEvent({
+        id: eventId,
+        type: "",
+        ...eventData,
+        requiresApproval: eventData.requiresApproval,
+        poapEnabled: poapData.name ? true : false,
+        qrCode: qrData.qrCodeImage,
+        eventUrl: qrData.eventUrl,
+      })
+
+      // Call smart contract to create event
+      const tx = await suilensService.createEvent({
+        name: eventData.title,
+        description: eventData.description,
+        startTime: new Date(`${eventData.date} ${eventData.time}`).getTime(),
+        endTime: new Date(`${eventData.endDate || eventData.date} ${eventData.endTime || eventData.time}`).getTime(),
+        maxAttendees: parseInt(eventData.capacity) || 100,
+        poapTemplate: poapData.name || '',
+      })
+      console.log('Create event transaction:', tx)
+
+      // POAP minting is disabled here to move to event details page after check-in
+      // if (poapData.name) {
+      //   try {
+      //     const mintTx = await mintPOAP(
+      //       eventId,
+      //       poapData.name,
+      //       poapData.image ? URL.createObjectURL(poapData.image) : '',
+      //       poapData.description,
+      //       ''
+      //     )
+      //     console.log('POAP mint transaction:', mintTx)
+      //   } catch (mintError) {
+      //     console.error('Error minting POAP:', mintError)
+      //     alert('Failed to mint POAP. Please try again.')
+      //   }
+      // }
+
+      // Redirect to discover page
+      router.push(`/discover`)
     } catch (error) {
-      console.error('Error creating event:', error);
-      setIsCreating(false);
+      console.error('Error creating event:', error)
+      alert('Failed to create event. Please try again.')
+    } finally {
+      setIsCreating(false)
     }
   }
-  
+
   const handleTicketSave = () => {
     setEventData({
       ...eventData,
@@ -207,7 +243,7 @@ export default function CreateEventPage() {
           <Link href="/landing" className="flex items-center space-x-2 sm:space-x-3 z-20">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center">
               <Image 
-                src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
+                src="https://i.ibb.co/PZHSkCV/Suilens-Logo-Mark-Suilens-Black.png" 
                 alt="Suilens Logo" 
                 width={60}
                 height={60}
@@ -262,7 +298,7 @@ export default function CreateEventPage() {
             )}
           </div>
         </div>
-        
+
         {/* Mobile Navigation Menu */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-10 bg-white pt-16 pb-6 px-4">
@@ -302,7 +338,7 @@ export default function CreateEventPage() {
               >
                 Bounties
               </Link>
-              
+
               {/* Mobile Actions */}
               <div className="flex flex-col space-y-4 pt-4">
                 {!user ? (
@@ -333,7 +369,7 @@ export default function CreateEventPage() {
           </Link>
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Create Event</h1>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Image Upload Section */}
           <div className="bg-gray-900 rounded-lg h-32 sm:h-40 flex items-center justify-center relative overflow-hidden">
@@ -656,7 +692,7 @@ export default function CreateEventPage() {
                   <Button 
                     type="button" 
                     className="bg-blue-500 hover:bg-blue-600 w-full sm:w-auto"
-                    onClick={() => setPoapDialogOpen(false)}
+                    onClick={handlePoapSave}
                   >
                     Add POAP
                   </Button>

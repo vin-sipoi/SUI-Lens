@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FaApple } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
+import { useCurrentAccount, ConnectButton } from '@mysten/dapp-kit';
+import { useUser } from "@/app/landing/UserContext"
 
 const wallets = [
 	{ name: 'Slush', icon: '/download (2) 1.png' },
@@ -24,11 +26,53 @@ export default function SignInPage() {
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 	const router = useRouter();
-	// Add state to handle client-side rendering
 	const [isMobile, setIsMobile] = useState(false);
 	const [mounted, setMounted] = useState(false);
+	const { login, user } = useUser();
+	const account = useCurrentAccount();
 
-	// Use useEffect to safely access window object after component mounts
+	const handleWalletConnect = async () => {
+		console.log("Starting wallet connection...");
+		try {
+			if (account) {
+				console.log("Wallet connected:", account.address);
+				await login({
+					name: 'Sui User',
+					email: '',
+					emails: [{ address: '', primary: true, verified: false }],
+					avatarUrl: '/placeholder-user.jpg',
+					walletAddress: account.address,
+				});
+				console.log("User logged in:", user);
+				router.push('/landing');
+				console.log("Redirecting to /landing...");
+			} else {
+				console.error("No wallet connected.");
+			}
+		} catch (error) {
+			console.error("Error connecting wallet:", error);
+		}
+	};
+
+	const handleEmailSignIn = async (e: React.FormEvent) => {
+		e.preventDefault();
+		try {
+			// Simulate successful sign in
+			console.log('Signing in with email:', email);
+			router.push('/landing');
+
+			login({
+				name: 'Email User',
+				email: email,
+				emails: [{ address: email, primary: true, verified: false }],
+				avatarUrl: '/placeholder-user.jpg',
+				walletAddress: '',
+			});
+		} catch (error) {
+			console.error(error);
+		}
+	};
+
 	useEffect(() => {
 		setMounted(true);
 		setIsMobile(window.innerWidth < 640);
@@ -41,20 +85,24 @@ export default function SignInPage() {
 		return () => window.removeEventListener('resize', handleResize);
 	}, []);
 
-	const handleEmailSignIn = (e: React.FormEvent) => {
-		e.preventDefault();
-		// Simulate successful sign in
-		console.log('Signing in with email:', email);
-		router.push('/dashboard');
-	};
+	useEffect(() => {
+		console.log("useEffect triggered. Account:", account, "User:", user);
+		if (account && !user) {
+			login({
+				name: 'Sui User',
+				email: '',
+				emails: [{ address: '', primary: true, verified: false }],
+				avatarUrl: '/placeholder-user.jpg',
+				walletAddress: account.address,
+			});
+			router.push('/landing');
+		}
+	}, [account, login, user, router]);
 
 	return (
 		<div className="min-h-screen font-inter bg-white">
-			{/* Main Content */}
 			<div className="min-h-screen flex flex-col lg:flex-row">
-				{/* Left: Auth Card */}
 				<div className="flex-1 flex flex-col justify-center px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-8 sm:py-12">
-					{/* Mobile Logo - Only shown on small screens */}
 					<div className="flex justify-center mb-8 lg:hidden">
 						<Image
 							src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png"
@@ -65,8 +113,6 @@ export default function SignInPage() {
 							unoptimized
 						/>
 					</div>
-
-					{/* Auth Form Container */}
 					<div className="w-full max-w-md mx-auto lg:max-w-lg xl:max-w-xl">
 						<div className="mb-8 lg:mb-10">
 							<h1 className="text-[#1C1C1C] text-xl sm:text-2xl lg:text-2xl font-medium mb-2 text-center lg:text-left">
@@ -76,8 +122,6 @@ export default function SignInPage() {
 								Login with either socials or email.
 							</p>
 						</div>
-
-						{/* Social Sign-in Buttons */}
 						<div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6">
 							<Button
 								variant="outline"
@@ -100,8 +144,6 @@ export default function SignInPage() {
 								<span className="sm:hidden">Apple ID</span>
 							</Button>
 						</div>
-
-						{/* Divider */}
 						<div className="flex items-center my-6">
 							<div className="flex-1 h-px bg-gray-200" />
 							<span className="mx-4 text-[#101928] text-xs sm:text-lg font-normal">
@@ -109,31 +151,43 @@ export default function SignInPage() {
 							</span>
 							<div className="flex-1 h-px bg-gray-200" />
 						</div>
-
-						{/* Wallet Options */}
 						<div className="space-y-2 sm:space-y-3 mb-6">
-							{/* Only render wallets after component is mounted and browser is available */}
 							{mounted &&
 								wallets
 									.slice(0, isMobile ? 3 : wallets.length)
-									.map((wallet) => (
-										<Button
-											key={wallet.name}
-											variant="outline"
-											className="w-full flex items-center gap-3 py-4 sm:py-5 text-sm sm:text-base font-medium justify-start"
-										>
-											<Image
-												src={wallet.icon}
-												alt={wallet.name}
-												width={20}
-												height={20}
-												className="sm:w-6 sm:h-6 rounded"
-											/>
-											{wallet.name}
-										</Button>
-									))}
-
-							{/* Show remaining wallets on mobile in a collapsible way */}
+									.map((wallet) =>
+										wallet.name === 'Slush' ? (
+											<ConnectButton
+												key={wallet.name}
+												className="w-full flex items-center gap-3 py-4 sm:py-5 text-sm sm:text-base font-medium justify-start"
+												style={{ width: '100%' }}
+											>
+												<Image
+													src={wallet.icon}
+													alt={wallet.name}
+													width={20}
+													height={20}
+													className="sm:w-6 sm:h-6 rounded"
+												/>
+												{wallet.name}
+											</ConnectButton>
+										) : (
+											<Button
+												key={wallet.name}
+												variant="outline"
+												className="w-full flex items-center gap-3 py-4 sm:py-5 text-sm sm:text-base font-medium justify-start"
+											>
+												<Image
+													src={wallet.icon}
+													alt={wallet.name}
+													width={20}
+													height={20}
+													className="sm:w-6 sm:h-6 rounded"
+												/>
+												{wallet.name}
+											</Button>
+										)
+									)}
 							{mounted && isMobile && wallets.length > 3 && (
 								<details className="group">
 									<summary className="cursor-pointer text-blue-600 text-sm font-medium py-2 list-none">
@@ -141,28 +195,43 @@ export default function SignInPage() {
 										<span className="hidden group-open:inline">Show less</span>
 									</summary>
 									<div className="space-y-2 mt-2">
-										{wallets.slice(3).map((wallet) => (
-											<Button
-												key={wallet.name}
-												variant="outline"
-												className="w-full flex items-center gap-3 py-4 text-sm font-medium justify-start"
-											>
-												<Image
-													src={wallet.icon}
-													alt={wallet.name}
-													width={20}
-													height={20}
-													className="rounded"
-												/>
-												{wallet.name}
-											</Button>
-										))}
+										{wallets.slice(3).map((wallet) =>
+											wallet.name === 'Slush' ? (
+												<ConnectButton
+													key={wallet.name}
+													className="w-full flex items-center gap-3 py-4 text-sm font-medium justify-start"
+													style={{ width: '100%' }}
+												>
+													<Image
+														src={wallet.icon}
+														alt={wallet.name}
+														width={20}
+														height={20}
+														className="rounded"
+													/>
+													{wallet.name}
+												</ConnectButton>
+											) : (
+												<Button
+													key={wallet.name}
+													variant="outline"
+													className="w-full flex items-center gap-3 py-4 text-sm font-medium justify-start"
+												>
+													<Image
+														src={wallet.icon}
+														alt={wallet.name}
+														width={20}
+														height={20}
+														className="rounded"
+													/>
+													{wallet.name}
+												</Button>
+											)
+										)}
 									</div>
 								</details>
 							)}
 						</div>
-
-						{/* Email/Password Form */}
 						<form
 							onSubmit={handleEmailSignIn}
 							className="space-y-4 sm:space-y-6"
@@ -252,8 +321,6 @@ export default function SignInPage() {
 						</div>
 					</div>
 				</div>
-
-				{/* Right: Logo Section - Hidden on mobile, visible on large screens */}
 				<div className="hidden lg:flex flex-1 items-center justify-center bg-[#56A8FF] min-h-screen">
 					<div className="text-center">
 						<Image
