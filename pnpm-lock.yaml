@@ -143,6 +143,9 @@ importers:
       next-themes:
         specifier: ^0.4.4
         version: 0.4.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      pnpm:
+        specifier: ^10.12.4
+        version: 10.12.4
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
@@ -2411,6 +2414,11 @@ packages:
   pngjs@5.0.0:
     resolution: {integrity: sha512-40QW5YalBNfQo5yRYmiw7Yz6TKKVr3h6970B2YE+3fQpsWcrbj1PzJgxeJ19DRQjhMbKPIuMY8rFaXc8moolVw==}
     engines: {node: '>=10.13.0'}
+
+  pnpm@10.12.4:
+    resolution: {integrity: sha512-Xqiw3u2U7WhpHJutTJVUknBcXuuKh++GvGLHSiawN7CP+VcPEIsuTb0d0akYb+qSXlJ/FBxkjoWvRWMQdGgBhA==}
+    engines: {node: '>=18.12'}
+    hasBin: true
 
   poseidon-lite@0.2.1:
     resolution: {integrity: sha512-xIr+G6HeYfOhCuswdqcFpSX47SPhm0EpisWJ6h7fHlWwaVIvH3dLnejpatrtw6Xc6HaLrpq05y7VRfvDmDGIog==}
@@ -5203,6 +5211,8 @@ snapshots:
   pirates@4.0.7: {}
 
   pngjs@5.0.0: {}
+
+  pnpm@10.12.4: {}
 
   poseidon-lite@0.2.1: {}
 
