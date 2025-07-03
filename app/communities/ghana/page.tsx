@@ -1,18 +1,8 @@
-'use client'
-
-import React, { useState } from 'react';
+import React from 'react';
 import Image from 'next/image'; 
 import Link from 'next/link';
-import { Menu } from 'lucide-react';
-import { Button } from "@/components/ui/button"
-import { ConnectButton } from '@mysten/dapp-kit';
-import {useUser} from '@/app/landing/UserContext';
 
 const EventPage: React.FC = () => {
-
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const {user} = useUser();
-
   const mainEvent = {
     title: 'Game Night in Ghana',
     image: 'https://i.ibb.co/8DGCTXfs/Go-Qzp-CXYAAgop4.jpg',
@@ -46,113 +36,41 @@ const EventPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800">
       {/* Header */}
-      <header className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <Link href="/landing" className="flex items-center space-x-2 sm:space-x-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center">
-                <Image 
-                  src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
-                  alt="Suilens Logo" 
-                  width={60}
-                  height={60}
-                  className="object-contain"
-                />
-              </div>
-              <span className="text-xl sm:text-2xl font-bold text-[#020B15]">Suilens</span>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex text-sm font-inter items-center space-x-8">
-              {["Communities", "Discover", "Dashboard","Bounties"].map((item) => (
-                <Link
-                  key={item}
-                  href={`/${item.toLowerCase().replace(' ', '-')}`}
-                  className="text-gray-600 font-medium hover:text-gray-900 transition-colors"
-                >
-                  {item}
-                </Link>
-              ))}
-            </nav>
-
-            {/* Desktop Actions */}
-            <div className="hidden lg:flex text-sm items-center space-x-4">                                    
-              <Link href='/create'>
-                <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-                  Create Event
-                </Button>
-              </Link>
-              {!user ? (
-                <ConnectButton />
-              ) : (
-                <Link href="/profile">
-                  <img
-                    src={user.avatarUrl || "https://via.placeholder.com/100"}
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer"
-                  />
-                </Link>
-              )}
-            </div>
-
-            {/* Mobile Menu Button */}
-            <div className="lg:hidden flex items-center space-x-2">
-              {!user ? (
-                <ConnectButton />
-              ) : (
-                <Link href="/profile">
-                  <img
-                    src={user.avatarUrl || "https://via.placeholder.com/100"}
-                    alt="Profile"
-                    className="w-8 h-8 rounded-full border-2 border-blue-500 cursor-pointer"
-                  />
-                </Link>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2"
-              >
-                <Menu className="w-5 h-5" />
-              </Button>
-            </div>
+      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <Link href="/landing" className="flex items-center space-x-3 group">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+            <Image 
+              src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
+              alt="Suilens Logo" 
+              width={60}
+              height={60}
+              className="object-contain"
+            />
           </div>
+          <span className="text-2xl font-bold text-gray-800">Suilens</span>
+          </Link>
 
-          {/* Mobile Navigation */}
-          {isMobileMenuOpen && (
-            <nav className="lg:hidden mt-4 pb-4 border-t pt-4">
-              <div className="flex flex-col space-y-3">
-                {["Communities", "Discover", "Dashboard","Bounties"].map((item) => (
-                  <Link
-                    key={item}
-                    href={`/${item.toLowerCase().replace(' ', '-')}`}
-                    className="text-gray-600 font-medium hover:text-gray-900 transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {item}
-                  </Link>
-                ))}
-                <Link href='/create' onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl w-full mt-2">
-                    Create Event
-                  </Button>
-                </Link>
-              </div>
-            </nav>
-          )}
+          <nav className="hidden lg:flex items-center space-x-8">
+            {["Home", "Communities", "Explore", "Dashboard"].map((item) => (
+              <Link
+                key={item}
+                href={`/${item.toLowerCase().replace(' ', '-')}`}
+                className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+              >
+                {item}
+              </Link>
+            ))}
+          </nav>
         </div>
       </header>
-
-
       {/* Main Event Section */}
       <div className="container mx-auto p-6">
         <div className="bg-white rounded-lg shadow-md overflow-hidden"
         style={{ backgroundImage: `url(${mainEvent.image})`, height: '700px', backgroundSize: 'cover', backgroundRepeat: 'no-repeat' }}>
-          
-          <div className=" top-0 pl-6 m-6 text-white relative">
-            <h1 className="text-5xl font-medium">{mainEvent.title}</h1>
+          <div className="absolute insert-0 bg-black bg-opacity-40"></div>
+          <div className="pl-6 text-white">
+            <h1 className="text-3xl font-bold">{mainEvent.title}</h1>
             <p className="text-white-600 mt-2">{mainEvent.description}</p>
             <p className="text-sm text-white-500 mt-2">{mainEvent.date}</p>
             <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
