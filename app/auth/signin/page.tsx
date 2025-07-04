@@ -29,62 +29,46 @@ export default function SignInPage() {
 	const [isMobile, setIsMobile] = useState(false);
 	const [mounted, setMounted] = useState(false);
 	const { login, user } = useUser();
-	const account = useCurrentAccount();
+const account = useCurrentAccount();
+const [connectModalOpen, setConnectModalOpen] = useState(false);
 
-<<<<<<< HEAD
-	const [connectModalOpen, setConnectModalOpen] = useState(false);
-
-
-	const handleWalletConnect = async () => {
-		console.log("Starting wallet connection...");
-		try {
-			if (account) {
-				console.log("Wallet connected:", account.address);
-				await login({
-					name: 'Sui User',
-					email: '',
-					emails: [{ address: '', primary: true, verified: false }],
-					avatarUrl: '/placeholder-user.jpg',
-					walletAddress: account.address,
-				});
-				console.log("User logged in:", user);
-				router.push('/landing');
-				console.log("Redirecting to /landing...");
-			} else {
-				console.error("No wallet connected.");
-			}
-		} catch (error) {
-			console.error("Error connecting wallet:", error);
-		}
-	};
-=======
 const handleWalletConnect = async () => {
+  console.log("Starting wallet connection...");
   if (!account) {
-	console.error("No wallet connected.");
-	return;
+    console.error("No wallet connected.");
+    setConnectModalOpen(true);
+    return;
   }
   try {
-	// Call backend to login or create user
-	const res = await fetch('/api/auth/wallet-login', {
-	  method: 'POST',
-	  headers: { 'Content-Type': 'application/json' },
-	  body: JSON.stringify({ walletAddress: account.address }),
-	});
-	if (!res.ok) {
-	  throw new Error('Wallet login failed');
-	}
-	const data = await res.json();
-	// Update user context with backend user info
-	await login({
-	  ...data.user,
-	  walletAddress: account.address,
-	});
-	router.push('/landing');
+    console.log("Wallet connected:", account.address);
+    // Call backend to login or create user (from fbbd849)
+    const res = await fetch('/api/auth/wallet-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ walletAddress: account.address }),
+    });
+    if (!res.ok) {
+      throw new Error('Wallet login failed');
+    }
+    const data = await res.json();
+    // Update user context with backend user info, merging with HEAD's defaults
+    await login({
+      ...data.user,
+      name: data.user.name || 'Sui User', // Fallback from HEAD
+      email: data.user.email || '', // Fallback from HEAD
+      emails: data.user.emails || [{ address: '', primary: true, verified: false }], // Fallback from HEAD
+      avatarUrl: data.user.avatarUrl || '/placeholder-user.jpg', // Fallback from HEAD
+      walletAddress: account.address,
+    });
+    console.log("User logged in:", user);
+    setConnectModalOpen(false);
+    router.push('/landing');
+    console.log("Redirecting to /landing...");
   } catch (error) {
-	console.error("Error connecting wallet:", error);
+    console.error("Error connecting wallet:", error);
+    setConnectModalOpen(true);
   }
 };
->>>>>>> fbbd849 (initial intergration with the backend to handle auth)
 
 	const handleEmailSignIn = async (e: React.FormEvent) => {
 		e.preventDefault();
