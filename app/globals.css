@@ -348,19 +348,6 @@ html {
   width: 8px;
 }
 
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #3b82f6, #ec4899);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #2563eb, #db2777);
-}
-
 /* Mobile optimizations */
 @media (max-width: 768px) {
   .base-card,

@@ -49,8 +49,7 @@ export default function HomePage() {
 	}, []);
 	const [email, setEmail] = useState('');
 	const [showDropdown, setShowDropdown] = useState(false);
-	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+	
 	// When wallet connects, log in with wallet address
 	useEffect(() => {
 		if (account && !user) {
@@ -111,11 +110,11 @@ export default function HomePage() {
 			<Header />
 
 			{/* Hero Section */}
-			<section className="py-16 sm:py-20 lg:py-32 relative">
+			<section className="py-6 sm:py-20 lg:py-29 relative">
 				<div className="container mx-auto px-4 sm:px-6 lg:px-8">
 					<div className="max-w-4xl mx-auto text-center sm:text-left space-y-8">
 						<div className="space-y-6">
-							<h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-inter font-semibold text-[#020B15] leading-tight">
+							<h1 className="text-2xl sm:text-4xl md:text-6xl lg:text-6xl font-inter font-bold text-[#020B15] leading-tight">
 								Discover, Create,
 								<br />
 								and Share Events
@@ -131,7 +130,7 @@ export default function HomePage() {
 
 						<div className="pt-4">
 							<Link href="/discover">
-								<Button className="w-full sm:w-auto bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white font-inter px-8 sm:px-12 py-6 sm:py-9 text-base sm:text-lg font-semibold rounded-xl shadow-lg">
+								<Button className="w-full sm:w-auto bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white font-inter px-6 sm:px-7 py-4 sm:py-7 text-base sm:text-lg font-medium rounded-xl shadow-lg">
 									Start Exploring
 								</Button>
 							</Link>

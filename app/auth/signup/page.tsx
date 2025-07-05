@@ -6,12 +6,12 @@ import Image from "next/image"
 import Link from "next/link"
 import { FcGoogle } from "react-icons/fc"
 import { FaApple, FaWallet } from "react-icons/fa"
-import { useCurrentAccount, ConnectButton } from "@mysten/dapp-kit"
+import { useCurrentAccount, ConnectModal } from "@mysten/dapp-kit"
 import { useUser } from "@/context/UserContext"
 import { useRouter } from 'next/navigation'
 
 const wallets = [
-  { name: "Slush", icon: "/placeholder-logo.svg" },
+  { name: "Slush", icon: "/download (2) 1.png" },
 ]
 
 export default function SignUpPage() {
@@ -24,6 +24,12 @@ export default function SignUpPage() {
   const [otp, setOtp] = useState("")
   const [isVerifying, setIsVerifying] = useState(false)
   const [otpError, setOtpError] = useState("")
+  const [connectModalOpen, setConnectModalOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Auto-redirect when wallet is connected
   useEffect(() => {
@@ -67,6 +73,7 @@ export default function SignUpPage() {
       console.log("Sending OTP to:", emailValue)
       // Here you would typically call your API to send OTP
       // await sendOtp(emailValue)
+      //Bevon do your thing
       
       setShowOtpDialog(true)
     } catch (error) {
@@ -86,7 +93,7 @@ export default function SignUpPage() {
       // Mock verification - in real app, call your API
       await new Promise(resolve => setTimeout(resolve, 2000))
       
-      // Mock success condition (in real app, check API response)
+      // Mock success condition, add the OTP backend
       if (otp === "123456") {
         await login({
           name: email.split('@')[0],
@@ -95,8 +102,7 @@ export default function SignUpPage() {
           avatarUrl: '/placeholder-user.jpg',
           walletAddress: undefined,
         })
-        console.log("Email verified, redirecting to landing...")
-        router.push('/landing')
+        router.push('/auth/signin')
       } else {
         setOtpError("Invalid OTP. Please try again.")
       }
@@ -156,40 +162,31 @@ export default function SignUpPage() {
                 </p>
               </div>
             )}
-            {wallets.map((wallet) =>
-              wallet.name === "Slush" ? (
-                <ConnectButton
-                  key={wallet.name}
-                  className="w-full flex items-center gap-3 py-4 sm:py-5 text-sm sm:text-base font-medium justify-start"
-                  style={{ width: "100%" }}
-                >
-                  <Image
-                    src={wallet.icon}
-                    alt={wallet.name}
-                    width={20}
-                    height={20}
-                    className="rounded sm:w-6 sm:h-6"
-                  />
-                  {wallet.name}
-                </ConnectButton>
-              ) : (
-                <Button
-                  key={wallet.name}
-                  variant="outline"
-                  className="w-full flex items-center gap-3 py-4 sm:py-5 text-sm sm:text-base font-medium justify-start"
-                >
-                  <Image
-                    src={wallet.icon}
-                    alt={wallet.name}
-                    width={20}
-                    height={20}
-                    className="rounded sm:w-6 sm:h-6"
-                  />
-                  {wallet.name}
-                </Button>
-              )
-            )}
+            {mounted && wallets.map((wallet) => (
+              <Button
+                key={wallet.name}
+                variant="outline"
+                className="w-full flex items-center gap-3 py-4 sm:py-5 text-sm sm:text-base font-medium justify-start"
+                onClick={() => setConnectModalOpen(true)}
+              >
+                <Image
+                  src={wallet.icon}
+                  alt={wallet.name}
+                  width={20}
+                  height={20}
+                  className="rounded sm:w-6 sm:h-6"
+                />
+                <span>{wallet.name}</span>
+              </Button>
+            ))}
           </div>
+
+          {/* Connect Modal */}
+          <ConnectModal
+            trigger={<div />}
+            open={connectModalOpen}
+            onOpenChange={setConnectModalOpen}
+          />
 
           {/* Divider */}
           <div className="flex items-center my-6">
