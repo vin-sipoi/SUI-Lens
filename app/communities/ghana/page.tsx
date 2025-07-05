@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Menu } from 'lucide-react';
 import { Button } from "@/components/ui/button"
 import { ConnectButton } from '@mysten/dapp-kit';
-import {useUser} from '@/app/landing/UserContext';
+import {useUser} from '@/context/UserContext';
 
 const EventPage: React.FC = () => {
 

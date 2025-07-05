@@ -23,14 +23,42 @@ type User = {
 
 type UserContextType = {
   user: User | null
+  setUser: React.Dispatch<React.SetStateAction<User | null>>
   login: (user: User) => void
   logout: () => void
+  updateUserProfile: (updates: Partial<User>) => void
+  updateProfileImage: (imageUrl: string) => void
+  updateUserName: (name: string) => void
+  updateUserEmail: (email: string) => void
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<User | null>({
+    name: "No Name",
+    email: "",
+    username: "Sui User",
+    avatarUrl: "https://via.placeholder.com/100",
+    walletAddress: "",
+    emails: [],
+  });
+
+  const updateUserProfile = (updates: Partial<User>) => {
+    setUser(prev => prev ? { ...prev, ...updates } : prev);
+  };
+
+  const updateProfileImage = (imageUrl: any) => {
+    setUser(prev => prev ? { ...prev, avatarUrl: imageUrl } : prev);
+  };
+
+  const updateUserName = (name: any) => {
+    setUser(prev => prev ? { ...prev, name } : prev);
+  };
+
+  const updateUserEmail = (email: any) => {
+    setUser(prev => prev ? ({ ...prev, email }): prev);
+  };
 
   const login = async (userData: User) => { // Make login async
         console.log("Login function called with:", userData); // Log input
@@ -50,7 +78,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [user])
 
   return (
-    <UserContext.Provider value={{ user, login, logout }}>
+    <UserContext.Provider value={{ user, setUser,updateUserProfile, updateProfileImage, updateUserName, updateUserEmail, login, logout }}>
       {children}
     </UserContext.Provider>
   )

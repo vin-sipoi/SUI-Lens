@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { useCurrentAccount, ConnectButton, useSignAndExecuteTransaction } from '@mysten/dapp-kit'
 import { mintPOAP } from '@/lib/sui-client'
 import { useEventContext } from '@/context/EventContext'
-import { useUser } from '@/app/landing/UserContext'
+import { useUser } from '@/context/UserContext'
 
 interface ClaimPOAPPageProps {
   params: { id: string }

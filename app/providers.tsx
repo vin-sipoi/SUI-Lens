@@ -6,7 +6,7 @@ import { getFullnodeUrl } from '@mysten/sui/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
-import { UserProvider } from './landing/UserContext';
+import { UserProvider } from '../context/UserContext';
 
 // Initialize QueryClient
 const queryClient = new QueryClient();

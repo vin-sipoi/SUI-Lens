@@ -7,7 +7,7 @@ import { Calendar, DollarSign, Menu } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { ConnectButton } from "@mysten/dapp-kit"
-import { useUser } from '../landing/UserContext';
+import { useUser } from '../../context/UserContext';
 
 interface Bounty {
   id: number

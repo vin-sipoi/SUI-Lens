@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, MapPin, Clock, Users, Share2, Heart } from "lucide-react";
 import Image from "next/image";
 import { mintPOAP } from "@/lib/sui-client";
-import { useUser } from "@/app/landing/UserContext";
+import { useUser } from "@/context/UserContext";
 
 interface EventDetailsProps {
   eventData: any;

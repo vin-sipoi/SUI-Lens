@@ -1,27 +1,77 @@
 "use client"
-import React, { useState } from "react";
-import { useUser } from "../landing/UserContext";
+import React, { useState, useRef } from "react";
+import { useUser } from "@/context/UserContext";
 import { useCurrentAccount } from "@mysten/dapp-kit";
-import { Copy, Calendar } from "lucide-react";
+import { Copy, Calendar, Edit2, Check, X, Upload } from "lucide-react";
 import Header from "../components/Header";
 
 export default function Profile() {
-  const { user } = useUser();
+  const { user, updateProfileImage, updateUserName, updateUserEmail } = useUser();
   const account = useCurrentAccount();
   const [copied, setCopied] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [tempName, setTempName] = useState("");
+  const [tempEmail, setTempEmail] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const walletAddress = account?.address || user?.walletAddress || "";
-  const primaryEmail = user?.emails?.find(e => e.primary)?.address || user?.email || "";
-  const name = user?.name || "No Name";
   const username = user?.username || "Sui User";
-  const poaps = user?.poapsCollected ?? 5;
-  const events = user?.eventsAttended ?? 9;
+  const poaps = 0;
+  const events = 0;
 
   const copyToClipboard = () => {
     if (!walletAddress) return;
     navigator.clipboard.writeText(walletAddress);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  interface ImageUploadEvent extends React.ChangeEvent<HTMLInputElement> {}
+
+  const handleImageUpload = (event: ImageUploadEvent) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        updateProfileImage((e.target as FileReader).result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const startEditingName = () => {
+    setTempName(user?.name || "");
+    setIsEditingName(true);
+  };
+
+  const startEditingEmail = () => {
+    setTempEmail(user?.email || "");
+    setIsEditingEmail(true);
+  };
+
+  const saveName = () => {
+    updateUserName(tempName);
+    setIsEditingName(false);
+  };
+
+  const saveEmail = () => {
+    updateUserEmail(tempEmail);
+    setIsEditingEmail(false);
+  };
+
+  const cancelNameEdit = () => {
+    setTempName("");
+    setIsEditingName(false);
+  };
+
+  const cancelEmailEdit = () => {
+    setTempEmail("");
+    setIsEditingEmail(false);
   };
 
   return (
@@ -34,15 +84,24 @@ export default function Profile() {
             {/* Avatar positioned to overlap both sections */}
             <div className="absolute left-1/2 top-full transform -translate-x-1/2 -translate-y-1/2 z-10">
               <div className="relative">
-                <img
-                  src={user?.avatarUrl || "https://via.placeholder.com/100"}
-                  alt="Profile"
-                  className="w-16 h-16 rounded-full object-cover border-4 border-white shadow-lg"
-                  style={{
-                    boxShadow: "0 2px 8px 0 rgba(0,0,0,0.08)",
-                    background: "#fff"
-                  }}
-                />
+                <div className="relative group">
+                  <img
+                    src={user?.avatarUrl || "https://via.placeholder.com/100"}
+                    alt="Profile"
+                    className="w-16 h-16 rounded-full object-cover border-4 border-white shadow-lg"
+                    style={{
+                      boxShadow: "0 2px 8px 0 rgba(0,0,0,0.08)",
+                      background: "#fff"
+                    }}
+                  />
+                  {/* Upload overlay */}
+                  <div 
+                    className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    onClick={triggerImageUpload}
+                  >
+                    <Upload className="w-5 h-5 text-white" />
+                  </div>
+                </div>
                 {/* Active Status Indicator */}
                 <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-4 border-white shadow-md"></div>
               </div>
@@ -52,6 +111,15 @@ export default function Profile() {
               </div>
             </div>
           </div>
+
+          {/* Hidden file input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            accept="image/*"
+            className="hidden"
+          />
 
           {/* Content section with white background */}
           <div className="px-4 py-6 space-y-6 pt-12">
@@ -84,8 +152,45 @@ export default function Profile() {
             {/* Name Section - inline layout */}
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-gray-500 text-xs font-medium">Name</span>
-              <div className="bg-gray-50 rounded-md px-4 py-2 border border-gray-200">
-                <span className="text-gray-800 text-sm font-medium">{name}</span>
+              <div className="flex items-center gap-2">
+                {isEditingName ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={tempName}
+                      onChange={(e) => setTempName(e.target.value)}
+                      className="bg-gray-50 rounded-md px-3 py-2 border border-gray-200 text-sm font-medium text-gray-800 min-w-0"
+                      autoFocus
+                    />
+                    <button
+                      onClick={saveName}
+                      className="p-1.5 hover:bg-green-100 rounded-lg transition-colors text-green-600"
+                      title="Save"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={cancelNameEdit}
+                      className="p-1.5 hover:bg-red-100 rounded-lg transition-colors text-red-600"
+                      title="Cancel"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className="bg-gray-50 rounded-md px-4 py-2 border border-gray-200">
+                      <span className="text-gray-800 text-sm font-medium">{user?.name || "No Name"}</span>
+                    </div>
+                    <button
+                      onClick={startEditingName}
+                      className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
+                      title="Edit name"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -95,8 +200,45 @@ export default function Profile() {
             {/* Email Section - inline layout */}
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-gray-500 text-sm font-medium">Email Address</span>
-              <div className="bg-gray-50 rounded-md px-4 py-2 border border-gray-200">
-                <span className="text-gray-800 text-sm font-medium">{primaryEmail || "No email"}</span>
+              <div className="flex items-center gap-2">
+                {isEditingEmail ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="email"
+                      value={tempEmail}
+                      onChange={(e) => setTempEmail(e.target.value)}
+                      className="bg-gray-50 rounded-md px-3 py-2 border border-gray-200 text-sm font-medium text-gray-800 min-w-0"
+                      autoFocus
+                    />
+                    <button
+                      onClick={saveEmail}
+                      className="p-1.5 hover:bg-green-100 rounded-lg transition-colors text-green-600"
+                      title="Save"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={cancelEmailEdit}
+                      className="p-1.5 hover:bg-red-100 rounded-lg transition-colors text-red-600"
+                      title="Cancel"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className="bg-gray-50 rounded-md px-4 py-2 border border-gray-200">
+                      <span className="text-gray-800 text-sm font-medium">{user?.email || "No email"}</span>
+                    </div>
+                    <button
+                      onClick={startEditingEmail}
+                      className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
+                      title="Edit email"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 

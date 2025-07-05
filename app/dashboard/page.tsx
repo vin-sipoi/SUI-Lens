@@ -11,7 +11,7 @@ import { ConnectButton } from "@mysten/dapp-kit"
 import { useEventStore } from "@/store/EventStore"
 import Image from "next/image"
 import GuestList from "@/components/GuestList"
-import { useUser } from "../landing/UserContext"
+import { useUser } from "../../context/UserContext"
 import { ProfileDropdown } from "../landing/ProfileDropDown"
 
 export default function DashboardPage() {
@@ -303,6 +303,16 @@ export default function DashboardPage() {
               <Image src="/Vector (1).png" alt ="reg" width={20} height={20}/>
               Blast
             </button>
+            <Link 
+                href="/bounties" 
+                className="flex items-center font-medium text-lg m-2 p-2 gap-2 text-gray-400 hover:text-white"
+                onClick={() => {
+                  if (isMobile) setSidebarOpen(false);
+                }}
+              >
+                <Image src="/Vector (2).png" alt="" width={20} height={20}/>
+                Bounties
+              </Link>
             <div className="p-6 m-3">
               <span className="text-gray-500 font-normal text-xl mb-2 block">Insight</span>
               <button 
@@ -314,16 +324,7 @@ export default function DashboardPage() {
                 <Image src="/bxs_chart.png" alt="" width={20} height={20}/>
                 Statistics
               </button>
-              <Link 
-                href="/bounties" 
-                className="flex items-center font-medium text-lg m-2 p-2 gap-2 text-gray-400 hover:text-white"
-                onClick={() => {
-                  if (isMobile) setSidebarOpen(false);
-                }}
-              >
-                <Image src="/Vector (2).png" alt="" width={20} height={20}/>
-                Bounties
-              </Link>
+              
             </div>
           </nav>
         </aside>

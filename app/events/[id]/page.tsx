@@ -8,7 +8,7 @@ import Link from "next/link"
 import Image from "next/image"
 import EventDetails from "@/components/EventDetails"
 import { useEventContext } from '@/context/EventContext'
-import { useUser } from '@/app/landing/UserContext'
+import { useUser } from '@/context/UserContext'
 
 const EventDashboard: React.FC = () => {
   const { events, updateEvent } = useEventContext()

@@ -7,9 +7,10 @@ import {
 import { Menu, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ProfileDropdown } from '../landing/ProfileDropDown';
-import { useUser } from '../landing/UserContext';
+import { useUser } from '@/context/UserContext';
 
 export default function Header() {
 	const { user, logout } = useUser();
@@ -17,6 +18,10 @@ export default function Header() {
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 	const account = useCurrentAccount();
 	const disconnectWallet = useDisconnectWallet();
+	const router = useRouter();
+
+	// Check if user is authenticated (you can modify this logic based on your auth system)
+	const isAuthenticated = user && account?.address;
 
 	// Close mobile menu when resizing to desktop
 	useEffect(() => {
@@ -50,6 +55,25 @@ export default function Header() {
 		{ name: 'Dashboard', href: '/dashboard' },
 	];
 
+	// Handle navigation with authentication check
+	const handleNavigation = (href: string) => {
+		if (!isAuthenticated) {
+			router.push('/auth/signin');
+			return;
+		}
+		router.push(href);
+		setMobileMenuOpen(false);
+	};
+
+	// Handle sign in/sign up navigation
+	const handleSignIn = () => {
+		router.push('/auth/signin');
+	};
+
+	const handleSignUp = () => {
+		router.push('/auth/signup');
+	};
+
 	return (
 		<header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
 			<div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
@@ -74,26 +98,37 @@ export default function Header() {
 				{/* Desktop Navigation */}
 				<nav className="hidden lg:flex items-center space-x-8">
 					{navItems.map((item) => (
-						<Link
+						<button
 							key={item.name}
-							href={item.href}
+							onClick={() => handleNavigation(item.href)}
 							className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
 						>
 							{item.name}
-						</Link>
+						</button>
 					))}
 				</nav>
 
 				<div className="flex items-center space-x-4 relative z-20">
-					{/* Only show ConnectButton on desktop or when mobile menu is closed */}
-					{!account?.address && !mobileMenuOpen && (
-						<div className="hidden sm:block">
-							<ConnectButton />
+					{/* Show Sign In/Sign Up buttons when not authenticated */}
+					{!isAuthenticated && !mobileMenuOpen && (
+						<div className="hidden sm:flex items-center space-x-3">
+							<button
+								onClick={handleSignIn}
+								className="px-4 py-2  font-medium transition-colors"
+							>
+								Sign In
+							</button>
+							<button
+								onClick={handleSignUp}
+								className="px-4 py-2 bg-[#4DA2FF] text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+							>
+								Sign Up
+							</button>
 						</div>
 					)}
 
-					{/* Show profile dropdown when wallet is connected */}
-					{account?.address && (
+					{/* Show profile dropdown when authenticated */}
+					{isAuthenticated && (
 						<div className="relative profile-dropdown-container">
 							<button
 								onClick={() => setShowDropdown((v) => !v)}
@@ -143,20 +178,30 @@ export default function Header() {
 					<div className="pt-20 pb-6 px-4 sm:px-6 h-full overflow-y-auto">
 						<nav className="flex flex-col space-y-6">
 							{navItems.map((item) => (
-								<Link
+								<button
 									key={item.name}
-									href={item.href}
-									className="text-lg font-medium text-gray-900 hover:text-blue-600 py-2 border-b border-gray-100"
-									onClick={() => setMobileMenuOpen(false)}
+									onClick={() => handleNavigation(item.href)}
+									className="text-lg font-medium text-gray-900 hover:text-blue-600 py-2 border-b border-gray-100 text-left"
 								>
 									{item.name}
-								</Link>
+								</button>
 							))}
 
-							{/* Show ConnectButton in mobile menu when not connected */}
-							{!account?.address && (
-								<div className="py-4">
-									<ConnectButton />
+							{/* Show Sign In/Sign Up buttons in mobile menu when not authenticated */}
+							{!isAuthenticated && (
+								<div className="py-4 space-y-3">
+									<button
+										onClick={handleSignIn}
+										className="w-full px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors border border-gray-300 rounded-lg"
+									>
+										Sign In
+									</button>
+									<button
+										onClick={handleSignUp}
+										className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+									>
+										Sign Up
+									</button>
 								</div>
 							)}
 						</nav>

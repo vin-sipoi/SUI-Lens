@@ -5,8 +5,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { UserProvider } from '../landing/UserContext';
-import { useUser } from '../landing/UserContext';
+import { UserProvider } from '../../context/UserContext';
+import { useUser } from '../../context/UserContext';
 import { Menu, X, Search } from 'lucide-react';
 
 export default function CommunityEventsPage(){

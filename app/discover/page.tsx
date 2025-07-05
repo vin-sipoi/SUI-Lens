@@ -17,7 +17,8 @@ import Link from "next/link"
 import Image from "next/image"
 import EventDetails from '@/components/EventDetails';
 import { useEventContext } from '@/context/EventContext'
-import { useUser } from '@/app/landing/UserContext'
+import { useUser } from '@/context/UserContext'
+import Header from "../components/Header"
 
 const EventDashboard: React.FC = () => {
   const { events, updateEvent } = useEventContext()
@@ -65,109 +66,7 @@ const EventDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
       {/* Header */}
-      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/landing" className="flex items-center space-x-2 sm:space-x-3 group z-20">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-              <Image 
-                src="https://i.ibb.co/PZHSkCV/Suilens-Logo-Mark-Suilens-Black.png" 
-                alt="Suilens Logo" 
-                width={60}
-                height={60}
-                className="object-contain"
-              />
-            </div>
-            <span className="text-xl sm:text-2xl font-bold text-gray-800">Suilens</span>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
-            <Link
-              href="/landing"
-              className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
-            >
-              Home
-            </Link>
-            <Link
-              href="/communities"
-              className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
-            >
-              Communities
-            </Link>
-            <Link
-              href="/discover"
-              className="text-gray-900 font-bold transition-colors"
-            >
-              Discover Events
-            </Link>
-            <Link
-              href="/bounties"
-              className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
-            >
-              Bounties
-            </Link>
-            <Link
-              href="/dashboard"
-              className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
-            >
-              Dashboard
-            </Link>
-          </nav>
-
-          {/* Mobile menu button */}
-          <button 
-            className="md:hidden p-2 text-gray-600 hover:text-gray-900 focus:outline-none z-20"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
-
-        {/* Mobile Navigation Menu */}
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-10 bg-white pt-16 pb-6 px-4">
-            <nav className="flex flex-col space-y-6">
-              <Link
-                href="/landing"
-                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link
-                href="/communities"
-                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Communities
-              </Link>
- Sebastián
-              <Link
-                href="/discover"
-                className="text-lg font-bold text-blue-600 py-2 border-b border-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Discover Events
-              </Link>
-              <Link
-                href="/bounties"
-                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Bounties
-              </Link>
-              <Link
-                href="/dashboard"
-                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
-            </nav>
-          </div>
-        )}
-      </header>
+      <Header />
 
       {/* Search and Filter Section */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">

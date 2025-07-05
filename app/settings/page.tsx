@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "../landing/UserContext";
+import { useUser } from "../../context/UserContext";
 import { useState, useEffect } from "react";
 import clsx from "clsx";
 import Header from "../components/Header";

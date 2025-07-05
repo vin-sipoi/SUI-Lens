@@ -11,14 +11,11 @@ import { useEffect, useState } from 'react';
 import { FaApple } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { ConnectModal, useCurrentAccount } from '@mysten/dapp-kit';
-import { useUser } from "@/app/landing/UserContext"
+import { useUser } from "@/context/UserContext"
 
 const wallets = [
 	{ name: 'Slush', icon: '/download (2) 1.png', status: ''},
-	{ name: 'Nightly', icon: '/download (3) 1.png', status: 'Coming soon'},
-	{ name: 'Backpack', icon: '/download (3) 2.png', status: 'Coming soon'},
-	{ name: 'Hana Wallet', icon: '/download (4) 1.png', status: 'Coming soon'},
-	{ name: 'OKX Wallet', icon: '/download (2) 2.png', status: 'Coming soon'},
+	
 ];
 
 export default function SignInPage() {
@@ -289,37 +286,7 @@ export default function SignInPage() {
 									/>
 								</div>
 							</div>
-							<div className="space-y-2">
-								<Label
-									htmlFor="password"
-									className="text-gray-700 font-semibold text-sm sm:text-base"
-								>
-									Password
-								</Label>
-								<div className="relative">
-									<Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-									<Input
-										id="password"
-										type={showPassword ? 'text' : 'password'}
-										placeholder="Enter your password"
-										value={password}
-										onChange={(e) => setPassword(e.target.value)}
-										required
-										className="pl-9 sm:pl-10 pr-10 sm:pr-12 py-2.5 sm:py-3 text-base sm:text-lg rounded-xl border-2 focus:border-blue-400"
-									/>
-									<button
-										type="button"
-										onClick={() => setShowPassword(!showPassword)}
-										className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-									>
-										{showPassword ? (
-											<EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
-										) : (
-											<Eye className="w-4 h-4 sm:w-5 sm:h-5" />
-										)}
-									</button>
-								</div>
-							</div>
+							
 							<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
 								<label className="flex items-center space-x-2 cursor-pointer">
 									<input type="checkbox" className="rounded border-gray-300" />
