@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-const argon2 = require('argon2');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/userSchema');
 require('dotenv').config();
@@ -7,12 +6,12 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 
-// In-memory storage for refresh tokens
+// In-memory storage for refresh tokens (consider using a database in production)
 let refreshTokens = [];
 
 // Sign up endpoint
 exports.signup = async (req, res) => {
-  const { email, username, password, googleToken } = req.body;
+  const { email, username, googleToken, walletAddress, name, avatarUrl, bio, location } = req.body;
 
   if (googleToken) {
     try {
@@ -31,21 +30,42 @@ exports.signup = async (req, res) => {
       console.timeEnd("Database User Lookup");
 
       if (!user) {
-        user = new User({
+        user = await User.create({
           email: googleEmail,
-          username: payload.name || googleEmail,
+          username: username || payload.name || googleEmail,
+          name: name || payload.name,
           google_oauth_id: payload.sub,
-          password_hash: null,
+          walletAddress,
+          avatarUrl,
+          bio,
+          location,
+          role: 'user',
         });
         console.time("Database Save New User");
         await user.save();
         console.timeEnd("Database Save New User");
+      } else {
+        // Update existing user with new optional fields if provided
+        await user.update({
+          walletAddress: walletAddress || user.walletAddress,
+          name: name || user.name,
+          avatarUrl: avatarUrl || user.avatarUrl,
+          bio: bio || user.bio,
+          location: location || user.location,
+        });
       }
 
-      const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
-      const refreshToken = jwt.sign({ userId: user.id, email: user.email }, REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
+      const token = jwt.sign(
+        { userId: user.id, email: user.email, role: user.role },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+      const refreshToken = jwt.sign(
+        { userId: user.id, email: user.email, role: user.role },
+        REFRESH_TOKEN_SECRET,
+        { expiresIn: '7d' }
+      );
 
-      // Store refresh token securely
       refreshTokens.push(refreshToken);
 
       res.cookie('token', token, {
@@ -58,40 +78,44 @@ exports.signup = async (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'Lax',
-        maxAge: 604800000, // 7 days
+        maxAge: 604800000,
       });
 
-      return res.status(201).json({ message: 'Signup successful' });
+      return res.status(201).json({ message: 'Signup successful', userId: user.id, role: user.role });
     } catch (err) {
       console.error("Google OAuth Error:", err);
       return res.status(400).json({ error: 'Invalid Google token' });
     }
   }
 
-  if (email && password) {
+  if (walletAddress) {
     try {
-      let user = await User.findOne({ where: { email } });
+      let user = await User.findOne({ where: { walletAddress } });
       if (user) {
-        return res.status(400).json({ error: 'User already exists' });
+        return res.status(400).json({ error: 'User already exists with this wallet address' });
       }
 
-      const hashedPassword = await argon2.hash(password, {
-        type: argon2.argon2id,
-        memoryCost: 2 ** 16,
-        timeCost: 3,
-        parallelism: 1,
+      user = await User.create({
+        email: email || `wallet-${walletAddress}@example.com`, // Fallback email if not provided
+        username: username || `user-${walletAddress.slice(0, 8)}`,
+        walletAddress,
+        name,
+        avatarUrl,
+        bio,
+        location,
+        role: 'user',
       });
 
-      user = new User({
-        email,
-        username,
-        password_hash: hashedPassword,
-      });
-
-      await user.save();
-
-      const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
-      const refreshToken = jwt.sign({ userId: user.id, email: user.email }, REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
+      const token = jwt.sign(
+        { userId: user.id, email: user.email, role: user.role },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+      const refreshToken = jwt.sign(
+        { userId: user.id, email: user.email, role: user.role },
+        REFRESH_TOKEN_SECRET,
+        { expiresIn: '7d' }
+      );
 
       refreshTokens.push(refreshToken);
 
@@ -105,73 +129,20 @@ exports.signup = async (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'Lax',
-        maxAge: 604800000, // 7 days
+        maxAge: 604800000,
       });
 
-      return res.status(201).json({ message: 'Signup successful' });
+      return res.status(201).json({ message: 'Signup successful', userId: user.id, role: user.role });
     } catch (err) {
-      console.error("Signup Error:", err);
+      console.error("Wallet Signup Error:", err);
       return res.status(500).json({ error: 'Something went wrong during signup' });
     }
   }
 
-  return res.status(400).json({ error: 'Email, password, or Google token required' });
+  return res.status(400).json({ error: 'Google token or wallet address required' });
 };
 
-exports.loginWithEmailPassword = async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
-
-    const user = await User.findOne({ where: { email } });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Check if the user is a Google OAuth user
-    if (user.google_oauth_id) {
-      return res.status(400).json({ error: 'Please use Google to login' });
-    }
-
-    const isPasswordValid = await argon2.verify(user.password_hash, password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
-
-    // Update last login timestamp
-    await user.update({ last_login: new Date() });
-
-    // Generate JWT tokens
-    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
-    const refreshToken = jwt.sign({ userId: user.id, email: user.email }, REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
-
-    refreshTokens.push(refreshToken);
-
-    // Set cookies
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Lax',
-      maxAge: 3600000,
-    });
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Lax',
-      maxAge: 604800000,
-    });
-
-    res.status(200).json({ message: 'Login successful', userId: user.id });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error', details: err.message });
-  }
-};
-
+// Login with Google endpoint
 exports.loginWithGoogle = async (req, res) => {
   const { googleToken } = req.body;
 
@@ -180,7 +151,6 @@ exports.loginWithGoogle = async (req, res) => {
       return res.status(400).json({ error: 'Google token is required' });
     }
 
-    // Verify Google token
     const ticket = await client.verifyIdToken({
       idToken: googleToken,
       audience: process.env.GOOGLE_CLIENT_ID,
@@ -188,30 +158,27 @@ exports.loginWithGoogle = async (req, res) => {
     const payload = ticket.getPayload();
     const googleEmail = payload.email;
 
-    // Find or create user based on Google email
     let user = await User.findOne({ where: { email: googleEmail } });
 
     if (!user) {
-      // Create a placeholder password hash for Google users
-      const placeholderPassword = 'google-oauth-user'; // Placeholder password
-      const passwordHash = await argon2.hash(placeholderPassword); // Hash the placeholder password using argon2
-
-      // Create user with the generated password hash
-      user = await User.create({
-        email: googleEmail,
-        username: payload.name || googleEmail,
-        google_oauth_id: payload.sub,
-        password_hash: passwordHash, // Assign the placeholder password hash
-      });
+      return res.status(404).json({ error: 'User not found. Please sign up first.' });
     }
 
-    // Generate JWT tokens
-    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
-    const refreshToken = jwt.sign({ userId: user.id, email: user.email }, REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
+    await user.update({ updatedAt: new Date() });
+
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+    const refreshToken = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      REFRESH_TOKEN_SECRET,
+      { expiresIn: '7d' }
+    );
 
     refreshTokens.push(refreshToken);
 
-    // Set cookies
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -225,7 +192,57 @@ exports.loginWithGoogle = async (req, res) => {
       maxAge: 604800000,
     });
 
-    res.status(200).json({ message: 'Google login successful', userId: user.id });
+    res.status(200).json({ message: 'Google login successful', userId: user.id, role: user.role });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+};
+
+// Login with wallet endpoint
+exports.loginWithWallet = async (req, res) => {
+  const { walletAddress } = req.body;
+
+  try {
+    if (!walletAddress) {
+      return res.status(400).json({ error: 'Wallet address is required' });
+    }
+
+    const user = await User.findOne({ where: { walletAddress } });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found. Please sign up first.' });
+    }
+
+    await user.update({ updatedAt: new Date() });
+
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+    const refreshToken = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      REFRESH_TOKEN_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    refreshTokens.push(refreshToken);
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Lax',
+      maxAge: 3600000,
+    });
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Lax',
+      maxAge: 604800000,
+    });
+
+    res.status(200).json({ message: 'Wallet login successful', userId: user.id, role: user.role });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error', details: err.message });
@@ -245,17 +262,14 @@ exports.refreshToken = (req, res) => {
   }
 
   try {
-    // Verify the refresh token
     const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
 
-    // Generate new access token
     const newAccessToken = jwt.sign(
-      { userId: decoded.userId, email: decoded.email },
+      { userId: decoded.userId, email: decoded.email, role: decoded.role },
       JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    // Send new access token as response
     res.json({ token: newAccessToken });
   } catch (err) {
     console.error('Error verifying refresh token:', err);
@@ -263,15 +277,27 @@ exports.refreshToken = (req, res) => {
   }
 };
 
+// Check Authentication endpoint
 exports.checkAuth = (req, res) => {
   if (req.user) {
-    return res.status(200).json({ message: 'User is authenticated' });
+    return res.status(200).json({
+      message: 'User is authenticated',
+      user: {
+        id: req.user.userId,
+        email: req.user.email,
+        role: req.user.role,
+      },
+    });
   }
   return res.status(401).json({ error: 'Unauthorized' });
 };
 
 // Logout endpoint
 exports.logout = (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (refreshToken) {
+    refreshTokens = refreshTokens.filter((token) => token !== refreshToken);
+  }
   res.clearCookie('token');
   res.clearCookie('refreshToken');
   return res.status(200).json({ message: 'Logged out successfully' });

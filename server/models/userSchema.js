@@ -12,10 +12,6 @@ const User = sequelize.define('User', {
     allowNull: false,
     unique: true,
   },
-  password_hash: {
-    type: DataTypes.STRING(512),
-    allowNull: false,
-  },
   two_factor_enabled: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
@@ -51,8 +47,8 @@ const User = sequelize.define('User', {
     allowNull: true,
   },
 }, {
-  tableName: 'users', 
-  schema: 'app_data', 
+  tableName: 'User',
+  // schema: 'app_data',
   underscored: true,
   timestamps: false,
 });
