@@ -17,15 +17,19 @@ import Link from "next/link"
 import Image from "next/image"
 import EventDetails from '@/components/EventDetails';
 import { useEventContext } from '@/context/EventContext'
+import type { Event as AppEvent } from '@/context/EventContext'
+
+type SafeAppEvent = Omit<AppEvent, 'image'> & { image: string }
 import { useUser } from '@/app/landing/UserContext'
 
-const EventDashboard: React.FC = () => {
+const DiscoverPage: React.FC = () => {
   const { events, updateEvent } = useEventContext()
   const { user } = useUser()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState("all")
-  const [selectedEvent, setSelectedEvent] = useState<any | null>(null)
+  const [selectedEvent, setSelectedEvent] = useState<SafeAppEvent | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const categories = [
     { id: "all", label: "All Events" },
@@ -41,6 +45,19 @@ const EventDashboard: React.FC = () => {
       (selectedCategory === "all" || event.category === selectedCategory)
     )
 
+  const handleEventClick = (event: AppEvent) => {
+  const safeEvent: SafeAppEvent = {
+    ...event,
+    image: event.image ?? '',
+  };
+  setSelectedEvent(safeEvent);
+  setIsModalOpen(true);
+}
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
   const handleRegister = (eventId: string) => {
     if (!user) {
       alert('Please login to register for events.')
@@ -54,8 +71,18 @@ const EventDashboard: React.FC = () => {
           updateEvent(eventId, { rsvps: [...rsvps, user.walletAddress] })
         }
       }
-      const selected = events.find(e => e.id === eventId)
-      setSelectedEvent(selected || null)
+      const selected = events.find(e => e.id === eventId) || null;
+      if (selected) {
+        const safeSelected: SafeAppEvent = {
+          ...selected,
+          image: selected.image ? selected.image : '',
+        };
+        setSelectedEvent(safeSelected);
+        setIsModalOpen(true);
+      } else {
+        setSelectedEvent(null);
+        setIsModalOpen(false);
+      }
     } catch (error) {
       console.error("Error updating RSVP:", error)
       alert("Failed to register for event. Please try again.")
@@ -281,7 +308,13 @@ const EventDashboard: React.FC = () => {
       {selectedEvent && (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="bg-white rounded-lg shadow-lg max-w-6xl mx-auto">
-            <EventDetails eventData={selectedEvent} onClose={() => setSelectedEvent(null)} />
+      <EventDetails
+        event={selectedEvent}
+        onClose={handleCloseModal}
+        isOpen={isModalOpen}
+        onRegister={handleRegister}
+        user={user} // Pass the user prop
+      />
           </div>
         </div>
       )}
@@ -300,4 +333,4 @@ const EventDashboard: React.FC = () => {
   )
 }
 
-export default EventDashboard
+export default DiscoverPage

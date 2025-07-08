@@ -12,22 +12,20 @@ export const metadata: Metadata = {
 	generator: 'v0.dev',
 };
 
+import { BountyProvider } from '../context/BountyContext';
+
 export default function RootLayout({
-	children,
-}: Readonly<{
-	children: React.ReactNode;
-}>) {
-	return (
-		<html lang="en" className={inter.className}>
-			<body>
-				<ErrorBoundary>
-					<Providers>
-						<ErrorBoundary>
-							<EventProvider>{children}</EventProvider>
-						</ErrorBoundary>
-					</Providers>
-				</ErrorBoundary>
-			</body>
-		</html>
-	);
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <BountyProvider>
+          {children}
+        </BountyProvider>
+      </body>
+    </html>
+  )
 }

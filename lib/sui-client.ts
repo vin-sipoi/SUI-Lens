@@ -1,6 +1,10 @@
-import { SuiClient, getFullnodeUrl } from '@mysten/sui/client';
-import { Transaction } from '@mysten/sui/transactions';
 
+"use client";
+
+import { SuiClient, getFullnodeUrl } from '@mysten/sui/client';
+import { TransactionBlock } from '@mysten/sui.js/transactions';
+
+// Initialize SuiClient for testnet
 const suiClient = new SuiClient({
   url: getFullnodeUrl('testnet'),
 });
@@ -8,14 +12,16 @@ const suiClient = new SuiClient({
 export { suiClient };
 
 export class SuilensService {
+  private client: SuiClient;
   private packageId: string;
   private eventRegistryId: string;
   private poapRegistryId: string;
   private bountyPackageId: string;
   private bountyRegistryId: string;
 
-  constructor() {
-    this.packageId = process.env.NEXT_PUBLIC_PACKAGE_ID || '';
+  constructor(client: SuiClient, packageId: string) {
+    this.client = client;
+    this.packageId = packageId;
     this.eventRegistryId = process.env.NEXT_PUBLIC_EVENT_REGISTRY_ID || '';
     this.poapRegistryId = process.env.NEXT_PUBLIC_POAP_REGISTRY_ID || '';
     this.bountyPackageId = process.env.NEXT_PUBLIC_BOUNTY_PACKAGE_ID || '';
@@ -30,8 +36,8 @@ export class SuilensService {
     maxAttendees: number;
     poapTemplate: string;
   }) {
-    const tx = new Transaction();
-    
+    const tx = new TransactionBlock();
+
     tx.moveCall({
       target: `${this.packageId}::event_manager::create_event`,
       arguments: [
@@ -48,9 +54,13 @@ export class SuilensService {
     return tx;
   }
 
-  async mintPOAP(eventObjectId: string) {
-    const tx = new Transaction();
-    
+  async mintPOAP(eventObjectId: string, userAddress: string) {
+    if (!userAddress) {
+      throw new Error('User not connected');
+    }
+
+    const tx = new TransactionBlock();
+
     tx.moveCall({
       target: `${this.packageId}::poap::mint_poap`,
       arguments: [
@@ -65,7 +75,7 @@ export class SuilensService {
 
   async getEventDetails(eventId: string) {
     try {
-      return await suiClient.getObject({
+      return await this.client.getObject({
         id: eventId,
         options: {
           showContent: true,
@@ -79,9 +89,12 @@ export class SuilensService {
   }
 
   async getUserPOAPs(userAddress: string) {
+    if (!userAddress) {
+      throw new Error('User not connected');
+    }
+
     try {
-      // Query user's POAP objects
-      return await suiClient.getOwnedObjects({
+      return await this.client.getOwnedObjects({
         owner: userAddress,
         filter: {
           StructType: `${this.packageId}::poap::POAP`,
@@ -99,8 +112,7 @@ export class SuilensService {
 
   async getAllEvents() {
     try {
-      // Query all events from the registry
-      const events = await suiClient.getDynamicFields({
+      const events = await this.client.getDynamicFields({
         parentId: this.eventRegistryId,
       });
       return events;
@@ -111,8 +123,12 @@ export class SuilensService {
   }
 
   async registerForEvent(eventId: string, userAddress: string) {
-    const tx = new Transaction();
-    
+    if (!userAddress) {
+      throw new Error('User not connected');
+    }
+
+    const tx = new TransactionBlock();
+
     tx.moveCall({
       target: `${this.packageId}::event_manager::register_for_event`,
       arguments: [
@@ -125,9 +141,12 @@ export class SuilensService {
   }
 
   async checkEventRegistration(eventId: string, userAddress: string) {
+    if (!userAddress) {
+      throw new Error('User not connected');
+    }
+
     try {
-      // This would depend on your Move contract implementation
-      // For now, returning a mock response
+      // Placeholder: Adjust based on your Move contract implementation
       return {
         isRegistered: false,
         registrationTime: null,
@@ -138,21 +157,23 @@ export class SuilensService {
     }
   }
 
-  async createEventWithRewardPool(eventData: {
-    name: string;
-    description: string;
-    startTime: number;
-    endTime: number;
-    maxAttendees: number;
-    poapTemplate: string;
-  }, rewardPoolData?: {
-    amount: number;
-    maxParticipants: number;
-  }) {
-    const tx = new Transaction();
-    
+  async createEventWithRewardPool(
+    eventData: {
+      name: string;
+      description: string;
+      startTime: number;
+      endTime: number;
+      maxAttendees: number;
+      poapTemplate: string;
+    },
+    rewardPoolData?: {
+      amount: number;
+      maxParticipants: number;
+    }
+  ) {
+    const tx = new TransactionBlock();
+
     if (rewardPoolData) {
-      // Create event with reward pool using BOUNTY contract
       tx.moveCall({
         target: `${this.bountyPackageId}::event_bounty::create_event_with_rewards`,
         arguments: [
@@ -168,76 +189,16 @@ export class SuilensService {
         ],
       });
     } else {
-      // Use your existing POAP contract for regular events
       return this.createEvent(eventData);
     }
 
     return tx;
   }
-
-  async lockRewardPool(eventObjectId: string, amount: number) {
-    const tx = new Transaction();
-    
-    tx.moveCall({
-      target: `${this.bountyPackageId}::reward_pool::lock_funds`,
-      arguments: [
-        tx.object(eventObjectId),
-        tx.pure.u64(amount),
-        tx.object('0x6'), // Clock object
-      ],
-    });
-
-    return tx;
-  }
-
-  async getRewardPoolStatus(eventObjectId: string) {
-    try {
-      return await suiClient.getObject({
-        id: eventObjectId,
-        options: {
-          showContent: true,
-          showType: true,
-        },
-      });
-    } catch (error) {
-      console.error('Error fetching reward pool status:', error);
-      throw new Error('Failed to fetch reward pool status');
-    }
-  }
-
-  async distributeRewards(eventObjectId: string, participants: string[]) {
-    const tx = new Transaction();
-    
-    tx.moveCall({
-      target: `${this.bountyPackageId}::reward_pool::distribute_rewards`,
-      arguments: [
-        tx.object(eventObjectId),
-        tx.pure.vector('address', participants),
-        tx.object('0x6'),
-      ],
-    });
-
-    return tx;
-  }
-
-  async unlockRewardPool(eventObjectId: string) {
-    const tx = new Transaction();
-    
-    tx.moveCall({
-      target: `${this.bountyPackageId}::reward_pool::unlock_funds`,
-      arguments: [
-        tx.object(eventObjectId),
-        tx.object('0x6'),
-      ],
-    });
-
-    return tx;
-  }
 }
 
-export const suilensService = new SuilensService();
+export const suilensService = new SuilensService(suiClient, process.env.NEXT_PUBLIC_PACKAGE_ID || '');
 
-// Helper function for minting POAP (updated signature to match usage)
+// Helper function for minting POAP
 export async function mintPOAP(
   eventId: string,
   name: string,
@@ -246,11 +207,11 @@ export async function mintPOAP(
   attendeeAddress: string,
   packageId?: string
 ) {
-  const tx = new Transaction();
-  
+  const tx = new TransactionBlock();
+
   const actualPackageId = packageId || process.env.NEXT_PUBLIC_PACKAGE_ID || '';
   const poapRegistryId = process.env.NEXT_PUBLIC_POAP_REGISTRY_ID || '';
-  
+
   tx.moveCall({
     target: `${actualPackageId}::poap::mint_poap`,
     arguments: [
@@ -269,29 +230,25 @@ export async function mintPOAP(
 
 // Utility functions for working with Sui
 export const suiUtils = {
-  // Convert timestamp to Sui format
   timestampToSui: (timestamp: number): number => {
     return Math.floor(timestamp / 1000); // Convert to seconds
   },
 
-  // Convert Sui timestamp to JS timestamp
   suiToTimestamp: (suiTimestamp: number): number => {
     return suiTimestamp * 1000; // Convert to milliseconds
   },
 
-  // Validate Sui address
   isValidSuiAddress: (address: string): boolean => {
     return /^0x[a-fA-F0-9]{64}$/.test(address);
   },
 
-  // Format Sui address for display
   formatAddress: (address: string): string => {
     if (!address) return '';
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   },
 };
 
-// Export types for better TypeScript support
+// Type definitions
 export interface EventData {
   id: string;
   name: string;
@@ -322,3 +279,14 @@ export interface RegistrationData {
   registeredAt: number;
   isApproved: boolean;
 }
+
+export interface Bounty {
+  id: string;
+  reward_amount: number;
+  status: string;
+}
+
+export type TransactionResult = {
+  effects: any;
+  events: any;
+};

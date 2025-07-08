@@ -1,14 +1,18 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useUser } from "../landing/UserContext"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "../landing/UserContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import RewardPoolSetup from '@/components/event-creation/RewardPoolSetup';
+import { RewardPool } from '@/context/EventContext';
+
+
 import {
   Dialog,
   DialogContent,
@@ -16,9 +20,9 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import Image from "next/image"
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import Image from "next/image";
 import {
   ArrowLeft,
   Edit3,
@@ -27,26 +31,28 @@ import {
   Loader2,
   Menu,
   X,
-} from "lucide-react"
-import Link from "next/link"
-import { useEventContext } from "@/context/EventContext"
-import { mintPOAP, suilensService } from "@/lib/sui-client"
+} from "lucide-react";
+import Link from "next/link";
+import { useEventContext } from "@/context/EventContext";
+import { mintPOAP, suilensService } from "@/lib/sui-client";
+
 
 export default function CreateEventPage() {
-  const { user } = useUser()
-  const router = useRouter()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { addEvent } = useEventContext()
+  const { user } = useUser();
+  const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { addEvent } = useEventContext();
+  
 
   // Redirect to signin if not logged in
   useEffect(() => {
     if (!user) {
       const timeoutId = setTimeout(() => {
-        router.push('/auth/signin')
-      }, 100)
-      return () => clearTimeout(timeoutId)
+        router.push('/auth/signin');
+      }, 100);
+      return () => clearTimeout(timeoutId);
     }
-  }, [user, router])
+  }, [user, router]);
 
   const [eventData, setEventData] = useState({
     title: "",
@@ -63,34 +69,35 @@ export default function CreateEventPage() {
     requiresApproval: false,
     isPrivate: false,
     timezone: "GMT+03:00 Nairobi",
-  })
+  });
 
-  const [isCreating, setIsCreating] = useState(false)
-  const [ticketDialogOpen, setTicketDialogOpen] = useState(false)
-  const [capacityDialogOpen, setCapacityDialogOpen] = useState(false)
-  const [poapDialogOpen, setPoapDialogOpen] = useState(false)
+  const [isCreating, setIsCreating] = useState(false);
+  const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
+  const [capacityDialogOpen, setCapacityDialogOpen] = useState(false);
+  const [poapDialogOpen, setPoapDialogOpen] = useState(false);
   const [tempTicketData, setTempTicketData] = useState({
     isFree: eventData.isFree,
     ticketPrice: eventData.ticketPrice,
-  })
+  });
   const [tempCapacityData, setTempCapacityData] = useState({
     capacity: eventData.capacity,
-  })
+  });
+  const [rewardPool, setRewardPool] = useState<RewardPool | null>(null);
 
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // POAP data state
   const [poapData, setPoapData] = useState({
     name: "",
     description: "",
     image: null as File | null,
-  })
+  });
 
   // Generate QR code using Qrfy API
   const generateQRCode = async (eventId: string) => {
     try {
-      const eventUrl = `${window.location.origin}/event/${eventId}/register`
+      const eventUrl = `${window.location.origin}/event/${eventId}/register`;
       const response = await fetch('https://qrfy.com/api/v1/generate', {
         method: 'POST',
         headers: {
@@ -105,46 +112,46 @@ export default function CreateEventPage() {
           foreground_color: '#000000',
           background_color: '#FFFFFF',
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to generate QR code')
+        throw new Error('Failed to generate QR code');
       }
 
-      const result = await response.json()
+      const result = await response.json();
       return {
         qrCodeUrl: result.qr_code_url,
         eventUrl: eventUrl,
         qrCodeImage: result.image_url,
-      }
+      };
     } catch (error) {
-      console.error('Error generating QR code:', error)
-      const eventUrl = `${window.location.origin}/event/${eventId}/register`
+      console.error('Error generating QR code:', error);
+      const eventUrl = `${window.location.origin}/event/${eventId}/register`;
       return {
         qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`,
         eventUrl: eventUrl,
         qrCodeImage: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`,
-      }
+      };
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsCreating(true)
+    e.preventDefault();
+    setIsCreating(true);
 
     try {
       // Validate required fields
       if (!eventData.title || !eventData.description || !eventData.date || !eventData.time || !eventData.location) {
-        alert('Please fill in all required fields')
-        setIsCreating(false)
-        return
+        alert('Please fill in all required fields');
+        setIsCreating(false);
+        return;
       }
 
       // Create event ID locally
-      const eventId = `event_${Date.now()}`
+      const eventId = `event_${Date.now()}`;
 
       // Generate QR code for the event
-      const qrData = await generateQRCode(eventId)
+      const qrData = await generateQRCode(eventId);
 
       // Add event to context
       addEvent({
@@ -155,18 +162,26 @@ export default function CreateEventPage() {
         poapEnabled: poapData.name ? true : false,
         qrCode: qrData.qrCodeImage,
         eventUrl: qrData.eventUrl,
-      })
+      });
 
-      // Call smart contract to create event
-      const tx = await suilensService.createEvent({
+      const transformedEventData = {
         name: eventData.title,
         description: eventData.description,
-        startTime: new Date(`${eventData.date} ${eventData.time}`).getTime(),
-        endTime: new Date(`${eventData.endDate || eventData.date} ${eventData.endTime || eventData.time}`).getTime(),
-        maxAttendees: parseInt(eventData.capacity) || 100,
-        poapTemplate: poapData.name || '',
-      })
-      console.log('Create event transaction:', tx)
+        startTime: new Date(`${eventData.date}T${eventData.time}`).getTime(), // Convert to timestamp
+        endTime: eventData.endDate ? new Date(`${eventData.endDate}T${eventData.endTime}`).getTime() : 0, // Convert to timestamp, handle missing endDate
+        maxAttendees: parseInt(eventData.capacity) || 0, // Convert to number, handle unlimited
+        poapTemplate: '', // Provide a default or handle POAP template logic
+      };
+       
+      // Call smart contract to create event with reward pool
+      const newEvent = await suilensService.createEventWithRewardPool(
+                transformedEventData,
+                rewardPool
+                    ? { amount: rewardPool.amount, maxParticipants: rewardPool.maxParticipants }
+                    : undefined,
+                
+            );
+      console.log('Create event transaction:', newEvent);
 
       // POAP minting is disabled here to move to event details page after check-in
       // if (poapData.name) {
@@ -177,63 +192,63 @@ export default function CreateEventPage() {
       //       poapData.image ? URL.createObjectURL(poapData.image) : '',
       //       poapData.description,
       //       ''
-      //     )
-      //     console.log('POAP mint transaction:', mintTx)
+      //     );
+      //     console.log('POAP mint transaction:', mintTx);
       //   } catch (mintError) {
-      //     console.error('Error minting POAP:', mintError)
-      //     alert('Failed to mint POAP. Please try again.')
+      //     console.error('Error minting POAP:', mintError);
+      //     alert('Failed to mint POAP. Please try again.');
       //   }
       // }
 
       // Redirect to discover page
-      router.push(`/discover`)
+      router.push(`/discover`);
     } catch (error) {
-      console.error('Error creating event:', error)
-      alert('Failed to create event. Please try again.')
+      console.error('Error creating event:', error);
+      alert('Failed to create event. Please try again.');
     } finally {
-      setIsCreating(false)
+      setIsCreating(false);
     }
-  }
+  };
 
   const handleTicketSave = () => {
     setEventData({
       ...eventData,
       isFree: tempTicketData.isFree,
       ticketPrice: tempTicketData.ticketPrice,
-    })
-    setTicketDialogOpen(false)
-  }
+    });
+    setTicketDialogOpen(false);
+  };
 
   const handleCapacitySave = () => {
     setEventData({
       ...eventData,
       capacity: tempCapacityData.capacity,
-    })
-    setCapacityDialogOpen(false)
-  }
+    });
+    setCapacityDialogOpen(false);
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
-      setImageFile(file)
-      const reader = new FileReader()
+      setImageFile(file);
+      const reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   const handlePoapImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
-      setPoapData({ ...poapData, image: file })
+      setPoapData({ ...poapData, image: file });
     }
-  }
+  };
 
   const handlePoapSave = () => {
-    setPoapDialogOpen(false)
-  }
+    setPoapDialogOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -501,7 +516,7 @@ export default function CreateEventPage() {
                     setTempTicketData({
                       isFree: eventData.isFree,
                       ticketPrice: eventData.ticketPrice,
-                    })
+                    });
                   }}
                 >
                   <span>{eventData.isFree ? "Free" : `$${eventData.ticketPrice || "0"}`}</span>
@@ -578,7 +593,7 @@ export default function CreateEventPage() {
                   onClick={() => {
                     setTempCapacityData({
                       capacity: eventData.capacity,
-                    })
+                    });
                   }}
                 >
                   <span>{eventData.capacity || "Unlimited"}</span>
@@ -701,6 +716,12 @@ export default function CreateEventPage() {
             </Dialog>
           </div>
 
+          {/* Reward Pool Setup */}
+          <div>
+            <Label className="text-sm font-medium text-gray-700 mb-2 block">Reward Pool Setup</Label>
+       <RewardPoolSetup onRewardPoolChange={(newRewardPool) => setRewardPool(newRewardPool as RewardPool | null)} />
+          </div>
+
           {/* Create Event Button */}
           <Button
             type="submit"
@@ -719,5 +740,5 @@ export default function CreateEventPage() {
         </form>
       </div>
     </div>
-  )
+  );
 }

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 
-interface RewardPool {
+export interface RewardPool {
   amount: number
   maxParticipants: number
   status: 'none' | 'locked' | 'distributed' | 'cancelled'
@@ -13,7 +13,7 @@ interface RewardPool {
   createdAt: Date
 }
 
-interface Event {
+export interface Event {
   id: string
   title: string
   description: string
@@ -53,6 +53,8 @@ interface EventContextType {
   updateEvent: (id: string, updates: Partial<Event>) => void
   deleteEvent: (id: string) => void
   markAttendance: (eventId: string, attendee: string) => void
+  addRsvp: (eventId: string, userAddress: string) => void
+  removeRsvp: (eventId: string, userAddress: string) => void
 }
 
 const EventContext = createContext<EventContextType | undefined>(undefined)
@@ -69,8 +71,8 @@ export function EventProvider({ children }: { children: ReactNode }) {
   }
 
   const updateEvent = (id: string, updates: Partial<Event>) => {
-    setEvents(prev => 
-      prev.map(event => 
+    setEvents(prev =>
+      prev.map(event =>
         event.id === id ? { ...event, ...updates } : event
       )
     )
@@ -94,6 +96,32 @@ export function EventProvider({ children }: { children: ReactNode }) {
     )
   }
 
+  const addRsvp = (eventId: string, userAddress: string) => {
+    setEvents(prev =>
+      prev.map(event => {
+        if (event.id === eventId) {
+          const rsvps = event.rsvps || []
+          if (!rsvps.includes(userAddress)) {
+            return { ...event, rsvps: [...rsvps, userAddress] }
+          }
+        }
+        return event
+      })
+    )
+  }
+
+  const removeRsvp = (eventId: string, userAddress: string) => {
+    setEvents(prev =>
+      prev.map(event => {
+        if (event.id === eventId) {
+          const rsvps = event.rsvps || []
+          return { ...event, rsvps: rsvps.filter(addr => addr !== userAddress) }
+        }
+        return event
+      })
+    )
+  }
+
   return (
     <EventContext.Provider value={{
       events,
@@ -101,7 +129,9 @@ export function EventProvider({ children }: { children: ReactNode }) {
       getEvent,
       updateEvent,
       deleteEvent,
-      markAttendance
+      markAttendance,
+      addRsvp,
+      removeRsvp
     }}>
       {children}
     </EventContext.Provider>
