@@ -11,11 +11,32 @@ import { useEffect, useState } from 'react';
 import { FaApple } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { ConnectModal, useCurrentAccount } from '@mysten/dapp-kit';
-import { useUser } from "@/context/UserContext"
+import { useUser } from "@/context/UserContext";
+
+// Modern Google OAuth interface
+interface GoogleCredentialResponse {
+	credential: string;
+	select_by: string;
+	client_id: string;
+}
+
+interface GoogleUserInfo {
+	iss: string;
+	azp: string;
+	aud: string;
+	sub: string;
+	email: string;
+	email_verified: boolean;
+	name: string;
+	picture: string;
+	given_name: string;
+	family_name: string;
+	iat: number;
+	exp: number;
+}
 
 const wallets = [
 	{ name: 'Slush', icon: '/download (2) 1.png', status: ''},
-	
 ];
 
 export default function SignInPage() {
@@ -25,11 +46,199 @@ export default function SignInPage() {
 	const router = useRouter();
 	const [isMobile, setIsMobile] = useState(false);
 	const [mounted, setMounted] = useState(false);
+	const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 	const { login, user } = useUser();
 	const account = useCurrentAccount();
 
 	const [connectModalOpen, setConnectModalOpen] = useState(false);
 
+	// Initialize Google Identity Services
+	useEffect(() => {
+		const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+		
+		if (!clientId) {
+			console.error('Google Client ID is not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID in your environment variables.');
+			return;
+		}
+
+		const initializeGoogleAuth = () => {
+			if (typeof window !== 'undefined' && window.google) {
+				try {
+					window.google.accounts.id.initialize({
+						client_id: clientId,
+						callback: handleGoogleResponse,
+						auto_select: false,
+						cancel_on_tap_outside: true,
+						use_fedcm_for_prompt: false,
+						context: 'signin',
+						ux_mode: 'popup',
+					});
+					console.log('Google Identity Services initialized successfully');
+				} catch (error) {
+					console.error('Failed to initialize Google Identity Services:', error);
+				}
+			}
+		};
+
+		// Check if script already exists
+		const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+		if (existingScript) {
+			if (window.google) {
+				initializeGoogleAuth();
+			}
+			return;
+		}
+
+		// Load Google Identity Services script
+		const script = document.createElement('script');
+		script.src = 'https://accounts.google.com/gsi/client';
+		script.async = true;
+		script.defer = true;
+		script.onload = initializeGoogleAuth;
+		script.onerror = () => {
+			console.error('Failed to load Google Identity Services script');
+		};
+		document.head.appendChild(script);
+
+		return () => {
+			if (script.parentNode) {
+				document.head.removeChild(script);
+			}
+		};
+	}, []);
+
+	// Decode JWT token to extract user info
+	const decodeJWT = (token: string): GoogleUserInfo | null => {
+		try {
+			const base64Url = token.split('.')[1];
+			const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+			const jsonPayload = decodeURIComponent(
+				atob(base64)
+					.split('')
+					.map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+					.join('')
+			);
+			return JSON.parse(jsonPayload);
+		} catch (error) {
+			console.error('Error decoding JWT:', error);
+			return null;
+		}
+	};
+
+	// Store token in database (you'll need to implement this API endpoint)
+	const storeTokenInDatabase = async (token: string, userInfo: GoogleUserInfo) => {
+		try {
+			const response = await fetch('/api/auth/store-google-token', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					token,
+					userInfo,
+					timestamp: new Date().toISOString(),
+				}),
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to store token');
+			}
+
+			return await response.json();
+		} catch (error) {
+			console.error('Error storing token:', error);
+			throw error;
+		}
+	};
+
+	// Handle Google OAuth response
+	const handleGoogleResponse = async (response: GoogleCredentialResponse) => {
+		try {
+			const userInfo = decodeJWT(response.credential);
+			
+			if (!userInfo) {
+				throw new Error('Failed to decode user information');
+			}
+
+			// Store token in database
+			await storeTokenInDatabase(response.credential, userInfo);
+
+			// Log in user
+			await login({
+				name: userInfo.name,
+				email: userInfo.email,
+				emails: [{ address: userInfo.email, primary: true, verified: userInfo.email_verified }],
+				avatarUrl: userInfo.picture || '/placeholder-user.jpg',
+				walletAddress: '',
+				googleToken: response.credential,
+			});
+
+			console.log('Google login successful:', userInfo);
+			router.push('/landing');
+		} catch (error) {
+			console.error('Google login error:', error);
+			alert('Login failed. Please try again.');
+		} finally {
+			setIsGoogleLoading(false);
+		}
+	};
+
+	// Trigger Google OAuth flow without dialog box
+	const handleGoogleSignIn = () => {
+		const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+		
+		if (!clientId) {
+			console.error('Google Client ID is not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID in your environment variables.');
+			alert('Google Sign-In is not configured. Please contact support.');
+			return;
+		}
+
+		if (!window.google) {
+			console.error('Google Identity Services not loaded');
+			alert('Google Sign-In is not available. Please refresh the page and try again.');
+			return;
+		}
+
+		try {
+			setIsGoogleLoading(true);
+			
+			// Create a hidden container for the Google button
+			const buttonContainer = document.createElement('div');
+			buttonContainer.style.position = 'absolute';
+			buttonContainer.style.top = '-9999px';
+			buttonContainer.style.left = '-9999px';
+			buttonContainer.style.visibility = 'hidden';
+			
+			document.body.appendChild(buttonContainer);
+			
+			// Render Google button in hidden container
+			window.google.accounts.id.renderButton(buttonContainer, {
+				theme: 'outline',
+				size: 'large',
+				width: '250',
+				text: 'signin_with',
+				logo_alignment: 'left',
+			});
+			
+			// Auto-click the Google button
+			setTimeout(() => {
+				const googleButton = buttonContainer.querySelector('div[role="button"]');
+				if (googleButton) {
+					(googleButton as HTMLElement).click();
+				}
+				
+				// Clean up the hidden container
+				if (buttonContainer.parentNode) {
+					document.body.removeChild(buttonContainer);
+				}
+			}, 100);
+			
+		} catch (error) {
+			console.error('Error during Google sign-in:', error);
+			alert('An error occurred during Google Sign-In. Please try again.');
+			setIsGoogleLoading(false);
+		}
+	};
 
 	const handleWalletConnect = async () => {
 		console.log("Starting wallet connection...");
@@ -126,13 +335,18 @@ export default function SignInPage() {
 							<Button
 								variant="outline"
 								className="flex-1 flex items-center justify-center gap-2 py-4 sm:py-6 text-sm sm:text-base font-medium"
+								onClick={handleGoogleSignIn}
+								disabled={isGoogleLoading}
 							>
 								<FcGoogle className="w-4 h-4 sm:w-5 sm:h-5" />
 								<span className="hidden sm:inline text-sm font-medium">
-									Sign in with Google
+									{isGoogleLoading ? 'Signing in...' : 'Sign in with Google'}
 								</span>
-								<span className="sm:hidden">Google</span>
+								<span className="sm:hidden">
+									{isGoogleLoading ? 'Loading...' : 'Google'}
+								</span>
 							</Button>
+							
 							<Button
 								variant="outline"
 								className="flex-1 flex items-center justify-center gap-2 py-4 sm:py-6 text-sm sm:text-base font-medium"
@@ -336,4 +550,20 @@ export default function SignInPage() {
 			</div>
 		</div>
 	);
+}
+
+// Global type declarations for Google Identity Services
+declare global {
+	interface Window {
+		google: {
+			accounts: {
+				id: {
+					initialize: (config: any) => void;
+					prompt: (callback?: (notification: any) => void) => void;
+					renderButton: (element: HTMLElement, config: any) => void;
+					disableAutoSelect: () => void;
+				};
+			};
+		};
+	}
 }
