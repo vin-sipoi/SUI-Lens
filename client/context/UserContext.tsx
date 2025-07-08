@@ -19,6 +19,8 @@ type User = {
   eventsAttended?: number
   poapsCollected?: number
   avatarUrl?: string
+  googleId?:string
+  googleToken?:string
 }
 
 type UserContextType = {
