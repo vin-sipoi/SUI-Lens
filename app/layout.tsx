@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 import { BountyProvider } from '../context/BountyContext';
+import { UserProvider } from '../app/landing/UserContext';
 
 export default function RootLayout({
   children,
@@ -22,9 +23,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <BountyProvider>
-          {children}
-        </BountyProvider>
+        <UserProvider>
+          <BountyProvider>
+            {children}
+          </BountyProvider>
+        </UserProvider>
       </body>
     </html>
   )

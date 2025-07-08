@@ -13,7 +13,15 @@ const BountiesPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Bounty Marketplace</h1>
+      <h1 className="text-2xl font-bold mb-4 flex justify-between items-center">
+        Bounty Marketplace
+        <button
+          onClick={() => window.location.href = '/create-bounty'}
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          Create Bounty
+        </button>
+      </h1>
 
       <div className="mb-4 flex space-x-4">
         <input
