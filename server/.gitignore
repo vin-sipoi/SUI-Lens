@@ -1,0 +1,16 @@
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+
+# Logs
+logs
+*.log
+
+# History of changes
+.history/
+
+
+# Other temporary files
+.DS_Store
