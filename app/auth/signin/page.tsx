@@ -10,23 +10,27 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FaApple } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
-
-const wallets = [
-	{ name: 'Slush', icon: '/download (2) 1.png' },
-	{ name: 'Nightly', icon: '/download (3) 1.png' },
-	{ name: 'Backpack', icon: '/download (3) 2.png' },
-	{ name: 'Hana Wallet', icon: '/download (4) 1.png' },
-	{ name: 'OKX Wallet', icon: '/download (2) 2.png' },
-];
+import { useCurrentAccount, useConnectWallet, useWallets } from '@mysten/dapp-kit';
+import { useSuiContracts } from '@/hooks/useSuiContracts';
+import { useUser } from '@/app/landing/UserContext';
+import { toast } from 'sonner';
 
 export default function SignInPage() {
 	const [showPassword, setShowPassword] = useState(false);
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
+	const [isConnecting, setIsConnecting] = useState(false);
 	const router = useRouter();
 	// Add state to handle client-side rendering
 	const [isMobile, setIsMobile] = useState(false);
 	const [mounted, setMounted] = useState(false);
+
+	// Sui wallet hooks
+	const currentAccount = useCurrentAccount();
+	const { mutate: connect } = useConnectWallet();
+	const wallets = useWallets();
+	const { hasUserProfile, getUserProfile } = useSuiContracts();
+	const { login } = useUser();
 
 	// Use useEffect to safely access window object after component mounts
 	useEffect(() => {
@@ -40,6 +44,84 @@ export default function SignInPage() {
 		window.addEventListener('resize', handleResize);
 		return () => window.removeEventListener('resize', handleResize);
 	}, []);
+
+	// Handle wallet connection and user profile check
+	useEffect(() => {
+		if (currentAccount?.address) {
+			checkUserProfile(currentAccount.address);
+		}
+	}, [currentAccount]);
+
+	const checkUserProfile = async (walletAddress: string) => {
+		try {
+			setIsConnecting(true);
+			console.log('Checking profile for wallet:', walletAddress);
+			
+			const profileExists = await hasUserProfile(walletAddress);
+			console.log('Profile exists result:', profileExists);
+			
+			if (profileExists) {
+				// Get user profile and log them in
+				console.log('Profile exists, fetching profile data...');
+				const profile = await getUserProfile(walletAddress);
+				console.log('Profile data received:', profile);
+				
+				if (profile) {
+					const userData = {
+						name: profile.username || 'Unknown',
+						email: '', // Will be filled from profile if available
+						walletAddress: walletAddress,
+						username: profile.username,
+						bio: profile.bio,
+						avatarUrl: profile.avatar_url,
+						emails: [],
+						eventsAttended: 0,
+						poapsCollected: 0
+					};
+					console.log('Logging in user with data:', userData);
+					
+					login(userData);
+					toast.success('Successfully signed in!');
+					router.push('/dashboard');
+				} else {
+					console.log('Profile exists but could not fetch profile data');
+					toast.error('Could not load profile data');
+				}
+			} else {
+				// Redirect to profile creation
+				console.log('No profile found, redirecting to create profile');
+				toast.info('Please create your profile first');
+				router.push(`/profile/create?wallet=${walletAddress}`);
+			}
+		} catch (error) {
+			console.error('Error checking user profile:', error);
+			toast.error('Failed to check user profile');
+		} finally {
+			setIsConnecting(false);
+		}
+	};
+
+	const handleWalletConnect = (walletName: string) => {
+		const wallet = wallets.find(w => w.name.toLowerCase().includes(walletName.toLowerCase()));
+		if (wallet) {
+			setIsConnecting(true);
+			connect(
+				{ wallet },
+				{
+					onSuccess: () => {
+						// Profile check will be handled in the useEffect
+					},
+					onError: (error) => {
+						console.error('Wallet connection failed:', error);
+						toast.error('Failed to connect wallet');
+						setIsConnecting(false);
+					}
+				}
+			);
+		} else {
+			toast.error(`${walletName} wallet not found`);
+		}
+	};
 
 	const handleEmailSignIn = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -112,29 +194,47 @@ export default function SignInPage() {
 
 						{/* Wallet Options */}
 						<div className="space-y-2 sm:space-y-3 mb-6">
+							{/* Show connected wallet status */}
+							{currentAccount && (
+								<div className="p-4 bg-green-50 border border-green-200 rounded-lg mb-4">
+									<p className="text-green-800 text-sm font-medium">
+										Wallet Connected: {currentAccount.address.slice(0, 6)}...{currentAccount.address.slice(-4)}
+									</p>
+									{isConnecting && (
+										<p className="text-green-600 text-xs mt-1">Checking profile...</p>
+									)}
+								</div>
+							)}
+
 							{/* Only render wallets after component is mounted and browser is available */}
-							{mounted &&
+							{mounted && !currentAccount &&
 								wallets
 									.slice(0, isMobile ? 3 : wallets.length)
 									.map((wallet) => (
 										<Button
 											key={wallet.name}
 											variant="outline"
-											className="w-full flex items-center gap-3 py-4 sm:py-5 text-sm sm:text-base font-medium justify-start"
+											onClick={() => handleWalletConnect(wallet.name)}
+											disabled={isConnecting}
+											className="w-full flex items-center gap-3 py-4 sm:py-5 text-sm sm:text-base font-medium justify-start hover:bg-blue-50 transition-colors"
 										>
-											<Image
-												src={wallet.icon}
-												alt={wallet.name}
-												width={20}
-												height={20}
-												className="sm:w-6 sm:h-6 rounded"
-											/>
-											{wallet.name}
+											{wallet.icon ? (
+												<img
+													src={wallet.icon}
+													alt={wallet.name}
+													width={20}
+													height={20}
+													className="sm:w-6 sm:h-6 rounded"
+												/>
+											) : (
+												<div className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 rounded-full"></div>
+											)}
+											{isConnecting ? 'Connecting...' : `Connect ${wallet.name}`}
 										</Button>
 									))}
 
 							{/* Show remaining wallets on mobile in a collapsible way */}
-							{mounted && isMobile && wallets.length > 3 && (
+							{mounted && !currentAccount && isMobile && wallets.length > 3 && (
 								<details className="group">
 									<summary className="cursor-pointer text-blue-600 text-sm font-medium py-2 list-none">
 										<span className="group-open:hidden">Show more wallets</span>
@@ -145,20 +245,35 @@ export default function SignInPage() {
 											<Button
 												key={wallet.name}
 												variant="outline"
-												className="w-full flex items-center gap-3 py-4 text-sm font-medium justify-start"
+												onClick={() => handleWalletConnect(wallet.name)}
+												disabled={isConnecting}
+												className="w-full flex items-center gap-3 py-4 text-sm font-medium justify-start hover:bg-blue-50 transition-colors"
 											>
-												<Image
-													src={wallet.icon}
-													alt={wallet.name}
-													width={20}
-													height={20}
-													className="rounded"
-												/>
-												{wallet.name}
+												{wallet.icon ? (
+													<img
+														src={wallet.icon}
+														alt={wallet.name}
+														width={20}
+														height={20}
+														className="rounded"
+													/>
+												) : (
+													<div className="w-5 h-5 bg-blue-500 rounded-full"></div>
+												)}
+												{isConnecting ? 'Connecting...' : `Connect ${wallet.name}`}
 											</Button>
 										))}
 									</div>
 								</details>
+							)}
+
+							{/* No wallets available message */}
+							{mounted && wallets.length === 0 && (
+								<div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+									<p className="text-yellow-800 text-sm">
+										No Sui wallets detected. Please install a Sui wallet extension.
+									</p>
+								</div>
 							)}
 						</div>
 

@@ -18,6 +18,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import Image from "next/image"
 import {
   ArrowLeft,
@@ -30,30 +37,46 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useEventContext } from "@/context/EventContext"
+import { useSuiContracts } from "@/hooks/useSuiContracts"
+import { useCurrentAccount, ConnectButton } from "@mysten/dapp-kit"
+import { toast } from "sonner"
 
 export default function CreateEventPage() {
-  const { user } = useUser();
+  const { user, login } = useUser();
   const router = useRouter();
+  const currentAccount = useCurrentAccount();
+  const { createEvent, createPoapCollection, isLoading } = useSuiContracts();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Redirect to signin if not logged in
+  // Check if we need to redirect
+  const [shouldCheckAuth, setShouldCheckAuth] = useState(false);
+
+  // Wait a bit before checking auth to allow UserContext to load from localStorage
   useEffect(() => {
-    if (!user) {
-      const timeoutId = setTimeout(() => {
-        router.push('/auth/signin');
-      }, 100); // delay of 100ms to allow any async user state updates
-      return () => clearTimeout(timeoutId);
+    const timer = setTimeout(() => {
+      setShouldCheckAuth(true);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Auto-login is now handled by WalletConnectionManager
+
+  // Redirect to signin if no user and no wallet after initial load
+  useEffect(() => {
+    if (shouldCheckAuth && !currentAccount && !user) {
+      router.push('/auth/signin');
     }
-  }, [user, router]);
+  }, [shouldCheckAuth, currentAccount, user, router]);
 
   const [eventData, setEventData] = useState({
     title: "",
     description: "",
     date: "",
     time: "",
+    endDate: "",
     endTime: "",
     location: "",
-    category: "",
+    category: "general",
     capacity: "",
     ticketPrice: "",
     isFree: true,
@@ -62,10 +85,18 @@ export default function CreateEventPage() {
     timezone: "GMT+03:00 Nairobi",
   })
 
+  const [poapData, setPoapData] = useState({
+    enabled: false,
+    name: "",
+    description: "",
+    imageUrl: "",
+    maxSupply: "",
+  })
+
   const [isCreating, setIsCreating] = useState(false)
-  const [ticketDialogOpen, setTicketDialogOpen] = useState(false)
-  const [capacityDialogOpen, setCapacityDialogOpen] = useState(false)
-  const [poapDialogOpen, setPoapDialogOpen] = useState(false)
+  const [ticketDialogOpen, setTicketDialogOpen] = useState<boolean>(false)
+  const [capacityDialogOpen, setCapacityDialogOpen] = useState<boolean>(false)
+  const [poapDialogOpen, setPoapDialogOpen] = useState<boolean>(false)
   const [tempTicketData, setTempTicketData] = useState({
     isFree: eventData.isFree,
     ticketPrice: eventData.ticketPrice,
@@ -123,31 +154,144 @@ export default function CreateEventPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    try {
-      setIsCreating(true);
-      // For demonstration, we're just using setTimeout to simulate API call
-      setTimeout(() => {
-        router.push('/event-created');
-        setIsCreating(false);
-      }, 1500);
-      
-      // Actual implementation would look like:
-      /*
-      const form = e.currentTarget;
-      const data = new FormData(form);
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        body: data
-      })
-      const result = await response.json()
-      if (response.ok) {
-        router.push('/event-created');
-      } else {
-        throw new Error(result.message || 'Failed to create event');
+    
+    if (!currentAccount) {
+      toast.error('Please connect your wallet first');
+      // Show connect wallet dialog or button
+      const connectButton = document.querySelector('[data-testid="connect-wallet-button"]') as HTMLButtonElement;
+      if (connectButton) {
+        connectButton.click();
       }
-      */
+      return;
+    }
+
+    // Validate field sizes before submission
+    const MAX_STRING_SIZE = 16000; // Leave buffer below 16384 limit
+    
+    const validateFieldSize = (value: string, fieldName: string) => {
+      const sizeInBytes = new TextEncoder().encode(value).length;
+      if (sizeInBytes > MAX_STRING_SIZE) {
+        toast.error(`${fieldName} is too long (${sizeInBytes} bytes). Please keep it under ${MAX_STRING_SIZE} bytes.`);
+        throw new Error(`${fieldName} exceeds size limit`);
+      }
+    };
+
+    try {
+      // Validate required fields are not empty
+      if (!eventData.title.trim()) {
+        toast.error('Event title is required');
+        return;
+      }
+      if (!eventData.description.trim()) {
+        toast.error('Event description is required');
+        return;
+      }
+      if (!eventData.location.trim()) {
+        toast.error('Event location is required');
+        return;
+      }
+      if (!eventData.date) {
+        toast.error('Event date is required');
+        return;
+      }
+      if (!eventData.time) {
+        toast.error('Event time is required');
+        return;
+      }
+      
+      // Validate all string fields
+      validateFieldSize(eventData.title, 'Event title');
+      validateFieldSize(eventData.description, 'Event description');
+      validateFieldSize(eventData.location, 'Event location');
+      validateFieldSize(eventData.category, 'Event category');
+      
+      // For image URLs, we'll use a placeholder if no image is uploaded
+      // This avoids the base64 data URL being too large
+      let imageUrl = 'https://placeholder.com/event-image.png';
+      if (imagePreview && imagePreview.startsWith('http')) {
+        imageUrl = imagePreview;
+        validateFieldSize(imageUrl, 'Image URL');
+      }
+      // If it's a base64 data URL, we'll need to upload it somewhere first
+      // For now, we'll use the placeholder
+      if (imagePreview && imagePreview.startsWith('data:')) {
+        console.log('Base64 image detected, using placeholder for now');
+        // TODO: Upload to IPFS or cloud storage
+        imageUrl = 'https://placeholder.com/event-image.png';
+      }
+
+      setIsCreating(true);
+      
+      // Combine date and time
+      const startDate = new Date(`${eventData.date}T${eventData.time}`);
+      // If no end date/time specified, set end time to 2 hours after start
+      const endDateStr = eventData.endDate || eventData.date;
+      const endTimeStr = eventData.endTime || (() => {
+        const tempDate = new Date(`${eventData.date}T${eventData.time}`);
+        tempDate.setHours(tempDate.getHours() + 2);
+        return tempDate.toTimeString().slice(0, 5);
+      })();
+      const endDate = new Date(`${endDateStr}T${endTimeStr}`);
+      
+      // Validate dates
+      if (isNaN(startDate.getTime())) {
+        toast.error('Invalid start date or time');
+        setIsCreating(false);
+        return;
+      }
+      
+      if (isNaN(endDate.getTime())) {
+        toast.error('Invalid end date or time');
+        setIsCreating(false);
+        return;
+      }
+      
+      if (endDate <= startDate) {
+        toast.error('End date must be after start date');
+        setIsCreating(false);
+        return;
+      }
+      
+      // Log event data for debugging
+      console.log('Creating event with data:', {
+        title: eventData.title,
+        description: eventData.description,
+        imageUrl: imageUrl,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        location: eventData.location,
+        category: eventData.category,
+        capacity: eventData.capacity ? parseInt(eventData.capacity) : undefined,
+        ticketPrice: eventData.isFree ? 0 : parseFloat(eventData.ticketPrice || '0'),
+        requiresApproval: eventData.requiresApproval,
+        isPrivate: eventData.isPrivate,
+      });
+      
+      // Create event on blockchain
+      await createEvent({
+        title: eventData.title,
+        description: eventData.description,
+        imageUrl: imageUrl,
+        startDate: startDate,
+        endDate: endDate,
+        location: eventData.location,
+        category: eventData.category,
+        capacity: eventData.capacity ? parseInt(eventData.capacity) : undefined,
+        ticketPrice: eventData.isFree ? 0 : parseFloat(eventData.ticketPrice || '0'),
+        requiresApproval: eventData.requiresApproval,
+        isPrivate: eventData.isPrivate,
+      });
+      
+      // If POAP is enabled, create POAP collection
+      if (poapData.enabled && poapData.name) {
+        // This would be called after getting the event ID from the transaction
+        // For now, we'll skip this part as it requires transaction result parsing
+      }
+      
     } catch (error) {
       console.error('Error creating event:', error);
+      toast.error('Failed to create event');
+    } finally {
       setIsCreating(false);
     }
   }
@@ -179,6 +323,22 @@ export default function CreateEventPage() {
       }
       reader.readAsDataURL(file)
     }
+  }
+
+  const handlePoapSave = () => {
+    setPoapDialogOpen(false);
+  }
+
+  // Show loading state while checking auth
+  if (!shouldCheckAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-500" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -229,18 +389,26 @@ export default function CreateEventPage() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex text-sm items-center space-x-4">
-            {!user ? (
+            {!currentAccount ? (
+              <ConnectButton 
+                connectText="Connect Wallet"
+                className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl"
+              />
+            ) : !user ? (
               <Link href='/auth/signin'>
                 <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
                   Sign In
                 </Button>
               </Link>
             ) : (
-              <Link href='/create'>
-                <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-                  Create Event
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-600">Connected</span>
+                <img
+                  src={user.avatarUrl || '/placeholder-user.jpg'}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-full border border-gray-200"
+                />
+              </div>
             )}
           </div>
         </div>
@@ -287,18 +455,26 @@ export default function CreateEventPage() {
               
               {/* Mobile Actions */}
               <div className="flex flex-col space-y-4 pt-4">
-                {!user ? (
+                {!currentAccount ? (
+                  <ConnectButton 
+                    connectText="Connect Wallet"
+                    className="w-full bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white py-2 rounded-xl"
+                  />
+                ) : !user ? (
                   <Link href='/auth/signin' onClick={() => setMobileMenuOpen(false)}>
                     <Button className="w-full bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white py-2 rounded-xl">
                       Sign In
                     </Button>
                   </Link>
                 ) : (
-                  <Link href='/create' onClick={() => setMobileMenuOpen(false)}>
-                    <Button className="w-full bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white py-2 rounded-xl">
-                      Create Event
-                    </Button>
-                  </Link>
+                  <div className="flex items-center justify-center gap-2 py-2">
+                    <span className="text-gray-600">Connected</span>
+                    <img
+                      src={user.avatarUrl || '/placeholder-user.jpg'}
+                      alt="Profile"
+                      className="w-8 h-8 rounded-full border border-gray-200"
+                    />
+                  </div>
                 )}
               </div>
             </nav>
@@ -359,8 +535,37 @@ export default function CreateEventPage() {
               value={eventData.title}
               onChange={(e) => setEventData({ ...eventData, title: e.target.value })}
               className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              maxLength={200}
               required
             />
+            <div className="text-xs text-gray-500 mt-1">
+              {eventData.title.length}/200 characters
+            </div>
+          </div>
+
+          {/* Event Category */}
+          <div>
+            <Label htmlFor="category" className="text-sm font-medium text-gray-700 mb-2 block">
+              Event Category
+            </Label>
+            <Select
+              value={eventData.category}
+              onValueChange={(value) => setEventData({ ...eventData, category: value })}
+            >
+              <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="general">General</SelectItem>
+                <SelectItem value="technology">Technology</SelectItem>
+                <SelectItem value="gaming">Gaming</SelectItem>
+                <SelectItem value="defi">DeFi</SelectItem>
+                <SelectItem value="nft">NFT</SelectItem>
+                <SelectItem value="dao">DAO</SelectItem>
+                <SelectItem value="social">Social</SelectItem>
+                <SelectItem value="education">Education</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Start Date & Time */}
@@ -390,8 +595,8 @@ export default function CreateEventPage() {
             <div className="grid grid-cols-2 gap-3">
               <Input
                 type="date"
-                value={eventData.date}
-                onChange={(e) => setEventData({ ...eventData, date: e.target.value })}
+                value={eventData.endDate || eventData.date}
+                onChange={(e) => setEventData({ ...eventData, endDate: e.target.value })}
                 className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
               />
               <Input
@@ -414,8 +619,12 @@ export default function CreateEventPage() {
               value={eventData.location}
               onChange={(e) => setEventData({ ...eventData, location: e.target.value })}
               className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              maxLength={500}
               required
             />
+            <div className="text-xs text-gray-500 mt-1">
+              {eventData.location.length}/500 characters
+            </div>
           </div>
 
           {/* Add Description */}
@@ -430,8 +639,12 @@ export default function CreateEventPage() {
               value={eventData.description}
               onChange={(e) => setEventData({ ...eventData, description: e.target.value })}
               className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none"
+              maxLength={2000}
               required
             />
+            <div className="text-xs text-gray-500 mt-1">
+              {eventData.description.length}/2000 characters
+            </div>
           </div>
 
           {/* Tickets */}
@@ -450,14 +663,17 @@ export default function CreateEventPage() {
                     })
                   }}
                 >
-                  <span>{eventData.isFree ? "Free" : `$${eventData.ticketPrice || "0"}`}</span>
+                  <span>{eventData.isFree ? "Free" : `${eventData.ticketPrice || "0"} SUI`}</span>
                   <Edit3 className="w-4 h-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="w-[95%] max-w-md mx-auto bg-white">
+              <DialogContent className="w-[95%] max-w-md mx-auto bg-white" aria-describedby="ticket-dialog-description">
                 <DialogHeader>
                   <DialogTitle>Edit Tickets</DialogTitle>
                 </DialogHeader>
+                <p id="ticket-dialog-description" className="sr-only">
+                  Configure ticket pricing for your event
+                </p>
                 <div className="grid gap-4 py-4">
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -472,11 +688,13 @@ export default function CreateEventPage() {
                   {!tempTicketData.isFree && (
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="price" className="text-right">
-                        Price ($)
+                        Price (SUI)
                       </Label>
                       <Input
                         id="price"
                         type="number"
+                        step="0.1"
+                        min="0"
                         placeholder="0.00"
                         value={tempTicketData.ticketPrice}
                         onChange={(e) => 
@@ -512,6 +730,18 @@ export default function CreateEventPage() {
             />
           </div>
 
+          {/* Private Event */}
+          <div className="flex items-center justify-between py-2">
+            <Label htmlFor="private" className="text-sm font-medium text-gray-700">
+              Private Event
+            </Label>
+            <Switch
+              id="private"
+              checked={eventData.isPrivate}
+              onCheckedChange={(checked) => setEventData({ ...eventData, isPrivate: checked })}
+            />
+          </div>
+
           {/* Maximum Capacity */}
           <div>
             <Label className="text-sm font-medium text-gray-700 mb-2 block">Maximum Capacity</Label>
@@ -531,10 +761,13 @@ export default function CreateEventPage() {
                   <Edit3 className="w-4 h-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="w-[95%] max-w-md mx-auto bg-white">
+              <DialogContent className="w-[95%] max-w-md mx-auto bg-white" aria-describedby="capacity-dialog-description">
                 <DialogHeader>
                   <DialogTitle>Edit Capacity</DialogTitle>
                 </DialogHeader>
+                <p id="capacity-dialog-description" className="sr-only">
+                  Set the maximum number of attendees for your event
+                </p>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="capacity" className="text-right">
@@ -580,14 +813,26 @@ export default function CreateEventPage() {
                   variant="outline" 
                   className="w-full justify-center border-dashed border-2 border-gray-300 hover:border-gray-400 py-6"
                 >
-                  <Plus className="w-5 h-5 mr-2" />
-                  Add POAP
+                  {poapData.enabled ? (
+                    <span className="flex items-center">
+                      <span className="mr-2">POAP: {poapData.name || 'Configured'}</span>
+                      <Edit3 className="w-4 h-4" />
+                    </span>
+                  ) : (
+                    <>
+                      <Plus className="w-5 h-5 mr-2" />
+                      Add POAP
+                    </>
+                  )}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="w-[95%] max-w-md mx-auto bg-white">
+              <DialogContent className="w-[95%] max-w-md mx-auto bg-white" aria-describedby="poap-dialog-description">
                 <DialogHeader>
                   <DialogTitle>Add POAP to Event</DialogTitle>
                 </DialogHeader>
+                <p id="poap-dialog-description" className="sr-only">
+                  Configure Proof of Attendance Protocol NFTs for your event attendees
+                </p>
                 <div className="grid gap-4 py-4">
                   <p className="text-sm text-gray-600">
                     POAP (Proof of Attendance Protocol) allows you to create commemorative NFTs for your event attendees.
@@ -598,6 +843,8 @@ export default function CreateEventPage() {
                       <Input
                         id="poap-name"
                         placeholder="Enter POAP name"
+                        value={poapData.name}
+                        onChange={(e) => setPoapData({ ...poapData, name: e.target.value })}
                         className="mt-1"
                       />
                     </div>
@@ -607,15 +854,29 @@ export default function CreateEventPage() {
                         id="poap-description"
                         placeholder="Describe your POAP"
                         rows={3}
+                        value={poapData.description}
+                        onChange={(e) => setPoapData({ ...poapData, description: e.target.value })}
                         className="mt-1"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="poap-image">POAP Image</Label>
+                      <Label htmlFor="poap-image">POAP Image URL</Label>
                       <Input
                         id="poap-image"
-                        type="file"
-                        accept="image/*"
+                        placeholder="https://..."
+                        value={poapData.imageUrl}
+                        onChange={(e) => setPoapData({ ...poapData, imageUrl: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="poap-supply">Max Supply (optional)</Label>
+                      <Input
+                        id="poap-supply"
+                        type="number"
+                        placeholder="Unlimited"
+                        value={poapData.maxSupply}
+                        onChange={(e) => setPoapData({ ...poapData, maxSupply: e.target.value })}
                         className="mt-1"
                       />
                     </div>
@@ -625,7 +886,10 @@ export default function CreateEventPage() {
                   <Button 
                     type="button" 
                     variant="outline" 
-                    onClick={() => setPoapDialogOpen(false)}
+                    onClick={() => {
+                      setPoapData({ enabled: false, name: "", description: "", imageUrl: "", maxSupply: "" });
+                      setPoapDialogOpen(false);
+                    }}
                     className="w-full sm:w-auto"
                   >
                     Cancel
@@ -633,7 +897,10 @@ export default function CreateEventPage() {
                   <Button 
                     type="button" 
                     className="bg-blue-500 hover:bg-blue-600 w-full sm:w-auto"
-                    onClick={() => setPoapDialogOpen(false)}
+                    onClick={() => {
+                      setPoapData({ ...poapData, enabled: true });
+                      handlePoapSave();
+                    }}
                   >
                     Add POAP
                   </Button>
@@ -642,21 +909,33 @@ export default function CreateEventPage() {
             </Dialog>
           </div>
 
-          {/* Create Event Button */}
-          <Button 
-            type="submit"
-            disabled={isCreating}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium disabled:opacity-50"
-          >
-            {isCreating ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating Event...
-              </>
-            ) : (
-              'Create Event'
-            )}
-          </Button>
+          {/* Create Event Button / Connect Wallet */}
+          {!currentAccount ? (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600 text-center">
+                You need to connect your wallet to create an event
+              </p>
+              <ConnectButton 
+                connectText="Connect Wallet to Continue"
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium"
+              />
+            </div>
+          ) : (
+            <Button 
+              type="submit"
+              disabled={isCreating || isLoading}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium disabled:opacity-50"
+            >
+              {isCreating || isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating Event...
+                </>
+              ) : (
+                'Create Event'
+              )}
+            </Button>
+          )}
         </form>
       </div>
     </div>

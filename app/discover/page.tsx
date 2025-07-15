@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -26,10 +26,32 @@ import {
 import Link from "next/link"
 import Image from "next/image"
 import { ConnectButton } from "@mysten/dapp-kit"
+import { useSuiContracts } from "@/hooks/useSuiContracts"
 
 const EventDashboard: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [blockchainEvents, setBlockchainEvents] = useState<any[]>([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const { getAllEvents } = useSuiContracts();
+  
+  // Fetch events from blockchain
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setIsLoadingEvents(true);
+      try {
+        const events = await getAllEvents();
+        console.log('Fetched all events from blockchain:', events);
+        setBlockchainEvents(events);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+      } finally {
+        setIsLoadingEvents(false);
+      }
+    };
+    
+    fetchEvents();
+  }, [getAllEvents]);
   
   const events = [
     {

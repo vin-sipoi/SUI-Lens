@@ -1,5 +1,6 @@
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { EventProvider } from '@/context/EventContext';
+import { Toaster } from '@/components/ui/sonner';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
@@ -26,6 +27,7 @@ export default function RootLayout({
 							<EventProvider>{children}</EventProvider>
 						</ErrorBoundary>
 					</Providers>
+					<Toaster />
 				</ErrorBoundary>
 			</body>
 		</html>

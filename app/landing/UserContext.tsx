@@ -31,17 +31,38 @@ const UserContext = createContext<UserContextType | undefined>(undefined)
 
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const login = (user: User) => setUser(user)
-  const logout = () => setUser(null)
+  const login = (user: User) => {
+    setUser(user)
+    // Save to localStorage to persist across page navigations
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sui-lens-user', JSON.stringify(user))
+    }
+  }
+
+  const logout = () => {
+    setUser(null)
+    // Clear from localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('sui-lens-user')
+    }
+  }
 
   useEffect(() => {
-    // Any initialization logic can go here
-    // For example, checking localStorage for existing user session
-    // const savedUser = localStorage.getItem('user')
-    // if (savedUser) {
-    //   setUser(JSON.parse(savedUser))
-    // }
+    // Check localStorage for existing user session on mount
+    if (typeof window !== 'undefined') {
+      const savedUser = localStorage.getItem('sui-lens-user')
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser))
+        } catch (error) {
+          console.error('Error parsing saved user:', error)
+          localStorage.removeItem('sui-lens-user')
+        }
+      }
+      setIsLoading(false)
+    }
   }, [])
 
   return (

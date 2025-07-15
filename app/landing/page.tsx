@@ -36,18 +36,7 @@ export default function HomePage() {
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-	// When wallet connects, log in with wallet address
-	useEffect(() => {
-		if (account && !user) {
-			login({
-				name: 'Sui User',
-				email: '',
-				emails: [{ address: '', primary: true, verified: false }],
-				avatarUrl: 'https://via.placeholder.com/100',
-				walletAddress: account.address,
-			});
-		}
-	}, [account, login, user]);
+	// Auto-login is now handled by WalletConnectionManager
 
 	useEffect(() => {
 		if (!user) setShowDropdown(false);
