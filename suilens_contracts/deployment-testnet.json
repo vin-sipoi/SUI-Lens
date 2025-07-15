@@ -1,0 +1,31 @@
+{
+  "network": "testnet",
+  "deploymentDate": "2025-07-14",
+  "transactionDigest": "22H3GHkiEzC6LqjSxpRodS6Ux42LWW576hxUDDyqk2f9",
+  "packageId": "0x0687d19707ad6528234f3f1c6a58d8085b483ef629cbbbd8983fbf095fa30082",
+  "deployer": "0x4822bfc9c86d1a77daf48b0bdf8f012ae9b7f8f01b4195dc0f3fd4fb838525bd",
+  "objects": {
+    "AdminCap": "0x6c7b702dd93c43c320138c49f3f1c73e78e643d6a670e3adbcf95ae30d3ac4e3",
+    "GlobalRegistry": "0x6bb54788b079f5074f80cdfb5d5b48b7d487f021bf4d1d73eb98d9fff3ff88d9",
+    "POAPRegistry": "0x509f0748bbe1b4cee12b8fea9da45cddf7153b6382e8fb10015d3c149154a4e8",
+    "CommunityRegistry": "0xf92f5314c80e38cb73046cf34d597bedfb27df0aa2725289dfdfe039a2da2f22",
+    "BountyRegistry": "0x4412dd37dc7660ff5b3b77ac5951200385fb8b4cce6e11cf4bfe72b441b7605f",
+    "UpgradeCap": "0x7a46ed263f24324e0043429e075c77577402c44ec628c5251cfa1ac0fc1c696b",
+    "Publisher": "0xa523790a847e646749953f7efcdfc07a02e8fcfcbed05f67a74362741238a061",
+    "POAPDisplay": "0x55de5635a7ef92392fee79115908fdb6d0fb095923e7585595aaebd8994b6133"
+  },
+  "modules": [
+    "suilens_core",
+    "suilens_poap", 
+    "suilens_community",
+    "suilens_bounty"
+  ],
+  "notes": {
+    "AdminCap": "Owned by deployer - controls platform fees and admin functions",
+    "GlobalRegistry": "Shared object - main registry for events and user profiles",
+    "POAPRegistry": "Shared object - manages POAP collections and claims",
+    "CommunityRegistry": "Shared object - manages communities and memberships",
+    "BountyRegistry": "Shared object - manages bounties and rewards",
+    "platformFeeRate": "250 (2.5%)"
+  }
+}
