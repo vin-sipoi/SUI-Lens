@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useMemo } from 'react';
 import { useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 // import { SUI_CLOCK_OBJECT_ID } from '@mysten/sui/utils';
@@ -340,144 +341,210 @@ export function useSuiContracts() {
     }
   };
   
-  const getAllEvents = async () => {
+  const getAllEvents = useCallback(async () => {
     try {
       console.log('Fetching all events from blockchain...');
+      console.log('Global Registry ID:', SUI_CONTRACTS.objects.globalRegistry);
       
-      // Query transaction blocks that created events
-      const txBlocks = await client.queryTransactionBlocks({
-        filter: {
-          MoveFunction: {
-            package: SUI_CONTRACTS.packageId,
-            module: SUI_CONTRACTS.modules.core,
-            function: 'create_event'
-          }
-        },
+      // Get the global registry which contains all events
+      const registryObject = await client.getObject({
+        id: SUI_CONTRACTS.objects.globalRegistry,
         options: {
-          showEffects: true,
-          showObjectChanges: true,
-        },
-        limit: 50,
-        order: 'descending'
+          showContent: true,
+        }
       });
       
-      console.log('Found transaction blocks:', txBlocks);
+      if (!registryObject.data?.content || registryObject.data.content.dataType !== 'moveObject') {
+        console.error('Failed to fetch global registry');
+        return [];
+      }
       
-      // Extract event IDs from created objects
-      const eventIds: string[] = [];
+      const registryFields = registryObject.data.content.fields as any;
+      console.log('Registry fields:', registryFields);
       
-      for (const tx of txBlocks.data) {
-        // Look for created objects in effects
-        if (tx.effects?.created) {
-          for (const created of tx.effects.created) {
-            eventIds.push(created.reference.objectId);
-          }
+      // Let's also check the user_profiles table structure for debugging
+      const userProfilesTableId = registryFields.user_profiles?.fields?.id?.id;
+      console.log('User profiles table ID:', userProfilesTableId);
+      
+      if (userProfilesTableId) {
+        try {
+          const userTableFields = await client.getDynamicFields({
+            parentId: userProfilesTableId,
+            limit: 5, // Just get a few for debugging
+          });
+          console.log('User table dynamic fields (sample):', userTableFields);
+        } catch (err) {
+          console.log('Error fetching user table fields:', err);
         }
       }
       
-      console.log('Found event IDs:', eventIds);
+      // The events are stored in a table - we need to get the table's ID
+      const eventsTableId = registryFields.events?.fields?.id?.id;
+      console.log('Events table ID:', eventsTableId);
       
-      // Fetch all event objects
-      if (eventIds.length > 0) {
-        const multiGetResult = await client.multiGetObjects({
-          ids: eventIds,
-          options: {
-            showContent: true,
-            showOwner: true,
-            showType: true,
-          }
-        });
-        
-        const events = multiGetResult
-          .filter(obj => obj.data?.content?.dataType === 'moveObject')
-          .map(obj => {
-            const fields = obj.data?.content?.fields as any;
-            return {
-              id: obj.data?.objectId || '',
-              ...fields,
-              // Convert Move timestamps to JS dates
-              start_date: fields?.start_date ? new Date(Number(fields.start_date)) : null,
-              end_date: fields?.end_date ? new Date(Number(fields.end_date)) : null,
-            };
-          });
-          
-        console.log('Parsed events:', events);
-        return events;
+      if (!eventsTableId) {
+        console.error('Events table ID not found in registry');
+        return [];
       }
       
-      return [];
+      // Query dynamic fields of the events table, not the registry
+      const dynamicFieldsResponse = await client.getDynamicFields({
+        parentId: eventsTableId,
+        limit: 50,
+      });
+      
+      console.log('Dynamic fields of events table:', dynamicFieldsResponse);
+      
+      // In a Sui Table, each dynamic field is a table entry
+      // The objectId of each dynamic field is the actual table entry we need to fetch
+      const eventFieldIds = dynamicFieldsResponse.data.map(field => field.objectId);
+      
+      console.log('Event field IDs:', eventFieldIds);
+      console.log('Number of events found:', eventFieldIds.length);
+      
+      if (eventFieldIds.length === 0) {
+        console.log('No events found in the table');
+        return [];
+      }
+      
+      // Fetch the actual event data from dynamic fields
+      const eventDataResponse = await client.multiGetObjects({
+        ids: eventFieldIds,
+        options: {
+          showContent: true,
+        }
+      });
+      
+      const events = eventDataResponse
+        .filter(obj => obj.data?.content?.dataType === 'moveObject')
+        .map(obj => {
+          console.log('Raw event object:', obj.data?.content);
+          
+          // In a table entry, the value is stored in fields.value
+          const tableEntry = (obj.data?.content as any)?.fields;
+          const fields = tableEntry?.value?.fields || tableEntry?.value;
+          
+          console.log('Table entry:', tableEntry);
+          console.log('Event fields:', fields);
+          
+          if (!fields) return null;
+          
+          return {
+            id: fields.id?.id || '',
+            creator: fields.creator || '',
+            title: fields.title || '',
+            description: fields.description || '',
+            image_url: fields.image_url || '',
+            start_date: fields.start_date ? new Date(Number(fields.start_date)) : null,
+            end_date: fields.end_date ? new Date(Number(fields.end_date)) : null,
+            location: fields.location || '',
+            category: fields.category || '',
+            capacity: fields.capacity,
+            ticket_price: fields.ticket_price || '0',
+            is_free: fields.is_free || false,
+            requires_approval: fields.requires_approval || false,
+            is_private: fields.is_private || false,
+            is_active: fields.is_active || true,
+            attendees: fields.attendees?.fields || [],
+            created_at: fields.created_at ? new Date(Number(fields.created_at)) : null,
+            updated_at: fields.updated_at ? new Date(Number(fields.updated_at)) : null,
+          };
+        })
+        .filter(event => event !== null);
+          
+      console.log('Parsed events:', events);
+      
+      // If no events found through table, try alternative approach
+      if (events.length === 0) {
+        console.log('No events found via table, trying event query approach...');
+        
+        // Try to query EventCreated events as an alternative
+        try {
+          const eventQuery = await client.queryEvents({
+            query: {
+              MoveEventType: `${SUI_CONTRACTS.packageId}::${SUI_CONTRACTS.modules.core}::EventCreated`
+            },
+            limit: 50,
+            order: 'descending'
+          });
+          
+          console.log('Event query response:', eventQuery);
+          
+          // Extract event IDs from emitted events
+          const eventIds = eventQuery.data
+            .map((event: any) => event.parsedJson?.event_id)
+            .filter((id: string) => id);
+          
+          console.log('Event IDs from events:', eventIds);
+          
+          // Fetch each event object directly
+          if (eventIds.length > 0) {
+            const eventObjects = await client.multiGetObjects({
+              ids: eventIds,
+              options: {
+                showContent: true,
+              }
+            });
+            
+            const eventsFromQuery = eventObjects
+              .filter(obj => obj.data?.content?.dataType === 'moveObject')
+              .map(obj => {
+                const fields = (obj.data?.content as any)?.fields;
+                if (!fields) return null;
+                
+                return {
+                  id: fields.id?.id || '',
+                  creator: fields.creator || '',
+                  title: fields.title || '',
+                  description: fields.description || '',
+                  image_url: fields.image_url || '',
+                  start_date: fields.start_date ? new Date(Number(fields.start_date)) : null,
+                  end_date: fields.end_date ? new Date(Number(fields.end_date)) : null,
+                  location: fields.location || '',
+                  category: fields.category || '',
+                  capacity: fields.capacity,
+                  ticket_price: fields.ticket_price || '0',
+                  is_free: fields.is_free || false,
+                  requires_approval: fields.requires_approval || false,
+                  is_private: fields.is_private || false,
+                  is_active: fields.is_active || true,
+                  attendees: fields.attendees?.fields || [],
+                  created_at: fields.created_at ? new Date(Number(fields.created_at)) : null,
+                  updated_at: fields.updated_at ? new Date(Number(fields.updated_at)) : null,
+                };
+              })
+              .filter(event => event !== null);
+            
+            console.log('Events from query approach:', eventsFromQuery);
+            return eventsFromQuery;
+          }
+        } catch (eventError) {
+          console.error('Error with event query approach:', eventError);
+        }
+      }
+      
+      return events;
     } catch (error) {
       console.error('Error fetching all events:', error);
       return [];
     }
-  };
+  }, [client]);
   
-  const getUserEvents = async (userAddress: string) => {
+  const getUserEvents = useCallback(async (userAddress: string) => {
     try {
       console.log('Fetching events for user:', userAddress);
       
-      // Query transaction blocks created by the user
-      const txBlocks = await client.queryTransactionBlocks({
-        filter: {
-          MoveFunction: {
-            package: SUI_CONTRACTS.packageId,
-            module: SUI_CONTRACTS.modules.core,
-            function: 'create_event'
-          },
-          FromAddress: userAddress,
-        },
-        options: {
-          showEffects: true,
-          showObjectChanges: true,
-        },
-        limit: 50,
-        order: 'descending'
-      });
+      // Get all events and filter by creator
+      const allEvents = await getAllEvents();
+      const userEvents = allEvents.filter(event => event.creator === userAddress);
       
-      // Extract event IDs from created objects
-      const eventIds: string[] = [];
-      
-      for (const tx of txBlocks.data) {
-        if (tx.effects?.created) {
-          for (const created of tx.effects.created) {
-            eventIds.push(created.reference.objectId);
-          }
-        }
-      }
-      
-      // Fetch all event objects
-      if (eventIds.length > 0) {
-        const multiGetResult = await client.multiGetObjects({
-          ids: eventIds,
-          options: {
-            showContent: true,
-            showOwner: true,
-            showType: true,
-          }
-        });
-        
-        const events = multiGetResult
-          .filter(obj => obj.data?.content?.dataType === 'moveObject')
-          .map(obj => {
-            const fields = obj.data?.content?.fields as any;
-            return {
-              id: obj.data?.objectId || '',
-              ...fields,
-              // Convert Move timestamps to JS dates
-              start_date: fields?.start_date ? new Date(Number(fields.start_date)) : null,
-              end_date: fields?.end_date ? new Date(Number(fields.end_date)) : null,
-            };
-          });
-          
-        return events;
-      }
-      
-      return [];
+      console.log('Found user events:', userEvents.length);
+      return userEvents;
     } catch (error) {
       console.error('Error fetching user events:', error);
       return [];
     }
-  };
+  }, [getAllEvents]);
 
   const hasUserProfile = async (userAddress: string) => {
     try {
