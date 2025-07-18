@@ -37,23 +37,42 @@ export default function DashboardPage() {
 
   // Fetch events from blockchain when wallet is connected
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
+    
     const fetchEvents = async () => {
-      if (currentAccount?.address) {
+      if (currentAccount?.address && isMounted) {
         setIsLoadingEvents(true);
         try {
           const events = await getUserEvents(currentAccount.address);
-          console.log('Fetched user events from blockchain:', events);
-          setBlockchainEvents(events);
+          if (isMounted) {
+            console.log('Fetched user events from blockchain:', events);
+            setBlockchainEvents(events);
+          }
         } catch (error) {
           console.error('Error fetching events:', error);
+          // Don't retry on network errors to prevent infinite loops
+          if (error instanceof TypeError && error.message === 'Failed to fetch') {
+            console.log('Network error, skipping retry');
+          }
         } finally {
-          setIsLoadingEvents(false);
+          if (isMounted) {
+            setIsLoadingEvents(false);
+          }
         }
       }
     };
     
-    fetchEvents();
-  }, [currentAccount, getUserEvents]);
+    // Add a delay to prevent immediate re-fetching
+    timeoutId = setTimeout(() => {
+      fetchEvents();
+    }, 1000);
+    
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
+  }, [currentAccount?.address, getUserEvents]);
 
   // Handle responsive behavior
   useEffect(() => {

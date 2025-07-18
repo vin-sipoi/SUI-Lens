@@ -252,6 +252,15 @@ export default function CreateEventPage() {
         return;
       }
       
+      // Check if start date is in the future (at least 5 minutes from now)
+      const now = new Date();
+      const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes buffer
+      if (startDate < fiveMinutesFromNow) {
+        toast.error('Event start date must be at least 5 minutes in the future');
+        setIsCreating(false);
+        return;
+      }
+      
       // Log event data for debugging
       console.log('Creating event with data:', {
         title: eventData.title,
@@ -577,6 +586,7 @@ export default function CreateEventPage() {
                 value={eventData.date}
                 onChange={(e) => setEventData({ ...eventData, date: e.target.value })}
                 className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                min={new Date().toISOString().split('T')[0]}
                 required
               />
               <Input
