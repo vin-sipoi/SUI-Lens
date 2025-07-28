@@ -1,6 +1,6 @@
 # SUI Community Lens – Blockchain Community Visualizer
 
-Welcome to the SUI Community Lens project – a playful, interactive, and gamified Progressive Web App (PWA) designed to offer a unique window into the SUI blockchain community. Our mission is to visualize community activity using dynamic, interactive bubbles that burst open to reveal real-time metrics, social feeds, and engaging gamification features. Built with Next.js, Tailwind CSS, and integrated with the SUI blockchain, this project is meant to be both informative and fun!
+Welcome to the SUI Community Lens project – a playful, interactive, and gamified Progressive Web App (PWA) designed to offer a unique window into the SUI blockchain community. Our mission is to visualize community activity using dynamic, interactive UI that  open to reveal real-time metrics, social feeds, and engaging gamification features. Built with Next.js, Tailwind CSS, and integrated with the SUI blockchain, this project is meant to be both informative and fun!
 
 ---
 
