@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  walletAddress String? @unique
+  username  String?  @unique
+  name      String?
+  avatarUrl String?
+  bio       String?
+  location  String?
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  events           Event[]
+  communities      CommunityMember[]
+  bounties         Bounty[]
+  attendees        Attendee[]
+  otps             OTP[]
+  sessions         Session[]
+  claimedBounties  Bounty[] @relation("BountyClaimer")
+
+  @@index([email])
+}
+
+model Event {
+  id               String   @id @default(uuid())
+  title            String
+  description      String?
+  image            String?
+  date             DateTime @db.Date
+  time             DateTime @db.Time
+  endTime          DateTime? @db.Time
+  location         String?
+  category         String?
+  capacity         Int?
+  ticketPrice      Decimal? @db.Decimal(10, 2)
+  isFree           Boolean  @default(true)
+  requiresApproval Boolean  @default(false)
+  isPrivate        Boolean  @default(false)
+  timezone         String
+  poapName         String?  @map("poap_name")
+  poapDesc         String?  @map("poap_desc")
+  poapImage        String?  @map("poap_image")
+  status           String   @default("published")
+  createdAt        DateTime @default(now()) @map("created_at")
+  // Removed: creator String?
+  // Replaced tags String[] with relation
+  eventTags        EventTag[]
+
+  // Relations
+  registrations    Registration[]
+  checkins         Checkin[]
+  attendees        Attendee[]
+  eventBounties    EventBounty[]
+  communityId      Int?
+  community        Community? @relation(fields: [communityId], references: [id])
+  userId           Int?
+  user             User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("events")
+}
+
+model Tag {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  eventTags EventTag[]
+
+  @@map("tags")
+}
+
+model EventTag {
+  id        Int    @id @default(autoincrement())
+  eventId   String
+  tagId     Int
+
+  event     Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tag       Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, tagId])
+  @@map("event_tags")
+}
+
+model Registration {
+  id           Int      @id @default(autoincrement())
+  eventId      String   @map("event_id")
+  address      String
+  name         String
+  mobile       String
+  email        String
+  x            String?
+  registeredAt DateTime @default(now()) @map("registered_at")
+
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("registrations")
+  @@index([eventId])
+}
+
+model Checkin {
+  id            Int      @id @default(autoincrement())
+  eventId       String   @map("event_id")
+  address       String
+  checkedInAt   DateTime @default(now()) @map("checked_in_at")
+
+  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("checkins")
+  @@index([eventId])
+}
+
+model Attendee {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  eventId   String
+  joinedAt  DateTime @default(now())
+
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@map("attendees")
+}
+
+model Community {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  imageUrl    String?
+  country     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  events      Event[]
+  members     CommunityMember[]
+
+  @@map("communities")
+}
+
+model CommunityMember {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  communityId Int
+  role        String   @default("member")
+  joinedAt    DateTime @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, communityId])
+  @@map("community_members")
+}
+
+model Bounty {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  title          String
+  description    String?
+  reward         Decimal  @db.Decimal(10, 2)
+  criteria       String?
+  status         String   @default("active")
+  claimedBy      Int?
+  submissionDate DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  eventBounties  EventBounty[]
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  claimer        User?    @relation("BountyClaimer", fields: [claimedBy], references: [id])
+
+  @@map("bounties")
+}
+
+model EventBounty {
+  id        Int    @id @default(autoincrement())
+  eventId   String
+  bountyId  Int
+
+  event     Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  bounty    Bounty @relation(fields: [bountyId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, bountyId])
+  @@map("event_bounties")
+}
+
+model OTP {
+  id        Int      @id @default(autoincrement())
+  email     String
+  otp       String   @db.VarChar(6)
+  expiresAt DateTime
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otps")
+}
+
+model Session {
+  sessionId String   @id @db.VarChar(128) @map("session_id")
+  userId    Int?
+  expires   DateTime
+  data      Json?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
