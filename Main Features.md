@@ -82,9 +82,8 @@ The SUI Community Lens is a vibrant PWA that visualizes SUI blockchain communiti
 - **Key Components:**
   | Component          | Description                                                                 |
   |--------------------|-----------------------------------------------------------------------------|
-  | `BubbleChart`      | A D3.js-powered bubble chart with intuitive hover and click interactions.  |
+  | `Mdodern UI`      |
   | `CommunityDetails` | A dropdown/modal that displays community metrics and social links.          |
-  | `EmojiReactions`   | Animates emojis on bubble hover based on community performance.             |
   | `AnalyticsEngine`  | Tracks user interactions and communicates with backend analytics services.  |
 
 ---
