@@ -21,8 +21,6 @@ export default function Profile() {
 
   const walletAddress = account?.address || user?.walletAddress || "";
   const username = user?.username || "Sui User";
-  const poaps = 0;
-  const events = 0;
 
   const copyToClipboard = () => {
     if (!walletAddress) return;
@@ -267,7 +265,7 @@ export default function Profile() {
                   <div className="w-10 h-10 bg-amber-100/30 rounded-full flex items-center justify-center mb-2">
                     <div className="w-5 h-5 bg-amber-200/30 rounded-full"></div>
                   </div>
-                  <div className="text-2xl font-bold text-black mb-1">{poaps}</div>
+                  <div className="text-2xl font-bold text-black mb-1">-</div>
                   <div className="text-black text-xs font-medium text-center">POAPs collected</div>
                 </div>
               </div>
@@ -276,7 +274,7 @@ export default function Profile() {
                   <div className="w-10 h-10 bg-amber-100/30 rounded-full flex items-center justify-center mb-2">
                     <Calendar className="w-5 h-5 text-amber-200/40" />
                   </div>
-                  <div className="text-2xl font-bold text-black mb-1">{events}</div>
+                  <div className="text-2xl font-bold text-black mb-1">-</div>
                   <div className="text-black text-xs font-medium text-center">Events Attended</div>
                 </div>
               </div>
