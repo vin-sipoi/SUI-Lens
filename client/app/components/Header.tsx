@@ -55,9 +55,10 @@ export default function Header() {
 		{ name: 'Dashboard', href: '/dashboard' },
 	];
 
-	// Handle navigation with authentication check
+	// Handle navigation - no authentication check for public pages
 	const handleNavigation = (href: string) => {
-		if (!isAuthenticated) {
+		// Only check authentication for protected routes like dashboard
+		if (href === '/dashboard' && !isAuthenticated) {
 			router.push('/auth/signin');
 			return;
 		}
