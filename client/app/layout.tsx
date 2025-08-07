@@ -3,6 +3,7 @@ import { EventProvider } from '@/context/EventContext';
 import type { Metadata } from 'next';
 import './globals.css';
 import Providers from './providers';
+import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
 	title: 'Sui Lens',
@@ -21,7 +22,15 @@ export default function RootLayout({
 				<ErrorBoundary>
 					<Providers>
 						<ErrorBoundary>
-							<EventProvider>{children}</EventProvider>
+							<EventProvider>
+								{children}
+								<Toaster 
+									position="bottom-right"
+									richColors
+									closeButton
+									duration={5000}
+								/>
+							</EventProvider>
 						</ErrorBoundary>
 					</Providers>
 				</ErrorBoundary>

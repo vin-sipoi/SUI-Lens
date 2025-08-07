@@ -2,17 +2,21 @@
 import React, { useState, useRef } from "react";
 import { useUser } from "@/context/UserContext";
 import { useCurrentAccount } from "@mysten/dapp-kit";
-import { Copy, Calendar, Edit2, Check, X, Upload } from "lucide-react";
+import { Copy, Calendar, Edit2, Check, X, Upload, Wallet } from "lucide-react";
 import Header from "../components/Header";
+import { WalletPopup } from "@/components/wallet/WalletPopup";
+import { useZkLogin } from "@mysten/enoki/react";
 
 export default function Profile() {
   const { user, updateProfileImage, updateUserName, updateUserEmail } = useUser();
   const account = useCurrentAccount();
+  const { address: enokiAddress } = useZkLogin();
   const [copied, setCopied] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [tempName, setTempName] = useState("");
   const [tempEmail, setTempEmail] = useState("");
+  const [showWallet, setShowWallet] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const walletAddress = account?.address || user?.walletAddress || "";
@@ -125,8 +129,19 @@ export default function Profile() {
           <div className="px-4 py-6 space-y-6 pt-12">
             {/* Wallet Address Section */}
             <div>
-              <div className="text-gray-500 text-xs font-medium mb-3 uppercase tracking-wider">
-                Wallet Address
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-gray-500 text-xs font-medium uppercase tracking-wider">
+                  Wallet Address
+                </span>
+                {(walletAddress || enokiAddress) && (
+                  <button
+                    onClick={() => setShowWallet(true)}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs font-medium"
+                  >
+                    <Wallet className="w-3.5 h-3.5" />
+                    Open Wallet
+                  </button>
+                )}
               </div>
               <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
                 <span className="text-gray-700 text-sm font-mono flex-1 truncate pr-2">
@@ -268,6 +283,12 @@ export default function Profile() {
             </div>
           </div>
         </div>
+        
+        {/* Wallet Popup */}
+        <WalletPopup 
+          isOpen={showWallet} 
+          onClose={() => setShowWallet(false)} 
+        />
       </div>
     </div>
   );
