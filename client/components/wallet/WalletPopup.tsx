@@ -541,16 +541,26 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
                 ≈ ${totalUsdValue} USD
               </p>
             </div>
-            <button
-              onClick={() => fetchWalletData(true)}
-              disabled={isRefreshing}
-              className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-              title="Refresh balance"
-            >
-              <RefreshCw 
-                className={`w-4 h-4 text-gray-600 ${isRefreshing ? 'animate-spin' : ''}`}
-              />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowSendModal(true)}
+                className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
+                title="Send tokens"
+              >
+                <Send className="w-4 h-4" />
+                <span className="text-sm">Send</span>
+              </button>
+              <button
+                onClick={() => fetchWalletData(true)}
+                disabled={isRefreshing}
+                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                title="Refresh balance"
+              >
+                <RefreshCw 
+                  className={`w-4 h-4 text-gray-600 ${isRefreshing ? 'animate-spin' : ''}`}
+                />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -748,36 +758,112 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Send {selectedCoin?.symbol || 'Token'}</DialogTitle>
+            <DialogTitle>Send Token</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-4">
-            {/* Token Info */}
-            {selectedCoin && (
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                {selectedCoin.logo ? (
-                  <img 
-                    src={selectedCoin.logo} 
-                    alt={selectedCoin.symbol}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-blue-600 font-bold">
-                      {selectedCoin.symbol.charAt(0)}
-                    </span>
-                  </div>
-                )}
-                <div className="flex-1">
-                  <p className="font-medium">{selectedCoin.symbol}</p>
-                  <p className="text-sm text-gray-500">{selectedCoin.name || 'Unknown Token'}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">{selectedCoin.balance}</p>
-                  <p className="text-sm text-gray-500">${parseFloat(selectedCoin.usdValue || '0').toFixed(2)}</p>
+            {/* Token Selector Dropdown with Icons */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                Select Token
+              </label>
+              <div className="relative">
+                <button
+                  type="button"
+                  className="w-full p-3 border border-gray-300 rounded-lg flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  onClick={() => {
+                    const dropdown = document.getElementById('token-dropdown');
+                    if (dropdown) {
+                      dropdown.classList.toggle('hidden');
+                    }
+                  }}
+                >
+                  {selectedCoin ? (
+                    <div className="flex items-center gap-3">
+                      {selectedCoin.logo ? (
+                        <img 
+                          src={selectedCoin.logo} 
+                          alt={selectedCoin.symbol}
+                          className="w-6 h-6 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-blue-600 text-xs font-bold">
+                            {selectedCoin.symbol.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="text-left">
+                        <p className="font-medium">{selectedCoin.symbol}</p>
+                        <p className="text-xs text-gray-500">Balance: {selectedCoin.balance}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-gray-500">Choose a token to send</span>
+                  )}
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {/* Dropdown Menu */}
+                <div id="token-dropdown" className="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {coins.map((coin, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      className="w-full p-3 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                      onClick={() => {
+                        setSelectedCoin(coin);
+                        document.getElementById('token-dropdown')?.classList.add('hidden');
+                      }}
+                    >
+                      {coin.logo ? (
+                        <img 
+                          src={coin.logo} 
+                          alt={coin.symbol}
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-blue-600 font-bold text-sm">
+                            {coin.symbol.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex-1 text-left">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{coin.symbol}</p>
+                          {coin.verified && (
+                            <span className="text-xs bg-blue-100 text-blue-600 px-1 py-0.5 rounded">✓</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">{coin.name || 'Unknown Token'}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{coin.balance}</p>
+                        <p className="text-xs text-gray-500">${parseFloat(coin.usdValue || '0').toFixed(2)}</p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
-            )}
+              
+              {/* Selected Token Info */}
+              {selectedCoin && (
+                <div className="mt-2 p-2 bg-blue-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-600">Available Balance:</span>
+                    <span className="text-sm font-medium">{selectedCoin.balance} {selectedCoin.symbol}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-xs text-gray-600">USD Value:</span>
+                    <span className="text-sm font-medium">${parseFloat(selectedCoin.usdValue || '0').toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
             
+            {/* Recipient and Amount Fields */}
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
                 Recipient Address
@@ -787,8 +873,10 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
                 value={recipientAddress}
                 onChange={(e) => setRecipientAddress(e.target.value)}
                 className="font-mono text-sm"
+                disabled={!selectedCoin}
               />
             </div>
+            
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
                 Amount
@@ -801,23 +889,27 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
                   onChange={(e) => setSendAmount(e.target.value)}
                   className="pr-20"
                   step="any"
+                  disabled={!selectedCoin}
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setSendAmount(selectedCoin?.balance || '0')}
-                    className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
+                    className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!selectedCoin}
                   >
                     MAX
                   </button>
                   <span className="text-gray-500">
-                    {selectedCoin?.symbol || ''}
+                    {selectedCoin?.symbol || 'Token'}
                   </span>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Available: {selectedCoin?.balance || '0'} {selectedCoin?.symbol || ''}
-              </p>
+              {selectedCoin && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Available: {selectedCoin.balance} {selectedCoin.symbol}
+                </p>
+              )}
             </div>
             <div className="flex gap-3 pt-2">
               <Button
