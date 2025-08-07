@@ -1,9 +1,10 @@
 'use client';
 
-import { SuiClientProvider, WalletProvider } from '@mysten/dapp-kit';
+import { SuiClientProvider, WalletProvider, useSuiClientContext } from '@mysten/dapp-kit';
 import '@mysten/dapp-kit/dist/index.css';
 import { getFullnodeUrl } from '@mysten/sui/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { isEnokiNetwork, registerEnokiWallets } from '@mysten/enoki';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { UserProvider } from '../context/UserContext';
@@ -17,6 +18,30 @@ const networks = {
 	mainnet: { url: getFullnodeUrl('mainnet') },
 	testnet: { url: getFullnodeUrl('testnet') },
 };
+
+// Component to register Enoki wallets
+function RegisterEnokiWallets() {
+	const { client, network } = useSuiClientContext();
+
+	useEffect(() => {
+		if (!isEnokiNetwork(network)) return;
+
+		const { unregister } = registerEnokiWallets({
+			apiKey: process.env.NEXT_PUBLIC_ENOKI_API_KEY!,
+			providers: {
+				google: {
+					clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+				},
+			},
+			client,
+			network,
+		});
+
+		return unregister;
+	}, [client, network]);
+
+	return null;
+}
 
 export default function Providers({ children }: { children: ReactNode }) {
 	const [theme, setTheme] = useState('system');
@@ -64,26 +89,16 @@ export default function Providers({ children }: { children: ReactNode }) {
 		};
 	}, [theme]);
 
-	// Wrap SUI components with try/catch to prevent errors from breaking the app
-	const renderSuiComponents = () => {
-		try {
-			return (
-				<SuiClientProvider networks={networks} defaultNetwork="devnet">
-					<WalletProvider>{children}</WalletProvider>
-				</SuiClientProvider>
-			);
-		} catch (error) {
-			console.error('Error in Sui wallet components:', error);
-			// Return children without wallet functionality if there's an error
-			return children;
-		}
-	};
-
 	return (
-		<UserProvider>
-			<QueryClientProvider client={queryClient}>
-				{renderSuiComponents()}
-			</QueryClientProvider>
-		</UserProvider>
+		<QueryClientProvider client={queryClient}>
+			<SuiClientProvider networks={networks} defaultNetwork="mainnet">
+				<RegisterEnokiWallets />
+				<WalletProvider autoConnect={true}>
+					<UserProvider>
+						{children}
+					</UserProvider>
+				</WalletProvider>
+			</SuiClientProvider>
+		</QueryClientProvider>
 	);
 }

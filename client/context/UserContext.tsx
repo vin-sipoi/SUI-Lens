@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react"
 
 type User = {
+  id?: string
   name: string
   email: string
   bio?: string
@@ -19,8 +20,11 @@ type User = {
   eventsAttended?: number
   poapsCollected?: number
   avatarUrl?: string
-  googleId?:string
-  googleToken?:string
+  picture?: string
+  googleId?: string
+  googleToken?: string
+  isEnoki?: boolean
+  jwt?: string
 }
 
 type UserContextType = {

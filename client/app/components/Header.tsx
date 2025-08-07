@@ -1,6 +1,5 @@
 'use client';
 import {
-	ConnectButton,
 	useCurrentAccount,
 	useDisconnectWallet,
 } from '@mysten/dapp-kit';
@@ -11,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ProfileDropdown } from '../landing/ProfileDropDown';
 import { useUser } from '@/context/UserContext';
+import { WalletConnect } from '@/components/auth/WalletConnect';
 
 export default function Header() {
 	const { user, logout } = useUser();
@@ -20,7 +20,7 @@ export default function Header() {
 	const disconnectWallet = useDisconnectWallet();
 	const router = useRouter();
 
-	// Check if user is authenticated (you can modify this logic based on your auth system)
+	// Check if user is authenticated
 	const isAuthenticated = user && account?.address;
 
 	// Close mobile menu when resizing to desktop
@@ -109,21 +109,10 @@ export default function Header() {
 				</nav>
 
 				<div className="flex items-center space-x-4 relative z-20">
-					{/* Show Sign In/Sign Up buttons when not authenticated */}
+					{/* Show WalletConnect when not authenticated */}
 					{!isAuthenticated && !mobileMenuOpen && (
-						<div className="hidden sm:flex items-center space-x-3">
-							<button
-								onClick={handleSignIn}
-								className="px-4 py-2  font-medium transition-colors"
-							>
-								Sign In
-							</button>
-							<button
-								onClick={handleSignUp}
-								className="px-4 py-2 bg-[#4DA2FF] text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
-							>
-								Sign Up
-							</button>
+						<div className="hidden sm:flex items-center">
+							<WalletConnect />
 						</div>
 					)}
 
