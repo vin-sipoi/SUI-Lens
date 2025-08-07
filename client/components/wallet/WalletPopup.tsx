@@ -33,6 +33,7 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
   const [showSendModal, setShowSendModal] = useState(false);
   const [recipientAddress, setRecipientAddress] = useState('');
   const [sendAmount, setSendAmount] = useState('');
+  const [selectedCoin, setSelectedCoin] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [coins, setCoins] = useState<any[]>([]);
   const [nfts, setNfts] = useState<any[]>([]);
@@ -335,7 +336,7 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
   };
 
   const handleSend = async () => {
-    if (!recipientAddress || !sendAmount) {
+    if (!recipientAddress || !sendAmount || !selectedCoin) {
       toast.error('Please fill in all fields');
       return;
     }
@@ -358,6 +359,12 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
       return;
     }
 
+    // Check if amount exceeds balance
+    if (amount > parseFloat(selectedCoin.balance)) {
+      toast.error('Insufficient balance');
+      return;
+    }
+
     setLoading(true);
     const loadingToast = toast.loading('Preparing transaction...');
     
@@ -365,12 +372,54 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
       // Create transaction
       const tx = new Transaction();
       
-      // Convert SUI to MIST (1 SUI = 1,000,000,000 MIST)
-      const amountInMist = Math.floor(amount * 1_000_000_000);
+      // Convert amount to smallest unit based on decimals
+      const decimals = selectedCoin.decimals || 9;
+      const amountInSmallestUnit = Math.floor(amount * Math.pow(10, decimals));
       
-      // Split coins and transfer
-      const [coin] = tx.splitCoins(tx.gas, [amountInMist]);
-      tx.transferObjects([coin], recipientAddress);
+      if (selectedCoin.coinType === '0x2::sui::SUI') {
+        // For SUI, use the gas coin
+        const [coin] = tx.splitCoins(tx.gas, [amountInSmallestUnit]);
+        tx.transferObjects([coin], recipientAddress);
+      } else {
+        // For other tokens, we need to find and use their coin objects
+        toast.loading('Fetching coin objects...', { id: loadingToast });
+        
+        // Get all coins of this type owned by the sender
+        const coins = await suiClient.getCoins({
+          owner: address,
+          coinType: selectedCoin.coinType,
+        });
+        
+        if (coins.data.length === 0) {
+          throw new Error('No coins found for this token type');
+        }
+        
+        // Calculate total available balance
+        let totalBalance = 0n;
+        const coinObjectIds = [];
+        for (const coin of coins.data) {
+          totalBalance += BigInt(coin.balance);
+          coinObjectIds.push(coin.coinObjectId);
+          if (totalBalance >= BigInt(amountInSmallestUnit)) {
+            break;
+          }
+        }
+        
+        if (totalBalance < BigInt(amountInSmallestUnit)) {
+          throw new Error('Insufficient balance in coin objects');
+        }
+        
+        // If we have multiple coins, merge them first
+        let primaryCoin = tx.object(coinObjectIds[0]);
+        if (coinObjectIds.length > 1) {
+          const mergeCoins = coinObjectIds.slice(1).map(id => tx.object(id));
+          tx.mergeCoins(primaryCoin, mergeCoins);
+        }
+        
+        // Split the exact amount and transfer
+        const [coinToSend] = tx.splitCoins(primaryCoin, [amountInSmallestUnit]);
+        tx.transferObjects([coinToSend], recipientAddress);
+      }
       
       // Set sender
       tx.setSender(address);
@@ -407,7 +456,7 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
         toast.success(
           <div>
             <p className="font-semibold">Transaction successful!</p>
-            <p className="text-sm">Sent {sendAmount} SUI</p>
+            <p className="text-sm">Sent {sendAmount} {selectedCoin.symbol}</p>
             <p className="text-xs font-mono mt-1">
               Digest: {result.digest.slice(0, 10)}...
             </p>
@@ -418,6 +467,7 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
         // Clear form and close modal
         setRecipientAddress('');
         setSendAmount('');
+        setSelectedCoin(null);
         setShowSendModal(false);
         
         // Refresh balance after a short delay
@@ -528,8 +578,8 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
                 <>
                   {/* Display all coins */}
                   {coins.map((coin, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                      <div className="flex items-center gap-3">
+                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+                      <div className="flex items-center gap-3 flex-1">
                         {coin.logo ? (
                           <img 
                             src={coin.logo} 
@@ -565,24 +615,36 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">{coin.balance} {coin.symbol}</p>
-                        <div className="flex items-center justify-end gap-2">
-                          <p className="text-sm text-gray-600">
-                            ${parseFloat(coin.usdValue || '0').toFixed(2)}
-                          </p>
-                          {coin.priceChange24h && (
-                            <span className={`text-xs ${parseFloat(coin.priceChange24h) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {parseFloat(coin.priceChange24h) >= 0 ? '↑' : '↓'}
-                              {Math.abs(parseFloat(coin.priceChange24h)).toFixed(2)}%
-                            </span>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="font-medium">{coin.balance} {coin.symbol}</p>
+                          <div className="flex items-center justify-end gap-2">
+                            <p className="text-sm text-gray-600">
+                              ${parseFloat(coin.usdValue || '0').toFixed(2)}
+                            </p>
+                            {coin.priceChange24h && (
+                              <span className={`text-xs ${parseFloat(coin.priceChange24h) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {parseFloat(coin.priceChange24h) >= 0 ? '↑' : '↓'}
+                                {Math.abs(parseFloat(coin.priceChange24h)).toFixed(2)}%
+                              </span>
+                            )}
+                          </div>
+                          {coin.price && parseFloat(coin.price) > 0 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              ${parseFloat(coin.price).toFixed(8)}
+                            </p>
                           )}
                         </div>
-                        {coin.price && parseFloat(coin.price) > 0 && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            ${parseFloat(coin.price).toFixed(8)}
-                          </p>
-                        )}
+                        <button
+                          onClick={() => {
+                            setSelectedCoin(coin);
+                            setShowSendModal(true);
+                          }}
+                          className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors opacity-0 group-hover:opacity-100"
+                          title={`Send ${coin.symbol}`}
+                        >
+                          <Send className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -594,16 +656,6 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
                 </div>
               )}
 
-              {/* Send Button - only show if there are coins */}
-              {coins.length > 0 && (
-                <Button
-                  onClick={() => setShowSendModal(true)}
-                  className="w-full flex items-center justify-center gap-2"
-                >
-                  <Send className="w-4 h-4" />
-                  Send Assets
-                </Button>
-              )}
             </div>
           </TabsContent>
 
@@ -686,12 +738,46 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
       </div>
 
       {/* Send Modal */}
-      <Dialog open={showSendModal} onOpenChange={setShowSendModal}>
+      <Dialog open={showSendModal} onOpenChange={(open) => {
+        setShowSendModal(open);
+        if (!open) {
+          setSelectedCoin(null);
+          setRecipientAddress('');
+          setSendAmount('');
+        }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Send SUI</DialogTitle>
+            <DialogTitle>Send {selectedCoin?.symbol || 'Token'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-4">
+            {/* Token Info */}
+            {selectedCoin && (
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                {selectedCoin.logo ? (
+                  <img 
+                    src={selectedCoin.logo} 
+                    alt={selectedCoin.symbol}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 font-bold">
+                      {selectedCoin.symbol.charAt(0)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex-1">
+                  <p className="font-medium">{selectedCoin.symbol}</p>
+                  <p className="text-sm text-gray-500">{selectedCoin.name || 'Unknown Token'}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium">{selectedCoin.balance}</p>
+                  <p className="text-sm text-gray-500">${parseFloat(selectedCoin.usdValue || '0').toFixed(2)}</p>
+                </div>
+              </div>
+            )}
+            
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
                 Recipient Address
@@ -714,35 +800,41 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
                   value={sendAmount}
                   onChange={(e) => setSendAmount(e.target.value)}
                   className="pr-20"
+                  step="any"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setSendAmount(balance)}
+                    onClick={() => setSendAmount(selectedCoin?.balance || '0')}
                     className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
                   >
                     MAX
                   </button>
                   <span className="text-gray-500">
-                    SUI
+                    {selectedCoin?.symbol || ''}
                   </span>
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Available: {balance} SUI
+                Available: {selectedCoin?.balance || '0'} {selectedCoin?.symbol || ''}
               </p>
             </div>
             <div className="flex gap-3 pt-2">
               <Button
                 variant="outline"
-                onClick={() => setShowSendModal(false)}
+                onClick={() => {
+                  setShowSendModal(false);
+                  setSelectedCoin(null);
+                  setRecipientAddress('');
+                  setSendAmount('');
+                }}
                 className="flex-1"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSend}
-                disabled={loading}
+                disabled={loading || !selectedCoin}
                 className="flex-1"
               >
                 {loading ? 'Sending...' : 'Send'}
