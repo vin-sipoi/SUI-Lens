@@ -18,6 +18,7 @@ import { LogOut, User, Wallet } from 'lucide-react';
 import { GoogleLogin } from './GoogleLogin';
 import { useZkLoginAuth } from '@/context/EnokiZkLogin';
 import { useZkLogin, useEnokiFlow } from '@mysten/enoki/react';
+import Link from 'next/link';
 
 export function WalletConnect() {
   const currentAccount = useCurrentAccount();
@@ -107,9 +108,11 @@ export function WalletConnect() {
             </div>
           )}
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="flex items-center gap-2 text-black hover:bg-gray-100">
-            <User className="h-4 w-4" />
-            <span>Profile</span>
+          <DropdownMenuItem asChild>
+            <Link href="/profile" className="flex items-center gap-2 text-black hover:bg-gray-100 cursor-pointer">
+              <User className="h-4 w-4" />
+              <span>Profile</span>
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem 
             onClick={handleCopyAddress}
