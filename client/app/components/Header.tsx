@@ -11,17 +11,19 @@ import { useEffect, useState } from 'react';
 import { ProfileDropdown } from '../landing/ProfileDropDown';
 import { useUser } from '@/context/UserContext';
 import { WalletConnect } from '@/components/auth/WalletConnect';
+import { useZkLogin } from '@mysten/enoki/react';
 
 export default function Header() {
 	const { user, logout } = useUser();
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 	const account = useCurrentAccount();
+	const { address: enokiAddress } = useZkLogin();
 	const disconnectWallet = useDisconnectWallet();
 	const router = useRouter();
 
-	// Check if user is authenticated
-	const isAuthenticated = user && account?.address;
+	// Check if user is authenticated (either traditional wallet or Enoki zkLogin)
+	const isAuthenticated = !!(user && (account?.address || enokiAddress));
 
 	// Close mobile menu when resizing to desktop
 	useEffect(() => {
@@ -220,7 +222,7 @@ export default function Header() {
 								</button>
 							))}
 
-							{/* Show Sign In/Sign Up buttons in mobile menu when not authenticated */}
+							{/* Show Sign In/Sign Up buttons ONLY when NOT authenticated */}
 							{!isAuthenticated && (
 								<div className="pt-3 mt-3 border-t border-gray-200 space-y-3">
 									<button
