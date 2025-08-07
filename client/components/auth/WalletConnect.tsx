@@ -1,9 +1,10 @@
 'use client';
 
-import { useCurrentAccount, useDisconnectWallet, useWallets, useConnectWallet } from '@mysten/dapp-kit';
+import { useCurrentAccount, useDisconnectWallet } from '@mysten/dapp-kit';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/context/UserContext';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,58 +15,71 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, User, Wallet } from 'lucide-react';
-import { FcGoogle } from 'react-icons/fc';
+import { GoogleLogin } from './GoogleLogin';
+import { useZkLoginAuth } from '@/context/EnokiZkLogin';
+import { useZkLogin, useEnokiFlow } from '@mysten/enoki/react';
 
 export function WalletConnect() {
   const currentAccount = useCurrentAccount();
   const { user, setUser, logout } = useUser();
   const { mutate: disconnect } = useDisconnectWallet();
-  const wallets = useWallets();
-  const { mutate: connect } = useConnectWallet();
+  const { user: zkLoginUser } = useZkLoginAuth();
+  const { address: enokiAddress } = useZkLogin();
+  const enokiFlow = useEnokiFlow();
+  const router = useRouter();
 
-  // Find the Google wallet
-  const googleWallet = wallets.find(wallet => 
-    wallet.name.toLowerCase().includes('google')
-  );
-
-  // Update user context when wallet connects
+  // Update user context when traditional wallet connects
   useEffect(() => {
-    if (currentAccount?.address) {
-      // Check if this is a Google/Enoki wallet
-      const isGoogleWallet = currentAccount.label?.toLowerCase().includes('google');
-      
-      console.log('Current account:', currentAccount); // Debug log
-      console.log('Setting wallet address:', currentAccount.address); // Debug log
+    if (currentAccount?.address && !enokiAddress) {
+      console.log('Traditional wallet connected:', currentAccount);
       
       setUser({
         walletAddress: currentAccount.address,
-        name: currentAccount.label || 'Google User',
+        name: currentAccount.label || 'Wallet User',
         email: '',
         emails: [],
-        isEnoki: isGoogleWallet,
+        isEnoki: false,
         avatarUrl: user?.avatarUrl || 'https://via.placeholder.com/100',
       });
     }
-  }, [currentAccount, setUser]);
+  }, [currentAccount, enokiAddress, setUser]);
 
-  const handleGoogleLogin = () => {
-    if (googleWallet) {
-      connect({ wallet: googleWallet });
+  // Update user context when zkLogin user data is available
+  useEffect(() => {
+    if (enokiAddress && zkLoginUser) {
+      console.log('Enoki address:', enokiAddress);
+      console.log('zkLogin user data:', zkLoginUser);
+      
+      setUser({
+        walletAddress: enokiAddress,
+        name: zkLoginUser.name || zkLoginUser.given_name || zkLoginUser.email?.split('@')[0] || 'Google User',
+        email: zkLoginUser.email || '',
+        emails: zkLoginUser.email ? [{ address: zkLoginUser.email, primary: true, verified: true }] : [],
+        isEnoki: true,
+        avatarUrl: zkLoginUser.picture || 'https://via.placeholder.com/100',
+        picture: zkLoginUser.picture,
+      });
     }
-  };
+  }, [enokiAddress, zkLoginUser, setUser]);
 
   const handleLogout = () => {
-    disconnect();
+    if (enokiAddress) {
+      // Logout from Enoki
+      enokiFlow.logout();
+    } else {
+      // Disconnect traditional wallet
+      disconnect();
+    }
     logout();
+    router.push('/');
   };
 
-  const displayAddress = currentAccount?.address;
+  const displayAddress = currentAccount?.address || enokiAddress;
   const isConnected = !!(displayAddress);
 
   const handleCopyAddress = () => {
     if (displayAddress) {
       navigator.clipboard.writeText(displayAddress);
-      // You could add a toast notification here if you want
     }
   };
 
@@ -87,6 +101,11 @@ export function WalletConnect() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64 bg-white">
           <DropdownMenuLabel className="text-black">My Account</DropdownMenuLabel>
+          {user.email && (
+            <div className="px-2 py-1">
+              <p className="text-sm text-gray-600">{user.email}</p>
+            </div>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem className="flex items-center gap-2 text-black hover:bg-gray-100">
             <User className="h-4 w-4" />
@@ -117,14 +136,5 @@ export function WalletConnect() {
     );
   }
 
-  return (
-    <Button 
-      onClick={handleGoogleLogin}
-      variant="default"
-      className="flex items-center gap-2"
-    >
-      <FcGoogle className="w-5 h-5" />
-      Sign in with Google
-    </Button>
-  );
+  return <GoogleLogin />;
 }

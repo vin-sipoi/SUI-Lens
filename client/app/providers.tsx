@@ -5,9 +5,11 @@ import '@mysten/dapp-kit/dist/index.css';
 import { getFullnodeUrl } from '@mysten/sui/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { isEnokiNetwork, registerEnokiWallets } from '@mysten/enoki';
+import { EnokiFlowProvider } from '@mysten/enoki/react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { UserProvider } from '../context/UserContext';
+import { ZkLoginProvider } from '../context/EnokiZkLogin';
 
 // Initialize QueryClient
 const queryClient = new QueryClient();
@@ -92,12 +94,18 @@ export default function Providers({ children }: { children: ReactNode }) {
 	return (
 		<QueryClientProvider client={queryClient}>
 			<SuiClientProvider networks={networks} defaultNetwork="mainnet">
-				<RegisterEnokiWallets />
-				<WalletProvider autoConnect={true}>
-					<UserProvider>
-						{children}
-					</UserProvider>
-				</WalletProvider>
+				<EnokiFlowProvider
+					apiKey={process.env.NEXT_PUBLIC_ENOKI_API_KEY!}
+				>
+					<RegisterEnokiWallets />
+					<WalletProvider autoConnect={true}>
+						<ZkLoginProvider>
+							<UserProvider>
+								{children}
+							</UserProvider>
+						</ZkLoginProvider>
+					</WalletProvider>
+				</EnokiFlowProvider>
 			</SuiClientProvider>
 		</QueryClientProvider>
 	);

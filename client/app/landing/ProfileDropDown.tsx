@@ -4,7 +4,7 @@ import { Settings, LogOut, User, Copy } from "lucide-react";
 import { useWallets } from "@mysten/dapp-kit";
 import { useState } from "react";
 
-export function ProfileDropdown({ walletAddress, onLogout, avatarUrl }: { walletAddress: string, onLogout: () => void, avatarUrl?: string }) {
+export function ProfileDropdown({ walletAddress, onLogout, avatarUrl, email }: { walletAddress: string, onLogout: () => void, avatarUrl?: string, email?: string }) {
   const wallets = useWallets();
   const [copied, setCopied] = useState(false);
 
@@ -36,6 +36,12 @@ export function ProfileDropdown({ walletAddress, onLogout, avatarUrl }: { wallet
           alt="Profile"
           className="w-12 h-12 rounded-full object-cover border-2 border-gray-300 mb-3"
         />
+        
+        {email && (
+          <div className="text-sm text-gray-700 font-medium mb-2">
+            {email}
+          </div>
+        )}
         
         <div 
           className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer group transition-colors"

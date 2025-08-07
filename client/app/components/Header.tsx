@@ -135,10 +135,12 @@ export default function Header() {
 									<ProfileDropdown
 										walletAddress={user?.walletAddress ?? account.address ?? ''}
 										avatarUrl={user?.avatarUrl}
+										email={user?.email}
 										onLogout={() => {
 											setShowDropdown(false);
 											disconnectWallet.mutate();
 											logout?.();
+											router.push('/');
 										}}
 									/>
 								</div>
