@@ -12,6 +12,7 @@ import { ProfileDropdown } from '../landing/ProfileDropDown';
 import { useUser } from '@/context/UserContext';
 import { WalletConnect } from '@/components/auth/WalletConnect';
 import { useZkLogin } from '@mysten/enoki/react';
+import { useEnokiFlow } from '@mysten/enoki/react';
 
 export default function Header() {
 	const { user, logout } = useUser();
@@ -19,6 +20,7 @@ export default function Header() {
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 	const account = useCurrentAccount();
 	const { address: enokiAddress } = useZkLogin();
+	const enokiFlow = useEnokiFlow();
 	const disconnectWallet = useDisconnectWallet();
 	const router = useRouter();
 
@@ -176,13 +178,26 @@ export default function Header() {
 								{showDropdown && (
 									<div className="absolute right-0 mt-2 z-50">
 										<ProfileDropdown
-											walletAddress={user?.walletAddress ?? account.address ?? ''}
+											walletAddress={user?.walletAddress ?? account?.address ?? enokiAddress ?? ''}
 											avatarUrl={user?.avatarUrl}
 											email={user?.email}
 											onLogout={() => {
 												setShowDropdown(false);
-												disconnectWallet.mutate();
-												logout?.();
+												
+												// Handle Enoki logout
+												if (enokiAddress) {
+													enokiFlow.logout();
+												}
+												
+												// Handle traditional wallet disconnect
+												if (account?.address) {
+													disconnectWallet.mutate();
+												}
+												
+												// Clear user context
+												logout();
+												
+												// Redirect to home
 												router.push('/');
 											}}
 										/>
