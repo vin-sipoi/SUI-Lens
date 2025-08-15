@@ -2,7 +2,7 @@ import { SuiClient, getFullnodeUrl } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
 
 const suiClient = new SuiClient({
-  url: getFullnodeUrl('testnet'),
+  url: getFullnodeUrl('mainnet'),
 });
 
 export { suiClient };
@@ -13,6 +13,7 @@ export class SuilensService {
   private poapRegistryId: string;
   private bountyPackageId: string;
   private bountyRegistryId: string;
+  private communityRegistryId: string;
 
   constructor() {
     this.packageId = process.env.NEXT_PUBLIC_PACKAGE_ID || '';
@@ -20,28 +21,44 @@ export class SuilensService {
     this.poapRegistryId = process.env.NEXT_PUBLIC_POAP_REGISTRY_ID || '';
     this.bountyPackageId = process.env.NEXT_PUBLIC_BOUNTY_PACKAGE_ID || '';
     this.bountyRegistryId = process.env.NEXT_PUBLIC_BOUNTY_REGISTRY_ID || '';
+    this.communityRegistryId = process.env.NEXT_PUBLIC_COMMUNITY_REGISTRY_ID || '';
   }
 
   async createEvent(eventData: {
     name: string;
     description: string;
+    bannerUrl: string;
+    nftImageUrl: string;
+    poapImageUrl: string;
+    location?: string;
+    category?: string;
     startTime: number;
     endTime: number;
     maxAttendees: number;
+    ticketPrice?: number;
+    requiresApproval?: boolean;
     poapTemplate: string;
   }) {
     const tx = new Transaction();
     
     tx.moveCall({
-      target: `${this.packageId}::event_manager::create_event`,
+      target: `${this.packageId}::suilens_core::create_event`,
       arguments: [
+        tx.object(this.eventRegistryId),
         tx.pure.string(eventData.name),
         tx.pure.string(eventData.description),
+        tx.pure.string(eventData.bannerUrl),
+        tx.pure.string(eventData.nftImageUrl),
+        tx.pure.string(eventData.poapImageUrl),
         tx.pure.u64(eventData.startTime),
         tx.pure.u64(eventData.endTime),
-        tx.pure.u64(eventData.maxAttendees),
-        tx.pure.string(eventData.poapTemplate),
-        tx.object(this.eventRegistryId),
+        tx.pure.string(eventData.location || ''),
+        tx.pure.string(eventData.category || ''),
+        eventData.maxAttendees ? tx.pure.option('u64', eventData.maxAttendees) : tx.pure.option('u64', null),
+        tx.pure.u64(eventData.ticketPrice || 0),
+        tx.pure.bool(eventData.requiresApproval || false),
+        tx.pure.bool(false), // is_private - default to false
+        tx.object('0x6'), // Clock object
       ],
     });
 
@@ -51,11 +68,13 @@ export class SuilensService {
   async mintPOAP(eventObjectId: string) {
     const tx = new Transaction();
     
+    // Basic POAP mint using event's stored metadata (contract should include poapImageUrl)
     tx.moveCall({
-      target: `${this.packageId}::poap::mint_poap`,
+      target: `${this.packageId}::suilens_poap::claim_poap`,
       arguments: [
-        tx.object(eventObjectId),
         tx.object(this.poapRegistryId),
+        tx.object(this.eventRegistryId),
+        tx.pure.id(eventObjectId),
         tx.object('0x6'), // Clock object
       ],
     });
@@ -84,7 +103,7 @@ export class SuilensService {
       return await suiClient.getOwnedObjects({
         owner: userAddress,
         filter: {
-          StructType: `${this.packageId}::poap::POAP`,
+          StructType: `${this.packageId}::suilens_poap::POAP`,
         },
         options: {
           showContent: true,
@@ -94,6 +113,59 @@ export class SuilensService {
     } catch (error) {
       console.error('Error fetching user POAPs:', error);
       throw new Error('Failed to fetch user POAPs');
+    }
+  }
+
+  async getUserEventNFTs(userAddress: string) {
+    try {
+      // Query user's Event NFT objects
+      return await suiClient.getOwnedObjects({
+        owner: userAddress,
+        filter: {
+          StructType: `${this.packageId}::suilens_core::EventNFT`,
+        },
+        options: {
+          showContent: true,
+          showType: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching user Event NFTs:', error);
+      throw new Error('Failed to fetch user Event NFTs');
+    }
+  }
+
+  async getUserEventStats(userAddress: string) {
+    try {
+      // Get all events and count user's registrations and attendance
+      const allEvents = await this.getAllEvents();
+      let attendedCount = 0;
+      let registeredCount = 0;
+
+      // For a more accurate count, we would need to check the event objects
+      // This is a simplified version - in practice you'd query the blockchain
+      // for events where the user is in the rsvps or attendance arrays
+      
+      // Get user's POAPs and NFTs to estimate attended events
+      const [poaps, eventNFTs] = await Promise.all([
+        this.getUserPOAPs(userAddress),
+        this.getUserEventNFTs(userAddress)
+      ]);
+
+      return {
+        poapCount: poaps.data?.length || 0,
+        eventNFTCount: eventNFTs.data?.length || 0,
+        estimatedAttendedEvents: poaps.data?.length || 0,
+        registeredEvents: eventNFTs.data?.length || 0
+      };
+    } catch (error) {
+      console.error('Error fetching user event stats:', error);
+      return {
+        poapCount: 0,
+        eventNFTCount: 0,
+        estimatedAttendedEvents: 0,
+        registeredEvents: 0
+      };
     }
   }
 
@@ -110,14 +182,65 @@ export class SuilensService {
     }
   }
 
-  async registerForEvent(eventId: string, userAddress: string) {
+  async registerForEvent(eventId: string, ticketPrice: number = 0) {
+    const tx = new Transaction();
+    
+    // Create a coin for payment (even if it's 0 for free events)
+    const [coin] = tx.splitCoins(tx.gas, [ticketPrice]);
+    
+    tx.moveCall({
+      target: `${this.packageId}::suilens_core::register_for_event`,
+      arguments: [
+        tx.object(this.eventRegistryId),
+        tx.pure.id(eventId),
+        coin, // Payment coin
+        tx.object('0x6'), // Clock object
+      ],
+    });
+
+    return tx;
+  }
+
+  async markAttendance(eventId: string, attendeeAddress: string) {
     const tx = new Transaction();
     
     tx.moveCall({
-      target: `${this.packageId}::event_manager::register_for_event`,
+      target: `${this.packageId}::suilens_core::mark_attendance`,
       arguments: [
-        tx.object(eventId),
-        tx.pure.address(userAddress),
+        tx.object(this.eventRegistryId),
+        tx.pure.id(eventId),
+        tx.pure.address(attendeeAddress),
+        tx.object('0x6'), // Clock object
+      ],
+    });
+
+    return tx;
+  }
+
+  async mintEventNFT(eventId: string) {
+    const tx = new Transaction();
+    
+    // Basic mint using event's stored metadata (contract should include nftImageUrl)
+    tx.moveCall({
+      target: `${this.packageId}::suilens_core::mint_event_nft`,
+      arguments: [
+        tx.object(this.eventRegistryId),
+        tx.pure.id(eventId),
+        tx.object('0x6'), // Clock object
+      ],
+    });
+
+    return tx;
+  }
+
+  async withdrawEventFunds(eventId: string) {
+    const tx = new Transaction();
+    
+    tx.moveCall({
+      target: `${this.packageId}::suilens_core::withdraw_event_funds`,
+      arguments: [
+        tx.object(this.eventRegistryId),
+        tx.pure.id(eventId),
       ],
     });
 
@@ -138,12 +261,44 @@ export class SuilensService {
     }
   }
 
+  async createPOAPCollection(eventId: string, poapData: {
+    name: string;
+    description: string;
+    imageUrl: string;
+    maxSupply?: number;
+  }) {
+    const tx = new Transaction();
+    
+    tx.moveCall({
+      target: `${this.packageId}::suilens_poap::create_poap_collection`,
+      arguments: [
+        tx.object(this.poapRegistryId),
+        tx.object(this.eventRegistryId),
+        tx.pure.id(eventId),
+        tx.pure.string(poapData.name),
+        tx.pure.string(poapData.description),
+        tx.pure.string(poapData.imageUrl),
+        poapData.maxSupply ? tx.pure.option('u64', poapData.maxSupply) : tx.pure.option('u64', null),
+        tx.object('0x6'), // Clock object
+      ],
+    });
+
+    return tx;
+  }
+
   async createEventWithRewardPool(eventData: {
     name: string;
     description: string;
+    bannerUrl: string;
+    nftImageUrl: string;
+    poapImageUrl: string;
+    location?: string;
+    category?: string;
     startTime: number;
     endTime: number;
     maxAttendees: number;
+    ticketPrice?: number;
+    requiresApproval?: boolean;
     poapTemplate: string;
   }, rewardPoolData?: {
     amount: number;
@@ -237,29 +392,28 @@ export class SuilensService {
 
 export const suilensService = new SuilensService();
 
-// Helper function for minting POAP (updated signature to match usage)
-export async function mintPOAP(
+// Export mintPOAP function directly for component use
+export const mintPOAP = async (eventId: string) => {
+  return suilensService.mintPOAP(eventId);
+};
+
+// Helper function for minting POAP
+export async function mintPOAPHelper(
   eventId: string,
-  name: string,
-  imageUrl: string,
-  metadata: string,
-  attendeeAddress: string,
   packageId?: string
 ) {
   const tx = new Transaction();
   
   const actualPackageId = packageId || process.env.NEXT_PUBLIC_PACKAGE_ID || '';
   const poapRegistryId = process.env.NEXT_PUBLIC_POAP_REGISTRY_ID || '';
+  const eventRegistryId = process.env.NEXT_PUBLIC_EVENT_REGISTRY_ID || '';
   
   tx.moveCall({
-    target: `${actualPackageId}::poap::mint_poap`,
+    target: `${actualPackageId}::suilens_poap::claim_poap`,
     arguments: [
-      tx.pure.string(eventId),
-      tx.pure.string(name),
-      tx.pure.string(imageUrl),
-      tx.pure.string(metadata),
-      tx.pure.address(attendeeAddress),
       tx.object(poapRegistryId),
+      tx.object(eventRegistryId),
+      tx.pure.id(eventId),
       tx.object('0x6'), // Clock object
     ],
   });

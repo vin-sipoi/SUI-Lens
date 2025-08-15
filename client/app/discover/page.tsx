@@ -11,7 +11,8 @@ import {
   Calendar,
   Heart,
   Menu,
-  X
+  X,
+  RefreshCw
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -21,7 +22,7 @@ import { useUser } from '@/context/UserContext'
 import Header from "../components/Header"
 
 const EventDashboard: React.FC = () => {
-  const { events, updateEvent } = useEventContext()
+  const { events, updateEvent, isLoading, fetchEvents } = useEventContext()
   const { user } = useUser()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -88,6 +89,16 @@ const EventDashboard: React.FC = () => {
             <Filter className="h-4 w-4" />
             Filter
           </Button>
+
+          {/* Refresh Button */}
+          <Button 
+            onClick={() => fetchEvents()}
+            disabled={isLoading}
+            className="flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
         </div>
 
         {/* Category Pills */}
@@ -110,12 +121,38 @@ const EventDashboard: React.FC = () => {
 
       {/* Event Grid */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-10">
+        {isLoading ? (
+          <div className="text-center py-12">
+            <div className="bg-white rounded-lg shadow-sm p-8 max-w-md mx-auto">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading events...</h3>
+              <p className="text-gray-600">Fetching events from the blockchain</p>
+            </div>
+          </div>
+        ) : filteredEvents.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="bg-white rounded-lg shadow-sm p-8 max-w-md mx-auto">
+              <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No events found</h3>
+              <p className="text-gray-600 mb-4">
+                {searchTerm ? 
+                  `No events matching "${searchTerm}"` : 
+                  "Be the first to create an event!"}
+              </p>
+              <Link href="/create">
+                <Button className="bg-blue-600 text-white hover:bg-blue-700">
+                  Create Event
+                </Button>
+              </Link>
+            </div>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {filteredEvents.map((event) => (
             <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="h-48 relative overflow-hidden">
+              <div className="h-48 relative overflow-hidden bg-gray-100">
                 <img 
-                  src={event.image} 
+                  src={event.bannerUrl || event.image || 'https://via.placeholder.com/400x300?text=Event'} 
                   alt={event.title} 
                   className="w-full h-full object-cover transition-transform hover:scale-105 duration-300" 
                 />
@@ -131,42 +168,51 @@ const EventDashboard: React.FC = () => {
                     {event.type}
                   </Badge>
                 </div>
-                <h3 
-                  className="text-lg font-bold line-clamp-1 cursor-pointer hover:underline"
-                  onClick={() => setSelectedEvent(event)}
-                >
-                  {event.title}
-                </h3>
+                <Link href={`/event/${event.id}`}>
+                  <h3 className="text-lg font-bold line-clamp-1 cursor-pointer hover:underline">
+                    {event.title}
+                  </h3>
+                </Link>
                 <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
                   <Calendar className="h-3 w-3" />
                   <span className="truncate">{event.date}</span>
                 </div>
-                {event.rsvps && event.rsvps.includes(user?.walletAddress || '') ? (
-                  <>
-                    {event.requiresApproval ? (
-                      <Button
-                        className="mt-4 w-full bg-yellow-400 text-white py-2 rounded-lg cursor-not-allowed"
-                        disabled
-                      >
-                        Pending Approval
-                      </Button>
-                    ) : (
-                      <Button
-                        className="mt-4 w-full bg-green-600 text-white py-2 rounded-lg cursor-not-allowed"
-                        disabled
-                      >
-                        You're In
-                      </Button>
-                    )}
-                  </>
-                ) : (
-                  <Button
-                    className="mt-4 w-full bg-blue-600 text-white hover:bg-blue-700 py-2 rounded-lg text-sm"
-                    onClick={() => handleRegister(event.id)}
-                  >
-                    Register
-                  </Button>
-                )}
+                <div className="flex gap-2 mt-4">
+                  <Link href={`/event/${event.id}`} className="flex-1">
+                    <Button
+                      variant="outline"
+                      className="w-full py-2 text-sm"
+                    >
+                      View Details
+                    </Button>
+                  </Link>
+                  {event.rsvps && event.rsvps.includes(user?.walletAddress || '') ? (
+                    <>
+                      {event.requiresApproval ? (
+                        <Button
+                          className="flex-1 bg-yellow-400 text-white py-2 rounded-lg cursor-not-allowed"
+                          disabled
+                        >
+                          Pending
+                        </Button>
+                      ) : (
+                        <Button
+                          className="flex-1 bg-green-600 text-white py-2 rounded-lg cursor-not-allowed"
+                          disabled
+                        >
+                          Registered
+                        </Button>
+                      )}
+                    </>
+                  ) : (
+                    <Button
+                      className="flex-1 bg-blue-600 text-white hover:bg-blue-700 py-2 rounded-lg text-sm"
+                      onClick={() => handleRegister(event.id)}
+                    >
+                      Register
+                    </Button>
+                  )}
+                </div>
                 {event.attendance && event.attendance.includes(user?.walletAddress || '') && (
                   <p className="mt-1 text-green-600 font-semibold text-center text-sm">Checked In</p>
                 )}
@@ -174,6 +220,7 @@ const EventDashboard: React.FC = () => {
             </div>
           ))}
         </div>
+        )}
       </div>
 
       {/* Event Details Inline */}

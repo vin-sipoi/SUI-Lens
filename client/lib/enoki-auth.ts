@@ -13,7 +13,7 @@ export async function initiateGoogleLogin() {
       provider: 'google',
       clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
       redirectUrl: `${window.location.origin}/auth/callback`,
-      network: 'testnet',
+      network: 'mainnet',
     });
 
     // Redirect to the zkLogin URL
@@ -33,7 +33,7 @@ export async function handleAuthCallback(authCode: string) {
       authCode,
       clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
       redirectUrl: `${window.location.origin}/auth/callback`,
-      network: 'testnet',
+      network: 'mainnet',
     });
 
     // Get the SUI address from the zkProof

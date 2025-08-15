@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthCallback, useZkLogin, useZkLoginSession } from '@mysten/enoki/react';
 import { useUser } from '@/context/UserContext';
 import { jwtDecode } from 'jwt-decode';
+import { useSessionPersistence } from '@/hooks/useSessionPersistence';
 
 export default function AuthPage() {
   const { handled } = useAuthCallback();
@@ -12,6 +13,7 @@ export default function AuthPage() {
   const { address: enokiAddress } = useZkLogin();
   const { setUser } = useUser();
   const router = useRouter();
+  useSessionPersistence(); // Automatically saves session when available
 
   useEffect(() => {
     if (zkLoginSession?.jwt) {
@@ -26,7 +28,7 @@ export default function AuthPage() {
           email: decodedJwt.email,
           emails: decodedJwt.email ? [{ address: decodedJwt.email, primary: true, verified: true }] : [],
           isEnoki: true,
-          avatarUrl: decodedJwt.picture || 'https://via.placeholder.com/100',
+          avatarUrl: decodedJwt.picture || 'https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens',
           picture: decodedJwt.picture,
         });
       } catch (error) {

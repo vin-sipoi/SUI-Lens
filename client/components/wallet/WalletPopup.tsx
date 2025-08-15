@@ -578,7 +578,7 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
           </TabsList>
 
           {/* Assets Tab */}
-          <TabsContent value="assets" className="p-6 space-y-4">
+          <TabsContent value="assets" className="p-6 h-[400px] overflow-y-auto">
             <div className="space-y-3">
               {fetchingCoins ? (
                 <div className="text-center py-4">
@@ -670,7 +670,7 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
           </TabsContent>
 
           {/* NFTs Tab */}
-          <TabsContent value="nfts" className="p-6">
+          <TabsContent value="nfts" className="p-6 h-[400px] overflow-y-auto">
             {fetchingNfts ? (
               <div className="text-center py-8">
                 <p className="text-gray-500">Loading NFTs...</p>
@@ -678,7 +678,16 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
             ) : nfts.length > 0 ? (
               <div className="grid grid-cols-2 gap-4">
                 {nfts.map((nft, index) => (
-                  <div key={nft.objectId || index} className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow bg-white">
+                  <button
+                    key={nft.objectId || index}
+                    onClick={() => {
+                      if (nft.objectId) {
+                        window.open(`https://suivision.xyz/object/${nft.objectId}`, '_blank');
+                      }
+                    }}
+                    className="border rounded-lg overflow-hidden hover:shadow-lg transition-all bg-white hover:scale-[1.02] cursor-pointer text-left"
+                    title="Click to view on SuiVision"
+                  >
                     <div className="w-full aspect-square bg-gray-100 relative">
                       {nft.image ? (
                         <img 
@@ -704,6 +713,14 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
                           #{nft.rarityRank}
                         </div>
                       )}
+                      {/* Click indicator overlay */}
+                      <div className="absolute inset-0 bg-black opacity-0 hover:opacity-10 transition-opacity flex items-center justify-center">
+                        <div className="bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </div>
+                      </div>
                     </div>
                     <div className="p-3">
                       <p className="font-medium text-sm truncate" title={nft.name}>
@@ -729,7 +746,7 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             ) : (

@@ -4,31 +4,31 @@ import Link from 'next/link';
 
 const EventPage: React.FC = () => {
   const mainEvent = {
-    title: 'Game Night in Ghana',
-    image: 'https://via.placeholder.com/1200x400?text=Game+Night+in+Ghana',
-    description: 'The Sui community in Ghana is hosting a game night on the date. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Acu more sui events remotes claim problem adopting datum.',
-    date: 'June 24, 2025, 02:23 PM EAT',
+    title: 'Sui Nigeria Tech Conference',
+    image: 'https://i.ibb.co/Nigeria01/nigeria-conference.jpg',
+    description: 'Be part of Nigeria\'s thriving Sui blockchain community. Engage in workshops, meetups, and hackathons designed to accelerate Web3 adoption across Africa.',
+    date: 'June 24, 2025, 02:23 PM WAT',
   };
 
   const otherEvents = [
     {
       title: 'Developer Meetup',
-      image: 'https://via.placeholder.com/300x200?text=Developer+Meetup',
+      image: 'https://i.ibb.co/Nigeria02/developer-meetup.jpg',
       type: 'Bootcamp',
     },
     {
       title: 'CONTENT CREATORS BOOTCAMP',
-      image: 'https://via.placeholder.com/300x200?text=Content+Creators+Bootcamp',
+      image: 'https://i.ibb.co/Nigeria03/content-creators.jpg',
       type: 'Bootcamp',
     },
     {
       title: 'Sui Community Meetup',
-      image: 'https://via.placeholder.com/300x200?text=Sui+Community+Meetup',
+      image: 'https://i.ibb.co/Nigeria04/community-meetup.jpg',
       type: 'Meetup',
     },
     {
       title: 'Developers Night',
-      image: 'https://via.placeholder.com/300x200?text=Developers+Night',
+      image: 'https://i.ibb.co/Nigeria05/developers-night.jpg',
       type: 'Night',
     },
   ];

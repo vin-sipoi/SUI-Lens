@@ -23,7 +23,7 @@ export default function CommunityEventsPage(){
         name: "Sui User",
         email: "",
         emails: [{ address: "", primary: true, verified: false }],
-        avatarUrl: "https://via.placeholder.com/100",
+        avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens",
         walletAddress: account.address,
       });
     }
@@ -135,7 +135,7 @@ export default function CommunityEventsPage(){
                   ) : (
                     <Link href="/profile">
                       <img
-                        src={user.avatarUrl || "https://via.placeholder.com/100"}
+                        src={user.avatarUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens"}
                         alt="Profile"
                         className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer"
                       />

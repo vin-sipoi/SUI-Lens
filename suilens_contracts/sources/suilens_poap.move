@@ -182,8 +182,8 @@ module suilens_contracts::suilens_poap {
         let claimer = tx_context::sender(ctx);
         let current_time = clock::timestamp_ms(clock);
         
-        // Verify event exists and user attended
-        assert!(suilens_core::is_approved_attendee(global_registry, event_id, claimer), E_NOT_ATTENDEE);
+        // Verify event exists and user actually attended (checked in)
+        assert!(suilens_core::has_attended_event(global_registry, event_id, claimer), E_NOT_ATTENDEE);
         
         // Verify event has ended
         assert!(current_time > suilens_core::get_event_end_date(global_registry, event_id), E_EVENT_NOT_ENDED);

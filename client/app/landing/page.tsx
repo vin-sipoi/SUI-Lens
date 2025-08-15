@@ -57,7 +57,7 @@ export default function HomePage() {
 				name: 'Sui User',
 				email: '',
 				emails: [{ address: '', primary: true, verified: false }],
-				avatarUrl: 'https://via.placeholder.com/100',
+				avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens',
 				walletAddress: account.address,
 			});
 		}

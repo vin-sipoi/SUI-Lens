@@ -30,23 +30,38 @@ export function ZkLoginProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (zkLoginSession?.jwt) {
-      try {
-        const decodedJwt: any = jwtDecode(zkLoginSession.jwt);
-        console.log('Decoded JWT from zkLogin session:', decodedJwt);
-        
-        setUser({
-          email: decodedJwt.email,
-          given_name: decodedJwt.given_name,
-          family_name: decodedJwt.family_name,
-          picture: decodedJwt.picture,
-          name: decodedJwt.name,
-        });
-      } catch (error) {
-        console.error('Failed to decode JWT:', error);
+    // Check for existing session
+    const checkSession = async () => {
+      setIsLoading(true);
+      
+      if (zkLoginSession?.jwt) {
+        try {
+          const decodedJwt: any = jwtDecode(zkLoginSession.jwt);
+          console.log('Decoded JWT from zkLogin session:', decodedJwt);
+          
+          // Check if JWT is still valid
+          const currentTime = Date.now() / 1000;
+          if (decodedJwt.exp && decodedJwt.exp > currentTime) {
+            setUser({
+              email: decodedJwt.email,
+              given_name: decodedJwt.given_name,
+              family_name: decodedJwt.family_name,
+              picture: decodedJwt.picture,
+              name: decodedJwt.name,
+            });
+            console.log('zkLogin session is valid and restored');
+          } else {
+            console.log('zkLogin JWT has expired');
+          }
+        } catch (error) {
+          console.error('Failed to decode JWT:', error);
+        }
       }
-    }
-    setIsLoading(false);
+      
+      setIsLoading(false);
+    };
+    
+    checkSession();
   }, [zkLoginSession]);
 
   return (

@@ -16,29 +16,29 @@ const EventPage: React.FC = () => {
   const mainEvent = {
     title: 'Game Night in Ghana',
     image: 'https://i.ibb.co/8DGCTXfs/Go-Qzp-CXYAAgop4.jpg',
-    description: 'The Sui community in Ghana is hosting a game night on the date. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Acu more sui events remotes claim problem adopting datum.',
+    description: 'Join the vibrant Sui community in Ghana for networking, learning, and building together. Connect with local developers, creators, and blockchain enthusiasts.',
     date: 'June 24, 2025, 02:23 PM EAT',
   };
 
   const otherEvents = [
     {
       title: 'Developer Meetup',
-      image: 'https://via.placeholder.com/300x200?text=Developer+Meetup',
+      image: 'https://i.ibb.co/Ghana01/developer-meetup.jpg',
       type: 'Bootcamp',
     },
     {
       title: 'CONTENT CREATORS BOOTCAMP',
-      image: 'https://via.placeholder.com/300x200?text=Content+Creators+Bootcamp',
+      image: 'https://i.ibb.co/Ghana02/content-creators.jpg',
       type: 'Bootcamp',
     },
     {
       title: 'Sui Community Meetup',
-      image: 'https://via.placeholder.com/300x200?text=Sui+Community+Meetup',
+      image: 'https://i.ibb.co/Ghana03/community-meetup.jpg',
       type: 'Meetup',
     },
     {
       title: 'Developers Night',
-      image: 'https://via.placeholder.com/300x200?text=Developers+Night',
+      image: 'https://i.ibb.co/Ghana04/developers-night.jpg',
       type: 'Night',
     },
   ];
@@ -88,7 +88,7 @@ const EventPage: React.FC = () => {
               ) : (
                 <Link href="/profile">
                   <img
-                    src={user.avatarUrl || "https://via.placeholder.com/100"}
+                    src={user.avatarUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens"}
                     alt="Profile"
                     className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer"
                   />
@@ -103,7 +103,7 @@ const EventPage: React.FC = () => {
               ) : (
                 <Link href="/profile">
                   <img
-                    src={user.avatarUrl || "https://via.placeholder.com/100"}
+                    src={user.avatarUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens"}
                     alt="Profile"
                     className="w-8 h-8 rounded-full border-2 border-blue-500 cursor-pointer"
                   />

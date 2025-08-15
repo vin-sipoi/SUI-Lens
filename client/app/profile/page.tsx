@@ -1,26 +1,84 @@
 "use client"
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useUser } from "@/context/UserContext";
 import { useCurrentAccount } from "@mysten/dapp-kit";
-import { Copy, Calendar, Edit2, Check, X, Upload, Wallet } from "lucide-react";
+import { Copy, Calendar, Edit2, Check, X, Upload, Wallet, Award } from "lucide-react";
 import Header from "../components/Header";
 import { WalletPopup } from "@/components/wallet/WalletPopup";
 import { useZkLogin } from "@mysten/enoki/react";
+import { suilensService } from "@/lib/sui-client";
+import { useSearchParams } from "next/navigation";
 
 export default function Profile() {
   const { user, updateProfileImage, updateUserName, updateUserEmail } = useUser();
   const account = useCurrentAccount();
   const { address: enokiAddress } = useZkLogin();
+  const searchParams = useSearchParams();
   const [copied, setCopied] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [tempName, setTempName] = useState("");
   const [tempEmail, setTempEmail] = useState("");
   const [showWallet, setShowWallet] = useState(false);
+  const [userStats, setUserStats] = useState({
+    poapCount: 0,
+    eventNFTCount: 0,
+    estimatedAttendedEvents: 0,
+    registeredEvents: 0
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const walletAddress = account?.address || user?.walletAddress || "";
   const username = user?.username || "Sui User";
+
+  // Function to refresh stats (can be called after claiming NFTs)
+  const refreshStats = useCallback(async () => {
+    if (!walletAddress) return;
+    
+    try {
+      setLoadingStats(true);
+      const stats = await suilensService.getUserEventStats(walletAddress);
+      setUserStats(stats);
+    } catch (error) {
+      console.error('Error refreshing user stats:', error);
+    } finally {
+      setLoadingStats(false);
+    }
+  }, [walletAddress]);
+
+  // Fetch user stats when wallet address changes
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      if (!walletAddress) {
+        setLoadingStats(false);
+        return;
+      }
+
+      try {
+        setLoadingStats(true);
+        const stats = await suilensService.getUserEventStats(walletAddress);
+        setUserStats(stats);
+      } catch (error) {
+        console.error('Error fetching user stats:', error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    fetchUserStats();
+  }, [walletAddress]);
+
+  // Handle refresh parameter from URL
+  useEffect(() => {
+    const shouldRefresh = searchParams.get('refresh');
+    if (shouldRefresh === 'true' && walletAddress) {
+      // Small delay to ensure any blockchain updates are reflected
+      setTimeout(() => {
+        refreshStats();
+      }, 2000);
+    }
+  }, [searchParams, walletAddress, refreshStats]);
 
   const copyToClipboard = () => {
     if (!walletAddress) return;
@@ -88,7 +146,7 @@ export default function Profile() {
               <div className="relative">
                 <div className="relative group">
                   <img
-                    src={user?.avatarUrl || "https://via.placeholder.com/100"}
+                    src={user?.avatarUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens"}
                     alt="Profile"
                     className="w-16 h-16 rounded-full object-cover border-4 border-white shadow-lg"
                     style={{
@@ -261,21 +319,25 @@ export default function Profile() {
             {/* Stats Section */}
             <div className="flex justify-around pt-2 gap-3 flex-wrap">
               <div className="flex-1 min-w-[120px]">
-                <div className="bg-amber-50/30 rounded-xl border border-amber-100/20 flex flex-col items-center py-4 px-2 shadow-sm">
-                  <div className="w-10 h-10 bg-amber-100/30 rounded-full flex items-center justify-center mb-2">
-                    <div className="w-5 h-5 bg-amber-200/30 rounded-full"></div>
+                <div className="bg-purple-50/30 rounded-xl border border-purple-100/20 flex flex-col items-center py-4 px-2 shadow-sm">
+                  <div className="w-10 h-10 bg-purple-100/30 rounded-full flex items-center justify-center mb-2">
+                    <Award className="w-5 h-5 text-purple-600/60" />
                   </div>
-                  <div className="text-2xl font-bold text-black mb-1">-</div>
+                  <div className="text-2xl font-bold text-black mb-1">
+                    {loadingStats ? "..." : userStats.poapCount}
+                  </div>
                   <div className="text-black text-xs font-medium text-center">POAPs collected</div>
                 </div>
               </div>
               <div className="flex-1 min-w-[120px]">
-                <div className="bg-amber-50/30 rounded-xl border border-amber-100/20 flex flex-col items-center py-4 px-2 shadow-sm">
-                  <div className="w-10 h-10 bg-amber-100/30 rounded-full flex items-center justify-center mb-2">
-                    <Calendar className="w-5 h-5 text-amber-200/40" />
+                <div className="bg-blue-50/30 rounded-xl border border-blue-100/20 flex flex-col items-center py-4 px-2 shadow-sm">
+                  <div className="w-10 h-10 bg-blue-100/30 rounded-full flex items-center justify-center mb-2">
+                    <Calendar className="w-5 h-5 text-blue-600/60" />
                   </div>
-                  <div className="text-2xl font-bold text-black mb-1">-</div>
-                  <div className="text-black text-xs font-medium text-center">Events Attended</div>
+                  <div className="text-2xl font-bold text-black mb-1">
+                    {loadingStats ? "..." : userStats.eventNFTCount}
+                  </div>
+                  <div className="text-black text-xs font-medium text-center">Event NFTs</div>
                 </div>
               </div>
             </div>

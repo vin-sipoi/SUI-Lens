@@ -4,31 +4,31 @@ import Link from 'next/link';
 
 const EventPage: React.FC = () => {
   const mainEvent = {
-    title: 'Game Night in Ghana',
-    image: 'https://via.placeholder.com/1200x400?text=Game+Night+in+Ghana',
-    description: 'The Sui community in Ghana is hosting a game night on the date. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Acu more sui events remotes claim problem adopting datum.',
+    title: 'Sui Developer Workshop',
+    image: 'https://i.ibb.co/SuiDev01/developer-workshop.jpg',
+    description: 'Join the global Sui developers community for technical discussions, hackathons, and collaboration on building the future of Web3 on Sui blockchain.',
     date: 'June 24, 2025, 02:23 PM EAT',
   };
 
   const otherEvents = [
     {
       title: 'Developer Meetup',
-      image: 'https://via.placeholder.com/300x200?text=Developer+Meetup',
+      image: 'https://i.ibb.co/Dev02/developer-meetup.jpg',
       type: 'Bootcamp',
     },
     {
       title: 'CONTENT CREATORS BOOTCAMP',
-      image: 'https://via.placeholder.com/300x200?text=Content+Creators+Bootcamp',
+      image: 'https://i.ibb.co/CC03/content-creators.jpg',
       type: 'Bootcamp',
     },
     {
       title: 'Sui Community Meetup',
-      image: 'https://via.placeholder.com/300x200?text=Sui+Community+Meetup',
+      image: 'https://i.ibb.co/Sui04/community-meetup.jpg',
       type: 'Meetup',
     },
     {
       title: 'Developers Night',
-      image: 'https://via.placeholder.com/300x200?text=Developers+Night',
+      image: 'https://i.ibb.co/Dev05/developers-night.jpg',
       type: 'Night',
     },
   ];

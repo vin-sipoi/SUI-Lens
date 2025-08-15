@@ -8,22 +8,32 @@ import { Calendar, MapPin, Users, Plus, BarChart3, Menu, X, Home, Users as Users
 import Link from "next/link"
 import { EmptyStateIllustration } from "@/components/empty-state-illustration"
 import { ConnectButton } from "@mysten/dapp-kit"
-import { useEventStore } from "@/store/EventStore"
 import Image from "next/image"
 import GuestList from "@/components/GuestList"
 import { useUser } from "../../context/UserContext"
 import { ProfileDropdown } from "../landing/ProfileDropDown"
+import { useEventContext } from "@/context/EventContext"
 
 export default function DashboardPage() {
   type Event = {
     id: string
     attendees?: number
   }
-  const myEvents = useEventStore((state) => state.myEvents)
-  const [registeredEvents, setRegisteredEvents] = useState<Event[]>([])
+  const { events } = useEventContext()
+  const { user, logout } = useUser()
+  
+  // Filter events created by the current user
+  const myEvents = events.filter(event => 
+    event.organizer?.name === user?.walletAddress || 
+    event.organizer?.name === user?.name
+  )
+  
+  // Filter events the user is registered for
+  const registeredEvents = events.filter(event => 
+    event.rsvps?.includes(user?.walletAddress || '')
+  )
   const [activeTab, setActiveTab] = useState("my-events")
   const [sidebarSection, setSidebarSection] = useState<string>("overview")
-  const { user, logout } = useUser()
   const [showDropdown, setShowDropdown] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -420,7 +430,36 @@ export default function DashboardPage() {
                         key={event.id}
                         className="base-card-light group overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 rounded-2xl"
                       >
-                        {/* ...event card rendering... */}
+                        <Link href={`/event/${event.id}`}>
+                          <div className="h-40 bg-gray-100 relative overflow-hidden">
+                            {event.bannerUrl ? (
+                              <img 
+                                src={event.bannerUrl} 
+                                alt={event.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600" />
+                            )}
+                          </div>
+                          <CardContent className="p-4">
+                            <h3 className="font-semibold text-lg mb-2 line-clamp-1">{event.title}</h3>
+                            <div className="space-y-2 text-sm text-gray-600">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4" />
+                                <span>{event.date}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4" />
+                                <span className="line-clamp-1">{event.location}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Users className="w-4 h-4" />
+                                <span>{event.rsvps?.length || 0} registered</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Link>
                       </Card>
                     ))}
                   </div>
@@ -442,7 +481,37 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full">
                     {registeredEvents.map((event) => (
                       <Card key={event.id} className="base-card-light overflow-hidden rounded-2xl">
-                        {/* ...registered event card rendering... */}
+                        <Link href={`/event/${event.id}`}>
+                          <div className="h-40 bg-gray-100 relative overflow-hidden">
+                            {event.bannerUrl ? (
+                              <img 
+                                src={event.bannerUrl} 
+                                alt={event.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-green-500 to-teal-600" />
+                            )}
+                            <div className="absolute top-2 right-2">
+                              <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                                Registered
+                              </span>
+                            </div>
+                          </div>
+                          <CardContent className="p-4">
+                            <h3 className="font-semibold text-lg mb-2 line-clamp-1">{event.title}</h3>
+                            <div className="space-y-2 text-sm text-gray-600">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4" />
+                                <span>{event.date}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4" />
+                                <span className="line-clamp-1">{event.location}</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Link>
                       </Card>
                     ))}
                   </div>

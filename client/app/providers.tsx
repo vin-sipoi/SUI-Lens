@@ -98,7 +98,7 @@ export default function Providers({ children }: { children: ReactNode }) {
 					apiKey={process.env.NEXT_PUBLIC_ENOKI_API_KEY!}
 				>
 					<RegisterEnokiWallets />
-					<WalletProvider autoConnect={true}>
+					<WalletProvider autoConnect={true} storageKey="sui-wallet-kit">
 						<ZkLoginProvider>
 							<UserProvider>
 								{children}

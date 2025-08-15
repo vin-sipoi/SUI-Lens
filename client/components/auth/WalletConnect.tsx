@@ -3,7 +3,7 @@
 import { useCurrentAccount, useDisconnectWallet } from '@mysten/dapp-kit';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/context/UserContext';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
@@ -19,15 +19,23 @@ import { GoogleLogin } from './GoogleLogin';
 import { useZkLoginAuth } from '@/context/EnokiZkLogin';
 import { useZkLogin, useEnokiFlow } from '@mysten/enoki/react';
 import Link from 'next/link';
+import { useSessionPersistence } from '@/hooks/useSessionPersistence';
 
 export function WalletConnect() {
+  const [mounted, setMounted] = useState(false);
   const currentAccount = useCurrentAccount();
   const { user, setUser, logout } = useUser();
   const { mutate: disconnect } = useDisconnectWallet();
-  const { user: zkLoginUser } = useZkLoginAuth();
+  const { user: zkLoginUser, isLoading: zkLoginLoading } = useZkLoginAuth();
   const { address: enokiAddress } = useZkLogin();
   const enokiFlow = useEnokiFlow();
   const router = useRouter();
+  const { clearSession } = useSessionPersistence();
+
+  // Prevent hydration errors
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Update user context when traditional wallet connects
   useEffect(() => {
@@ -40,33 +48,38 @@ export function WalletConnect() {
         email: '',
         emails: [],
         isEnoki: false,
-        avatarUrl: user?.avatarUrl || 'https://via.placeholder.com/100',
+        avatarUrl: user?.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens',
       });
     }
   }, [currentAccount, enokiAddress, setUser]);
 
   // Update user context when zkLogin user data is available
   useEffect(() => {
-    if (enokiAddress && zkLoginUser) {
-      console.log('Enoki address:', enokiAddress);
+    // Don't update if zkLogin is still loading or if user already exists with same address
+    if (!zkLoginLoading && enokiAddress && zkLoginUser) {
+      console.log('Enoki session restored - address:', enokiAddress);
       console.log('zkLogin user data:', zkLoginUser);
       
-      setUser({
-        walletAddress: enokiAddress,
-        name: zkLoginUser.name || zkLoginUser.given_name || zkLoginUser.email?.split('@')[0] || 'Google User',
-        email: zkLoginUser.email || '',
-        emails: zkLoginUser.email ? [{ address: zkLoginUser.email, primary: true, verified: true }] : [],
-        isEnoki: true,
-        avatarUrl: zkLoginUser.picture || 'https://via.placeholder.com/100',
-        picture: zkLoginUser.picture,
-      });
+      // Only update if the user context doesn't already have this data
+      if (!user?.walletAddress || user.walletAddress !== enokiAddress) {
+        setUser({
+          walletAddress: enokiAddress,
+          name: zkLoginUser.name || zkLoginUser.given_name || zkLoginUser.email?.split('@')[0] || 'Google User',
+          email: zkLoginUser.email || '',
+          emails: zkLoginUser.email ? [{ address: zkLoginUser.email, primary: true, verified: true }] : [],
+          isEnoki: true,
+          avatarUrl: zkLoginUser.picture || 'https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens',
+          picture: zkLoginUser.picture,
+        });
+      }
     }
-  }, [enokiAddress, zkLoginUser, setUser]);
+  }, [enokiAddress, zkLoginUser, zkLoginLoading, user?.walletAddress, setUser]);
 
   const handleLogout = () => {
     if (enokiAddress) {
       // Logout from Enoki
       enokiFlow.logout();
+      clearSession(); // Clear stored session
     } else {
       // Disconnect traditional wallet
       disconnect();
@@ -83,6 +96,15 @@ export function WalletConnect() {
       navigator.clipboard.writeText(displayAddress);
     }
   };
+
+  // Don't render until mounted to prevent hydration errors
+  if (!mounted) {
+    return (
+      <Button variant="default" className="flex items-center gap-2">
+        <span>Loading...</span>
+      </Button>
+    );
+  }
 
   if (isConnected && user) {
     return (

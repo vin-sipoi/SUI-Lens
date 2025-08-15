@@ -18,14 +18,19 @@ export default function Header() {
 	const { user, logout } = useUser();
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+	const [mounted, setMounted] = useState(false);
 	const account = useCurrentAccount();
 	const { address: enokiAddress } = useZkLogin();
 	const enokiFlow = useEnokiFlow();
 	const disconnectWallet = useDisconnectWallet();
 	const router = useRouter();
 
-	// Check if user is authenticated (either traditional wallet or Enoki zkLogin)
-	const isAuthenticated = !!(user && (account?.address || enokiAddress));
+	// Check if user is authenticated - check localStorage user or wallet connections
+	const isAuthenticated = mounted && !!(user?.walletAddress || account?.address || enokiAddress);
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	// Close mobile menu when resizing to desktop
 	useEffect(() => {
@@ -170,7 +175,7 @@ export default function Header() {
 									aria-label="Open profile menu"
 								>
 									<img
-										src={user?.avatarUrl || 'https://via.placeholder.com/100'}
+										src={user?.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens'}
 										alt="Profile"
 										className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-blue-500 cursor-pointer"
 									/>

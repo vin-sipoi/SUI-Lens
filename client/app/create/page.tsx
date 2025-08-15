@@ -27,17 +27,26 @@ import {
   Loader2,
   Menu,
   X,
+  Upload,
+  Image as ImageIcon,
+  Award,
+  Ticket,
 } from "lucide-react"
 import Link from "next/link"
 import { useEventContext } from "@/context/EventContext"
 import { mintPOAP, suilensService } from "@/lib/sui-client"
 import Header from '@/app/components/Header'
+import { uploadImageToImgBB, validateImageFile } from '@/utils/imageUtils'
+import { toast } from 'sonner'
+import { useEnokiTransaction } from '@/hooks/useEnokiTransaction'
+import { Transaction } from '@mysten/sui/transactions'
 
 export default function CreateEventPage() {
   const { user } = useUser()
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { addEvent } = useEventContext()
+  const { signAndExecuteTransaction } = useEnokiTransaction()
 
   // Redirect to signin if not logged in
   useEffect(() => {
@@ -78,48 +87,136 @@ export default function CreateEventPage() {
     capacity: eventData.capacity,
   })
 
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  // Three separate image states
+  const [bannerImage, setBannerImage] = useState<{
+    file: File | null;
+    preview: string | null;
+    url: string | null;
+  }>({ file: null, preview: null, url: null })
+
+  const [nftImage, setNftImage] = useState<{
+    file: File | null;
+    preview: string | null;
+    url: string | null;
+  }>({ file: null, preview: null, url: null })
+
+  const [poapImage, setPoapImage] = useState<{
+    file: File | null;
+    preview: string | null;
+    url: string | null;
+  }>({ file: null, preview: null, url: null })
+
+  // Upload states
+  const [uploadingImages, setUploadingImages] = useState({
+    banner: false,
+    nft: false,
+    poap: false,
+  })
 
   // POAP data state
   const [poapData, setPoapData] = useState({
     name: "",
     description: "",
-    image: null as File | null,
   })
 
-  // Generate QR code using Qrfy API
+  // Handle image upload for each type
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    imageType: 'banner' | 'nft' | 'poap'
+  ) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file
+    const validation = validateImageFile(file)
+    if (!validation.valid) {
+      toast.error(validation.error)
+      return
+    }
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const preview = event.target?.result as string
+      
+      // Update the appropriate state
+      if (imageType === 'banner') {
+        setBannerImage({ file, preview, url: null })
+      } else if (imageType === 'nft') {
+        setNftImage({ file, preview, url: null })
+      } else if (imageType === 'poap') {
+        setPoapImage({ file, preview, url: null })
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Upload images to imgBB and return the URLs
+  const uploadImagesToCloud = async () => {
+    const imageUrls = {
+      bannerUrl: bannerImage.url || '',
+      nftImageUrl: nftImage.url || '',
+      poapImageUrl: poapImage.url || ''
+    }
+    
+    const uploads: Promise<void>[] = []
+    
+    // Upload banner image
+    if (bannerImage.file && !bannerImage.url) {
+      uploads.push(
+        uploadImageToImgBB(bannerImage.file, `${eventData.title}_banner_${Date.now()}`)
+          .then(url => {
+            setBannerImage(prev => ({ ...prev, url }))
+            imageUrls.bannerUrl = url
+          })
+      )
+    }
+    
+    // Upload NFT image
+    if (nftImage.file && !nftImage.url) {
+      uploads.push(
+        uploadImageToImgBB(nftImage.file, `${eventData.title}_nft_${Date.now()}`)
+          .then(url => {
+            setNftImage(prev => ({ ...prev, url }))
+            imageUrls.nftImageUrl = url
+          })
+      )
+    }
+    
+    // Upload POAP image
+    if (poapImage.file && !poapImage.url) {
+      uploads.push(
+        uploadImageToImgBB(poapImage.file, `${eventData.title}_poap_${Date.now()}`)
+          .then(url => {
+            setPoapImage(prev => ({ ...prev, url }))
+            imageUrls.poapImageUrl = url
+          })
+      )
+    }
+    
+    if (uploads.length > 0) {
+      toast.info('Uploading images...')
+      await Promise.all(uploads)
+      toast.success('Images uploaded successfully!')
+    }
+    
+    return imageUrls
+  }
+
+  // Generate QR code using qr-server.com API (free, no API key needed)
   const generateQRCode = async (eventId: string) => {
     try {
       const eventUrl = `${window.location.origin}/event/${eventId}/register`
-      const response = await fetch('https://qrfy.com/api/v1/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add API key if required: 'Authorization': 'Bearer YOUR_API_KEY',
-        },
-        body: JSON.stringify({
-          qr_data: eventUrl,
-          image_format: 'PNG',
-          image_width: 300,
-          qr_code_logo: 'none',
-          foreground_color: '#000000',
-          background_color: '#FFFFFF',
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to generate QR code')
-      }
-
-      const result = await response.json()
+      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`
+      
       return {
-        qrCodeUrl: result.qr_code_url,
+        qrCodeUrl: qrCodeUrl,
         eventUrl: eventUrl,
-        qrCodeImage: result.image_url,
+        qrCodeImage: qrCodeUrl,
       }
     } catch (error) {
       console.error('Error generating QR code:', error)
+      // Fallback to the same URL
       const eventUrl = `${window.location.origin}/event/${eventId}/register`
       return {
         qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`,
@@ -136,10 +233,20 @@ export default function CreateEventPage() {
     try {
       // Validate required fields
       if (!eventData.title || !eventData.description || !eventData.date || !eventData.time || !eventData.location) {
-        alert('Please fill in all required fields')
+        toast.error('Please fill in all required fields')
         setIsCreating(false)
         return
       }
+
+      // Validate that at least banner image is uploaded
+      if (!bannerImage.file) {
+        toast.error('Please upload at least an event banner image')
+        setIsCreating(false)
+        return
+      }
+
+      // Upload images to imgBB and get the URLs
+      const imageUrls = await uploadImagesToCloud()
 
       // Create event ID locally
       const eventId = `event_${Date.now()}`
@@ -147,50 +254,75 @@ export default function CreateEventPage() {
       // Generate QR code for the event
       const qrData = await generateQRCode(eventId)
 
-      // Add event to context
+      // Add event to context with image URLs
       addEvent({
         id: eventId,
         type: "",
         ...eventData,
+        bannerUrl: imageUrls.bannerUrl,
+        nftImageUrl: imageUrls.nftImageUrl,
+        poapImageUrl: imageUrls.poapImageUrl,
         requiresApproval: eventData.requiresApproval,
         poapEnabled: poapData.name ? true : false,
         qrCode: qrData.qrCodeImage,
         eventUrl: qrData.eventUrl,
       })
 
-      // Call smart contract to create event
+      // First, ensure user has a profile (create if not exists)
+      try {
+        // Try to create a profile first (will fail if already exists, but that's okay)
+        const profileTx = new Transaction()
+        profileTx.moveCall({
+          target: `${process.env.NEXT_PUBLIC_PACKAGE_ID}::suilens_core::create_profile`,
+          arguments: [
+            profileTx.object(process.env.NEXT_PUBLIC_EVENT_REGISTRY_ID!),
+            profileTx.pure.string(user?.name || 'Event Creator'),
+            profileTx.pure.string('Event creator on SUI-Lens'),
+            profileTx.pure.string(user?.avatarUrl || user?.picture || 'https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens'),
+            profileTx.object('0x6'), // Clock object
+          ],
+        })
+        
+        // Try to execute profile creation (ignore if fails - profile might already exist)
+        try {
+          await signAndExecuteTransaction(profileTx)
+          toast.info('Profile created successfully!')
+        } catch (profileError: any) {
+          // Profile might already exist, that's okay
+          console.log('Profile creation skipped (may already exist):', profileError.message)
+        }
+      } catch (error) {
+        console.log('Profile check:', error)
+      }
+
+      // Now create the event with the uploaded image URLs
       const tx = await suilensService.createEvent({
         name: eventData.title,
         description: eventData.description,
+        bannerUrl: imageUrls.bannerUrl,
+        nftImageUrl: imageUrls.nftImageUrl,
+        poapImageUrl: imageUrls.poapImageUrl,
+        location: eventData.location,
+        category: eventData.category,
         startTime: new Date(`${eventData.date} ${eventData.time}`).getTime(),
         endTime: new Date(`${eventData.endDate || eventData.date} ${eventData.endTime || eventData.time}`).getTime(),
         maxAttendees: parseInt(eventData.capacity) || 100,
+        ticketPrice: eventData.isFree ? 0 : parseInt(eventData.ticketPrice) || 0,
+        requiresApproval: eventData.requiresApproval,
         poapTemplate: poapData.name || '',
       })
-      console.log('Create event transaction:', tx)
+      
+      // Execute the transaction with Enoki zkLogin
+      const result = await signAndExecuteTransaction(tx)
+      console.log('Create event transaction result:', result)
 
-      // POAP minting is disabled here to move to event details page after check-in
-      // if (poapData.name) {
-      //   try {
-      //     const mintTx = await mintPOAP(
-      //       eventId,
-      //       poapData.name,
-      //       poapData.image ? URL.createObjectURL(poapData.image) : '',
-      //       poapData.description,
-      //       ''
-      //     )
-      //     console.log('POAP mint transaction:', mintTx)
-      //   } catch (mintError) {
-      //     console.error('Error minting POAP:', mintError)
-      //     alert('Failed to mint POAP. Please try again.')
-      //   }
-      // }
-
+      toast.success('Event created successfully!')
+      
       // Redirect to discover page
       router.push(`/discover`)
     } catch (error) {
       console.error('Error creating event:', error)
-      alert('Failed to create event. Please try again.')
+      toast.error('Failed to create event. Please try again.')
     } finally {
       setIsCreating(false)
     }
@@ -213,25 +345,6 @@ export default function CreateEventPage() {
     setCapacityDialogOpen(false)
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setImageFile(file)
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const handlePoapImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setPoapData({ ...poapData, image: file })
-    }
-  }
-
   const handlePoapSave = () => {
     setPoapDialogOpen(false)
   }
@@ -241,7 +354,7 @@ export default function CreateEventPage() {
       {/* Header */}
       <Header />
       {/* Form Section with Back Button */}
-      <div className="max-w-md mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="mb-6">
           <Link href="/landing" className="inline-flex items-center text-gray-600 hover:text-gray-900">
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -251,34 +364,116 @@ export default function CreateEventPage() {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Create Event</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Image Upload Section */}
-          <div className="bg-gray-900 rounded-lg h-32 sm:h-40 flex items-center justify-center relative overflow-hidden">
-            {imagePreview ? (
-              <img
-                src={imagePreview}
-                alt="Event preview"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="text-center">
-                <Camera className="w-6 h-6 text-white mx-auto mb-2" />
-                <span className="text-white text-xs sm:text-sm">Add Event Image</span>
+          {/* Three Image Upload Sections */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-gray-800">Event Images</h2>
+            
+            {/* 1. Event Banner */}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
+              <div className="flex items-start space-x-4">
+                <div className="flex-shrink-0">
+                  <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                    {bannerImage.preview ? (
+                      <img src={bannerImage.preview} alt="Banner" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-8 h-8 text-gray-400" />
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">📸 Event Banner *</h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Main promotional image for your event (16:9 recommended)
+                  </p>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 'banner')}
+                      className="hidden"
+                    />
+                    <Button type="button" variant="outline" size="sm" className="pointer-events-none">
+                      <Upload className="w-4 h-4 mr-2" />
+                      {bannerImage.file ? 'Change Image' : 'Upload Image'}
+                    </Button>
+                  </label>
+                  {bannerImage.url && (
+                    <span className="ml-2 text-sm text-green-600">✓ Uploaded</span>
+                  )}
+                </div>
               </div>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            />
-            <div className="absolute top-3 right-3">
-              <Button
-                type="button"
-                size="sm"
-                className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 sm:px-3 py-1 h-auto"
-              >
-                Upload Image
-              </Button>
+            </div>
+
+            {/* 2. Event NFT Image */}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
+              <div className="flex items-start space-x-4">
+                <div className="flex-shrink-0">
+                  <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                    {nftImage.preview ? (
+                      <img src={nftImage.preview} alt="NFT" className="w-full h-full object-cover" />
+                    ) : (
+                      <Ticket className="w-8 h-8 text-gray-400" />
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">🎫 Event NFT Image</h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Commemorative NFT for registered attendees (1:1 recommended)
+                  </p>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 'nft')}
+                      className="hidden"
+                    />
+                    <Button type="button" variant="outline" size="sm" className="pointer-events-none">
+                      <Upload className="w-4 h-4 mr-2" />
+                      {nftImage.file ? 'Change Image' : 'Upload Image'}
+                    </Button>
+                  </label>
+                  {nftImage.url && (
+                    <span className="ml-2 text-sm text-green-600">✓ Uploaded</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 3. POAP Badge Design */}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
+              <div className="flex items-start space-x-4">
+                <div className="flex-shrink-0">
+                  <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
+                    {poapImage.preview ? (
+                      <img src={poapImage.preview} alt="POAP" className="w-full h-full object-cover" />
+                    ) : (
+                      <Award className="w-8 h-8 text-gray-400" />
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">🏅 POAP Badge Design</h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Badge for attendees who check in (Square, badge-style recommended)
+                  </p>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 'poap')}
+                      className="hidden"
+                    />
+                    <Button type="button" variant="outline" size="sm" className="pointer-events-none">
+                      <Upload className="w-4 h-4 mr-2" />
+                      {poapImage.file ? 'Change Image' : 'Upload Image'}
+                    </Button>
+                  </label>
+                  {poapImage.url && (
+                    <span className="ml-2 text-sm text-green-600">✓ Uploaded</span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -502,89 +697,40 @@ export default function CreateEventPage() {
             </Dialog>
           </div>
 
-          {/* Add POAP to your event */}
-          <div>
-            <Label className="text-sm font-medium text-gray-700 mb-2 block">
-              Add POAP to your event [Optional]
-            </Label>
-            <Dialog open={poapDialogOpen} onOpenChange={setPoapDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full justify-center border-dashed border-2 border-gray-300 hover:border-gray-400 py-6"
-                >
-                  <Plus className="w-5 h-5 mr-2" />
-                  Add POAP
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="w-[95%] max-w-md mx-auto bg-white">
-                <DialogHeader>
-                  <DialogTitle>Add POAP to Event</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <p className="text-sm text-gray-600">
-                    POAP (Proof of Attendance Protocol) allows you to create commemorative NFTs for your event attendees.
-                  </p>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="poap-name">POAP Name</Label>
-                      <Input
-                        id="poap-name"
-                        placeholder="Enter POAP name"
-                        value={poapData.name}
-                        onChange={(e) => setPoapData({ ...poapData, name: e.target.value })}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="poap-description">POAP Description</Label>
-                      <Textarea
-                        id="poap-description"
-                        placeholder="Describe your POAP"
-                        rows={3}
-                        value={poapData.description}
-                        onChange={(e) => setPoapData({ ...poapData, description: e.target.value })}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="poap-image">POAP Image</Label>
-                      <Input
-                        id="poap-image"
-                        type="file"
-                        accept="image/*"
-                        onChange={handlePoapImageUpload}
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
+          {/* POAP Details (if POAP image uploaded) */}
+          {poapImage.file && (
+            <div className="border rounded-lg p-4 bg-blue-50">
+              <h3 className="font-medium text-gray-900 mb-3">POAP Details</h3>
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="poap-name">POAP Name</Label>
+                  <Input
+                    id="poap-name"
+                    placeholder="Enter POAP name"
+                    value={poapData.name}
+                    onChange={(e) => setPoapData({ ...poapData, name: e.target.value })}
+                    className="mt-1"
+                  />
                 </div>
-                <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setPoapDialogOpen(false)}
-                    className="w-full sm:w-auto"
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="button" 
-                    className="bg-blue-500 hover:bg-blue-600 w-full sm:w-auto"
-                    onClick={handlePoapSave}
-                  >
-                    Add POAP
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+                <div>
+                  <Label htmlFor="poap-description">POAP Description</Label>
+                  <Textarea
+                    id="poap-description"
+                    placeholder="Describe your POAP"
+                    rows={3}
+                    value={poapData.description}
+                    onChange={(e) => setPoapData({ ...poapData, description: e.target.value })}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Create Event Button */}
           <Button
             type="submit"
-            disabled={isCreating}
+            disabled={isCreating || !bannerImage.file}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium disabled:opacity-50"
           >
             {isCreating ? (

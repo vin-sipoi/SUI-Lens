@@ -41,13 +41,28 @@ type UserContextType = {
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>({
-    name: "No Name",
-    email: "",
-    username: "Sui User",
-    avatarUrl: "https://via.placeholder.com/100",
-    walletAddress: "",
-    emails: [],
+  // Initialize user from localStorage on mount
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) {
+        try {
+          const parsedUser = JSON.parse(savedUser);
+          console.log('Restoring user from localStorage:', parsedUser);
+          return parsedUser;
+        } catch (error) {
+          console.error('Failed to parse saved user:', error);
+        }
+      }
+    }
+    return {
+      name: "No Name",
+      email: "",
+      username: "Sui User",
+      avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens",
+      walletAddress: "",
+      emails: [],
+    };
   });
 
   const updateUserProfile = (updates: Partial<User>) => {
@@ -69,9 +84,20 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (userData: User) => { // Make login async
         console.log("Login function called with:", userData); // Log input
         setUser(userData);
-        console.log("User set in context:", user); // Log after setUser
+        // Save to localStorage immediately after login
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+        console.log("User set in context and saved to localStorage:", userData); // Log after setUser
     };
-  const logout = () => setUser(null)
+  const logout = () => {
+    setUser(null);
+    // Clear localStorage on logout
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user');
+      console.log("User cleared from localStorage");
+    }
+  }
 
   useEffect(() => {
     if (user) {

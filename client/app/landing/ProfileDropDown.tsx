@@ -32,7 +32,7 @@ export function ProfileDropdown({ walletAddress, onLogout, avatarUrl, email }: {
     <div className="min-w-[280px] bg-white border border-gray-200 rounded-xl shadow-lg p-4">
       <div className="flex flex-col items-center mb-4">
         <img
-          src={avatarUrl || "https://via.placeholder.com/100"}
+          src={avatarUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens"}
           alt="Profile"
           className="w-12 h-12 rounded-full object-cover border-2 border-gray-300 mb-3"
         />

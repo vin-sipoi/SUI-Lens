@@ -1,9 +1,9 @@
 // SUI-Lens Smart Contract Configuration
-// Deployed on Sui Testnet
+// Deployed on Sui Mainnet
 
 export const SUI_CONTRACTS = {
-  network: 'testnet',
-  packageId: '0x0687d19707ad6528234f3f1c6a58d8085b483ef629cbbbd8983fbf095fa30082',
+  network: 'mainnet',
+  packageId: '0x5d663fe35c25c54fe701cc9490e516722590e28722c34325dc6f1e20b2e8576c',
   
   // Module names
   modules: {
@@ -15,24 +15,24 @@ export const SUI_CONTRACTS = {
   
   // Shared objects
   objects: {
-    globalRegistry: '0x6bb54788b079f5074f80cdfb5d5b48b7d487f021bf4d1d73eb98d9fff3ff88d9',
-    poapRegistry: '0x509f0748bbe1b4cee12b8fea9da45cddf7153b6382e8fb10015d3c149154a4e8',
-    communityRegistry: '0xf92f5314c80e38cb73046cf34d597bedfb27df0aa2725289dfdfe039a2da2f22',
-    bountyRegistry: '0x4412dd37dc7660ff5b3b77ac5951200385fb8b4cce6e11cf4bfe72b441b7605f'
+    globalRegistry: '0x31ff956c2a7983edb450237628a363780c2651fff956f6c9aec9969b66f97c92',
+    poapRegistry: '0xc8dd38a9b655f355e5de22514ede961b219722eaada1c36d980fc085dcb571a3',
+    communityRegistry: '0x9a5a7f1a40761a7e2487723251e043c11ce60432c6c19142717d6e20a3e4710b',
+    bountyRegistry: '0xe48bfa0fb21c9200de91b7d7662a38db91dbe837bd5498178e47175621366a3e'
   },
   
-  // Admin capabilities
+  // Admin capabilities (update when available)
   admin: {
-    adminCap: '0x6c7b702dd93c43c320138c49f3f1c73e78e643d6a670e3adbcf95ae30d3ac4e3',
-    upgradeCap: '0x7a46ed263f24324e0043429e075c77577402c44ec628c5251cfa1ac0fc1c696b',
-    publisher: '0xa523790a847e646749953f7efcdfc07a02e8fcfcbed05f67a74362741238a061',
-    poapDisplay: '0x55de5635a7ef92392fee79115908fdb6d0fb095923e7585595aaebd8994b6133'
+    adminCap: '',
+    upgradeCap: '',
+    publisher: '',
+    poapDisplay: ''
   },
   
   // Platform configuration
   platform: {
     platformFeeRate: 250, // 2.5% in basis points
-    deployer: '0x4822bfc9c86d1a77daf48b0bdf8f012ae9b7f8f01b4195dc0f3fd4fb838525bd'
+    deployer: '0x9a5b0ad3a18964ab7c0dbf9ab4cdecfd6b3899423b47313ae6e78f4b801022a3'
   },
   
   // Contract functions

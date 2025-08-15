@@ -115,7 +115,7 @@ export default function ClaimPOAPPage({ params }: ClaimPOAPPageProps) {
             <div className="bg-white rounded-xl shadow-lg border p-8 mb-8">
               <div className="mb-6">
                 <img 
-                  src={eventData.poapTemplate || 'https://via.placeholder.com/300x300?text=Event+POAP'} 
+                  src={eventData.poapTemplate || 'https://i.ibb.co/POAP456/default-poap.jpg'} 
                   alt="Event POAP"
                   className="w-48 h-48 mx-auto rounded-lg object-cover"
                 />
