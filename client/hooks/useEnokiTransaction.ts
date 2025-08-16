@@ -21,6 +21,9 @@ export function useEnokiTransaction() {
 
       // Set the sender
       transaction.setSender(address);
+      
+      // Set gas budget (0.1 SUI = 100000000 MIST)
+      transaction.setGasBudget(100000000);
 
       // Get the keypair from Enoki
       const keypair = await enokiFlow.getKeypair({

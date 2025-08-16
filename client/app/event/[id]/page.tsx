@@ -20,13 +20,17 @@ import {
   CheckCircle,
   Award,
   QrCode,
-  DollarSign
+  DollarSign,
+  Camera,
+  Download
 } from 'lucide-react'
 import Link from 'next/link'
 import { useEnokiTransaction } from '@/hooks/useEnokiTransaction'
 import { suilensService } from '@/lib/sui-client'
 import { toast } from 'sonner'
 import Header from '@/app/components/Header'
+import QRScanner from '@/components/QRScanner'
+import { generateEventQRCode, downloadQRCode } from '@/utils/qrCodeUtils'
 
 export default function EventDetailsPage() {
   const router = useRouter()
@@ -39,17 +43,49 @@ export default function EventDetailsPage() {
   const [event, setEvent] = useState<any>(null)
   const [registering, setRegistering] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [showScanner, setShowScanner] = useState(false)
+  const [eventQRCode, setEventQRCode] = useState<string | null>(null)
+  const [generatingQR, setGeneratingQR] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     const loadEvent = async () => {
       setLoading(true)
+      
       // First try to get from context
       let eventData = getEvent(eventId)
       
+      // Only fetch from blockchain if not in context
       if (!eventData) {
-        // If not in context, fetch from blockchain
+        console.log('Event not in context, fetching from blockchain:', eventId)
         await fetchEvents()
         eventData = getEvent(eventId)
+      }
+      
+      if (eventData) {
+        // Check if we have a local attendance state that might not be on chain yet
+        const currentEvent = event
+        const checkInKey = user?.walletAddress ? `checkin_${eventId}_${user.walletAddress}` : null
+        const hasSessionCheckIn = checkInKey ? sessionStorage.getItem(checkInKey) === 'true' : false
+        
+        if ((currentEvent?.attendance?.includes(user?.walletAddress) || hasSessionCheckIn) && 
+            user?.walletAddress &&
+            !eventData.attendance?.includes(user.walletAddress)) {
+          console.log('Preserving check-in state from previous load or session')
+          eventData.attendance = [...(eventData.attendance || []), user.walletAddress]
+        }
+        
+        console.log('Event data loaded:', {
+          id: eventData.id,
+          title: eventData.title,
+          totalRsvps: eventData.rsvps?.length,
+          totalAttendance: eventData.attendance?.length,
+          attendanceList: eventData.attendance,
+          userWallet: user?.walletAddress,
+          isUserRegistered: user?.walletAddress && eventData.rsvps?.includes(user.walletAddress),
+          hasUserAttended: user?.walletAddress && eventData.attendance?.includes(user.walletAddress),
+          hasSessionCheckIn
+        })
       }
       
       setEvent(eventData)
@@ -59,9 +95,17 @@ export default function EventDetailsPage() {
     loadEvent()
   }, [eventId, getEvent, fetchEvents])
 
+  // Remove constant debug logging to reduce noise
+  
   const isRegistered = event?.rsvps?.includes(user?.walletAddress)
-  const hasAttended = event?.attendance?.includes(user?.walletAddress)
+  
+  // Check both event attendance and session storage for check-in status
+  const checkInKey = user?.walletAddress ? `checkin_${eventId}_${user.walletAddress}` : null
+  const hasSessionCheckIn = checkInKey ? sessionStorage.getItem(checkInKey) === 'true' : false
+  const hasAttended = event?.attendance?.includes(user?.walletAddress) || hasSessionCheckIn
+  
   const isFull = event?.capacity && event?.rsvps?.length >= parseInt(event.capacity)
+  const isEventCreator = event?.creator === user?.walletAddress
 
   const handleRegister = async () => {
     if (!user?.walletAddress) {
@@ -70,9 +114,30 @@ export default function EventDetailsPage() {
       return
     }
 
+    // Check if already registered
+    if (isRegistered) {
+      toast.info('You are already registered for this event')
+      return
+    }
+
     setRegistering(true)
 
     try {
+      // First, try to create a profile if user doesn't have one
+      // This is a workaround - in production, you'd check if profile exists first
+      try {
+        const profileTx = await suilensService.createProfile(
+          user.name || 'SuiLens User',
+          'Active member of the SuiLens community',
+          'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.walletAddress
+        )
+        await signAndExecuteTransaction(profileTx)
+        console.log('Profile created successfully')
+      } catch (profileError: any) {
+        // Profile might already exist, continue with registration
+        console.log('Profile creation skipped:', profileError.message)
+      }
+
       // Get the ticket price (convert to MIST - 1 SUI = 1e9 MIST)
       const ticketPriceInMist = event.isFree ? 0 : parseInt(event.ticketPrice || '0') * 1e9;
       
@@ -83,14 +148,24 @@ export default function EventDetailsPage() {
       const result = await signAndExecuteTransaction(tx)
       console.log('Registration result:', result)
       
-      // Update local state
-      if (event) {
-        const updatedRsvps = [...(event.rsvps || []), user.walletAddress]
-        updateEvent(eventId, { rsvps: updatedRsvps })
-        setEvent({ ...event, rsvps: updatedRsvps })
+      // Check if transaction was successful
+      if (result.effects?.status?.status === 'success') {
+        // Update local state immediately
+        if (event) {
+          const updatedRsvps = [...(event.rsvps || []), user.walletAddress]
+          updateEvent(eventId, { rsvps: updatedRsvps })
+          setEvent({ ...event, rsvps: updatedRsvps })
+        }
+        
+        toast.success('Successfully registered for the event!')
+        
+        // Refresh event data from blockchain after transaction confirms
+        setTimeout(async () => {
+          await refreshEventData()
+        }, 3000) // Wait 3 seconds for blockchain to update
+      } else {
+        throw new Error('Transaction failed')
       }
-      
-      toast.success('Successfully registered for the event!')
     } catch (error: any) {
       console.error('Error registering for event:', error)
       toast.error(error.message || 'Failed to register for event')
@@ -110,6 +185,88 @@ export default function EventDetailsPage() {
       navigator.clipboard.writeText(window.location.href)
       toast.success('Event link copied to clipboard!')
     }
+  }
+
+  const handleGenerateQRCode = async () => {
+    setGeneratingQR(true)
+    try {
+      const qrCode = await generateEventQRCode(eventId)
+      setEventQRCode(qrCode)
+      toast.success('QR code generated successfully!')
+    } catch (error) {
+      console.error('Error generating QR code:', error)
+      toast.error('Failed to generate QR code')
+    } finally {
+      setGeneratingQR(false)
+    }
+  }
+
+  const handleDownloadQRCode = async () => {
+    try {
+      await downloadQRCode(eventId, event.title)
+      toast.success('QR code downloaded!')
+    } catch (error) {
+      console.error('Error downloading QR code:', error)
+      toast.error('Failed to download QR code')
+    }
+  }
+
+  const refreshEventData = async () => {
+    setRefreshing(true)
+    try {
+      await fetchEvents()
+      const updatedEvent = getEvent(eventId)
+      if (updatedEvent && user?.walletAddress) {
+        // Preserve local attendance state if blockchain hasn't caught up
+        // This prevents the "disappearing check-in" issue
+        const userAddress = user.walletAddress
+        if (event?.attendance?.includes(userAddress) && 
+            !updatedEvent.attendance?.includes(userAddress)) {
+          console.log('Preserving local check-in state while blockchain updates')
+          updatedEvent.attendance = [...(updatedEvent.attendance || []), userAddress]
+        }
+        setEvent(updatedEvent)
+        // Only show toast if not preserving local state
+        if (!event?.attendance?.includes(userAddress) || 
+            updatedEvent.attendance?.includes(userAddress)) {
+          toast.success('Event data refreshed')
+        }
+      } else if (updatedEvent) {
+        // No user logged in, just update the event
+        setEvent(updatedEvent)
+        toast.success('Event data refreshed')
+      }
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  const handleCheckInSuccess = async (scannedEventId: string) => {
+    if (scannedEventId === eventId && user?.walletAddress) {
+      // Update local state to reflect attendance immediately
+      const updatedAttendance = [...(event.attendance || []), user.walletAddress]
+      
+      // Store check-in state in session storage as backup
+      const checkInKey = `checkin_${eventId}_${user.walletAddress}`
+      sessionStorage.setItem(checkInKey, 'true')
+      
+      // Update both the local state and context to ensure persistence
+      const updatedEvent = { ...event, attendance: updatedAttendance }
+      setEvent(updatedEvent)
+      updateEvent(eventId, { attendance: updatedAttendance })
+      
+      toast.success('✅ You have been checked in!')
+      
+      // Don't immediately refresh - let the local update persist
+      // Only refresh after a longer delay to confirm blockchain state
+      setTimeout(async () => {
+        // Only refresh if still on the same event page
+        if (eventId === scannedEventId) {
+          await refreshEventData()
+        }
+      }, 5000) // Wait 5 seconds for blockchain to fully update
+    }
+    setShowScanner(false)
   }
 
   if (loading) {
@@ -187,6 +344,29 @@ export default function EventDetailsPage() {
             className="bg-white/90 hover:bg-white"
           >
             <Heart className="w-4 h-4" />
+          </Button>
+          {/* Debug: Force refresh to check blockchain state */}
+          <Button 
+            variant="secondary" 
+            size="sm"
+            onClick={async () => {
+              console.log('=== FORCE REFRESH DEBUG ===')
+              console.log('Current event attendance:', event?.attendance)
+              console.log('User wallet:', user?.walletAddress)
+              console.log('Fetching fresh from blockchain...')
+              await fetchEvents()
+              const fresh = getEvent(eventId)
+              console.log('Fresh event data:', fresh)
+              console.log('Fresh attendance list:', fresh?.attendance)
+              if (fresh) {
+                setEvent(fresh)
+                toast.info(`Refreshed: ${fresh.attendance?.length || 0} checked in`)
+              }
+            }}
+            className="bg-yellow-500 hover:bg-yellow-600 text-white"
+            title="Force refresh from blockchain"
+          >
+            Debug Refresh
           </Button>
         </div>
       </div>
@@ -359,10 +539,35 @@ export default function EventDetailsPage() {
                     </Button>
                   )}
                   
-                  {event.qrCode && (
-                    <Button variant="outline" className="sm:w-auto">
-                      <QrCode className="w-4 h-4 mr-2" />
-                      Show QR
+                  {/* Check-in Button for Attendees */}
+                  {isRegistered && !hasAttended && (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        className="sm:w-auto"
+                        onClick={() => setShowScanner(true)}
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        Check In
+                      </Button>
+                      {/* Show check-in availability notice */}
+                      {event.date && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Check-in available during event hours only
+                        </p>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* Show Attended Status */}
+                  {hasAttended && (
+                    <Button 
+                      variant="outline" 
+                      disabled
+                      className="sm:w-auto bg-green-50"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                      Checked In
                     </Button>
                   )}
                 </div>
@@ -373,6 +578,69 @@ export default function EventDetailsPage() {
                   </p>
                 )}
               </div>
+
+              {/* Event Creator QR Code Management */}
+              {isEventCreator && (
+                <div className="border-t pt-6 mt-6">
+                  <h3 className="text-lg font-semibold mb-3">🎫 Event Check-in QR Code</h3>
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-4">
+                      Generate and download a QR code for attendees to check in at your event.
+                      Display this QR code at the venue for attendees to scan.
+                    </p>
+                    
+                    {eventQRCode ? (
+                      <div className="space-y-4">
+                        <div className="bg-white p-4 rounded-lg flex justify-center">
+                          <img 
+                            src={eventQRCode} 
+                            alt="Event Check-in QR Code"
+                            className="w-48 h-48"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={handleDownloadQRCode}
+                            className="flex-1"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Download QR Code
+                          </Button>
+                          <Button 
+                            onClick={handleGenerateQRCode}
+                            variant="outline"
+                            disabled={generatingQR}
+                          >
+                            {generatingQR ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              'Regenerate'
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button 
+                        onClick={handleGenerateQRCode}
+                        disabled={generatingQR}
+                        className="w-full"
+                      >
+                        {generatingQR ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Generating QR Code...
+                          </>
+                        ) : (
+                          <>
+                            <QrCode className="w-4 h-4 mr-2" />
+                            Generate Check-in QR Code
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Organizer Info */}
               {event.organizer && (
@@ -395,6 +663,13 @@ export default function EventDetailsPage() {
           </Card>
         </div>
       </div>
+      
+      {/* QR Scanner Modal */}
+      <QRScanner 
+        isOpen={showScanner}
+        onClose={() => setShowScanner(false)}
+        onSuccess={handleCheckInSuccess}
+      />
     </div>
   )
 }

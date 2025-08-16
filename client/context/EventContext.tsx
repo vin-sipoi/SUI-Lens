@@ -40,6 +40,7 @@ interface Event {
   poapImageUrl?: string
   tags?: string[]
   registered?: number
+  creator?: string
   organizer?: {
     name: string
     avatar?: string
@@ -77,7 +78,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      // First get the registry to find the events table ID
+      // First get the registry to find the events table ID and attendance_records table ID
       const registryObject = await suiClient.getObject({
         id: eventRegistryId,
         options: {
@@ -92,6 +93,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
 
       const registryFields = registryObject.data.content.fields as any
       const eventsTableId = registryFields.events?.fields?.id?.id
+      const attendanceRecordsTableId = registryFields.attendance_records?.fields?.id?.id
 
       if (!eventsTableId) {
         console.log('No events table found in registry')
@@ -100,6 +102,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
       }
 
       console.log('Events table ID:', eventsTableId)
+      console.log('Attendance records table ID:', attendanceRecordsTableId)
 
       // Get dynamic fields (events) from the events table
       const dynamicFields = await suiClient.getDynamicFields({
@@ -112,6 +115,58 @@ export function EventProvider({ children }: { children: ReactNode }) {
         console.log('No events found in table')
         setEvents([])
         return
+      }
+
+      // Fetch attendance records if the table exists
+      let attendanceMap: Map<string, string[]> = new Map()
+      if (attendanceRecordsTableId) {
+        try {
+          const attendanceFields = await suiClient.getDynamicFields({
+            parentId: attendanceRecordsTableId,
+          })
+          
+          console.log('Fetching attendance records...')
+          
+          // Fetch each attendance record
+          for (const field of attendanceFields.data || []) {
+            try {
+              const attendanceObject = await suiClient.getObject({
+                id: field.objectId,
+                options: {
+                  showContent: true,
+                },
+              })
+              
+              if (attendanceObject.data?.content && attendanceObject.data.content.dataType === 'moveObject') {
+                const attendanceData = attendanceObject.data.content.fields as any
+                // The key is the event ID (field.name.value for Table entries)
+                const eventId = field.name?.value || field.name
+                
+                // Parse the VecSet of addresses
+                let attendeesList: string[] = []
+                if (attendanceData.value?.fields?.contents) {
+                  // Table entry structure: { name: eventId, value: VecSet }
+                  attendeesList = attendanceData.value.fields.contents.filter((addr: any) => typeof addr === 'string')
+                } else if (attendanceData.fields?.contents) {
+                  // Direct VecSet structure
+                  attendeesList = attendanceData.fields.contents.filter((addr: any) => typeof addr === 'string')
+                } else if (attendanceData.contents) {
+                  // Alternative structure
+                  attendeesList = attendanceData.contents.filter((addr: any) => typeof addr === 'string')
+                }
+                
+                if (eventId && attendeesList.length > 0) {
+                  attendanceMap.set(eventId, attendeesList)
+                  console.log(`Event ${eventId}: ${attendeesList.length} attendees checked in`)
+                }
+              }
+            } catch (err) {
+              console.error('Error fetching attendance record:', err)
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching attendance records table:', err)
+        }
       }
 
       // Filter for event entries in the Table
@@ -132,6 +187,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
           })
 
           console.log('Event object:', field.objectId, eventObject)
+          console.log('Event data fields:', eventObject.data?.content?.fields)
 
           if (eventObject.data?.content && eventObject.data.content.dataType === 'moveObject') {
             const wrapper = eventObject.data.content.fields as any
@@ -140,8 +196,60 @@ export function EventProvider({ children }: { children: ReactNode }) {
             const eventData = wrapper.value?.fields || wrapper
             
             // Parse the event ID from the wrapper or use the actual event ID
-            const eventId = eventData.id?.id || wrapper.name || field.objectId
+            // For table entries, the name field contains the event ID
+            const eventId = wrapper.name || eventData.id?.id || field.objectId
             
+            // Parse attendees - check multiple possible locations
+            let rsvpList: string[] = []
+            
+            // Debug logging
+            console.log('Raw event data for RSVPs:', {
+              attendees: eventData.attendees,
+              registered_users: eventData.registered_users,
+              all_fields: Object.keys(eventData)
+            })
+            
+            // Parse VecSet<address> from Move contract
+            // The attendees field is a VecSet which has a contents array
+            if (eventData.attendees) {
+              console.log('Attendees structure:', eventData.attendees)
+              
+              if (Array.isArray(eventData.attendees)) {
+                // Direct array (unlikely but check)
+                rsvpList = eventData.attendees
+              } else if (eventData.attendees.fields?.contents) {
+                // VecSet structure: { fields: { contents: [...] } }
+                const contents = eventData.attendees.fields.contents
+                console.log('Attendees contents:', contents)
+                
+                if (Array.isArray(contents)) {
+                  // Each item in contents should be an address string
+                  rsvpList = contents.filter(item => typeof item === 'string')
+                }
+              } else if (eventData.attendees.contents) {
+                // Alternative structure: { contents: [...] }
+                rsvpList = eventData.attendees.contents
+              }
+            }
+            
+            // Also check approved_attendees field
+            if (!rsvpList.length && eventData.approved_attendees) {
+              if (eventData.approved_attendees.fields?.contents) {
+                rsvpList = eventData.approved_attendees.fields.contents.filter((item: any) => 
+                  typeof item === 'string'
+                )
+              }
+            }
+
+            // Get attendance list from the separate attendance_records table
+            // The eventId is used to look up the attendance data
+            let attendanceList: string[] = attendanceMap.get(eventId) || []
+            
+            // Log event stats if there's meaningful data
+            if (rsvpList.length > 0 || attendanceList.length > 0) {
+              console.log(`Event ${eventId}: ${rsvpList.length} registered, ${attendanceList.length} checked in`)
+            }
+
             return {
               id: eventId,
               title: eventData.title || eventData.name || '',
@@ -161,8 +269,9 @@ export function EventProvider({ children }: { children: ReactNode }) {
               poapImageUrl: eventData.poap_image_url || '',
               category: eventData.category || '',
               type: 'Event',
-              rsvps: eventData.attendees?.fields?.contents || eventData.registered_users?.fields?.contents || [],
-              attendance: eventData.checked_in_attendees?.fields?.contents || [],
+              rsvps: rsvpList,
+              attendance: attendanceList,
+              creator: eventData.creator || '',
               organizer: {
                 name: eventData.creator || 'Unknown',
                 avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens',
@@ -179,7 +288,8 @@ export function EventProvider({ children }: { children: ReactNode }) {
       const fetchedEvents = await Promise.all(eventPromises)
       const validEvents = fetchedEvents.filter(e => e !== null) as Event[]
       
-      console.log('Fetched events from blockchain:', validEvents)
+      // Only log summary to reduce noise
+      console.log(`Fetched ${validEvents.length} events from blockchain`)
       setEvents(validEvents)
     } catch (error) {
       console.error('Error fetching events:', error)
@@ -188,14 +298,12 @@ export function EventProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Fetch events on mount and periodically
+  // Fetch events on mount only
   useEffect(() => {
     fetchEvents()
     
-    // Refresh events every 30 seconds
-    const interval = setInterval(fetchEvents, 30000)
-    
-    return () => clearInterval(interval)
+    // Remove auto-refresh to prevent too many requests
+    // Users can manually refresh or it will refresh after specific actions
   }, [])
 
   const addEvent = (event: Event) => {

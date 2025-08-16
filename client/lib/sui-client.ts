@@ -24,6 +24,40 @@ export class SuilensService {
     this.communityRegistryId = process.env.NEXT_PUBLIC_COMMUNITY_REGISTRY_ID || '';
   }
 
+  async createProfile(username: string, bio: string, avatarUrl: string) {
+    const tx = new Transaction();
+    
+    tx.moveCall({
+      target: `${this.packageId}::suilens_core::create_profile`,
+      arguments: [
+        tx.object(this.eventRegistryId),
+        tx.pure.string(username),
+        tx.pure.string(bio),
+        tx.pure.string(avatarUrl),
+        tx.object('0x6'), // Clock object
+      ],
+    });
+
+    return tx;
+  }
+
+  async updateProfile(username: string, bio: string, avatarUrl: string) {
+    const tx = new Transaction();
+    
+    tx.moveCall({
+      target: `${this.packageId}::suilens_core::update_profile`,
+      arguments: [
+        tx.object(this.eventRegistryId),
+        tx.pure.string(username),
+        tx.pure.string(bio),
+        tx.pure.string(avatarUrl),
+        tx.object('0x6'), // Clock object
+      ],
+    });
+
+    return tx;
+  }
+
   async createEvent(eventData: {
     name: string;
     description: string;
@@ -210,6 +244,39 @@ export class SuilensService {
         tx.object(this.eventRegistryId),
         tx.pure.id(eventId),
         tx.pure.address(attendeeAddress),
+        tx.object('0x6'), // Clock object
+      ],
+    });
+
+    return tx;
+  }
+
+  async verifyAndCheckin(eventId: string, ticketCode: string, attendeeAddress: string) {
+    const tx = new Transaction();
+    
+    tx.moveCall({
+      target: `${this.packageId}::suilens_core::verify_and_checkin`,
+      arguments: [
+        tx.object(this.eventRegistryId),
+        tx.pure.id(eventId),
+        tx.pure.string(ticketCode),
+        tx.pure.address(attendeeAddress),
+        tx.object('0x6'), // Clock object
+      ],
+    });
+
+    return tx;
+  }
+
+  async selfCheckin(eventId: string, verificationCode: string) {
+    const tx = new Transaction();
+    
+    tx.moveCall({
+      target: `${this.packageId}::suilens_core::self_checkin`,
+      arguments: [
+        tx.object(this.eventRegistryId),
+        tx.pure.id(eventId),
+        tx.pure.string(verificationCode),
         tx.object('0x6'), // Clock object
       ],
     });

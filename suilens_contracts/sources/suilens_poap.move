@@ -24,6 +24,7 @@ module suilens_contracts::suilens_poap {
     const E_EVENT_NOT_ENDED: u64 = 5;
     const E_POAP_NOT_ACTIVE: u64 = 6;
     const E_MAX_SUPPLY_REACHED: u64 = 7;
+    const E_EVENT_NOT_STARTED: u64 = 8;
 
     // ======== Structs ========
 
@@ -185,8 +186,9 @@ module suilens_contracts::suilens_poap {
         // Verify event exists and user actually attended (checked in)
         assert!(suilens_core::has_attended_event(global_registry, event_id, claimer), E_NOT_ATTENDEE);
         
-        // Verify event has ended
-        assert!(current_time > suilens_core::get_event_end_date(global_registry, event_id), E_EVENT_NOT_ENDED);
+        // Verify event has started (POAPs can be claimed during or after the event)
+        let event_start = suilens_core::get_event_start_date(global_registry, event_id);
+        assert!(current_time >= event_start, E_EVENT_NOT_STARTED);
         
         // Get POAP collection for this event
         assert!(table::contains(&poap_registry.event_collections, event_id), E_POAP_NOT_FOUND);

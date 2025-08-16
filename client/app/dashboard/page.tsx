@@ -24,6 +24,7 @@ export default function DashboardPage() {
   
   // Filter events created by the current user
   const myEvents = events.filter(event => 
+    event.creator === user?.walletAddress ||
     event.organizer?.name === user?.walletAddress || 
     event.organizer?.name === user?.name
   )
@@ -430,7 +431,7 @@ export default function DashboardPage() {
                         key={event.id}
                         className="base-card-light group overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 rounded-2xl"
                       >
-                        <Link href={`/event/${event.id}`}>
+                        <Link href={`/event/${event.id}/admin`}>
                           <div className="h-40 bg-gray-100 relative overflow-hidden">
                             {event.bannerUrl ? (
                               <img 
@@ -441,6 +442,11 @@ export default function DashboardPage() {
                             ) : (
                               <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600" />
                             )}
+                            <div className="absolute top-2 right-2">
+                              <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+                                Creator
+                              </span>
+                            </div>
                           </div>
                           <CardContent className="p-4">
                             <h3 className="font-semibold text-lg mb-2 line-clamp-1">{event.title}</h3>
@@ -457,6 +463,11 @@ export default function DashboardPage() {
                                 <Users className="w-4 h-4" />
                                 <span>{event.rsvps?.length || 0} registered</span>
                               </div>
+                            </div>
+                            <div className="mt-3 pt-3 border-t">
+                              <Button variant="outline" size="sm" className="w-full text-blue-600 hover:bg-blue-50">
+                                Manage Event →
+                              </Button>
                             </div>
                           </CardContent>
                         </Link>

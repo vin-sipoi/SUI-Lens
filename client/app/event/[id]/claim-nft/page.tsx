@@ -152,8 +152,37 @@ export default function ClaimNFTPage() {
       }, 3000)
     } catch (error: any) {
       console.error('Error claiming POAP:', error)
-      setError(error.message || 'Failed to claim POAP')
-      toast.error('Failed to claim POAP. Please try again.')
+      
+      // Check for specific Move error codes
+      let errorMessage = 'Failed to claim POAP'
+      
+      if (error.message.includes('MoveAbort')) {
+        if (error.message.includes(', 8)')) {
+          // E_EVENT_NOT_STARTED
+          errorMessage = 'POAPs can only be claimed after the event has started. Please check back later.'
+        } else if (error.message.includes(', 5)')) {
+          // E_EVENT_NOT_ENDED (no longer used but kept for compatibility)
+          errorMessage = 'POAPs can only be claimed after checking in at the event.'
+        } else if (error.message.includes(', 3)')) {
+          // E_ALREADY_CLAIMED
+          errorMessage = 'You have already claimed the POAP for this event.'
+        } else if (error.message.includes(', 4)')) {
+          // E_NOT_ATTENDEE
+          errorMessage = 'You must check in at the event to claim the POAP.'
+        } else if (error.message.includes(', 6)')) {
+          // E_POAP_NOT_ACTIVE
+          errorMessage = 'The POAP collection for this event is not active.'
+        } else if (error.message.includes(', 7)')) {
+          // E_MAX_SUPPLY_REACHED
+          errorMessage = 'All POAPs for this event have been claimed.'
+        } else if (error.message.includes(', 2)')) {
+          // E_POAP_NOT_FOUND
+          errorMessage = 'No POAP collection exists for this event.'
+        }
+      }
+      
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setClaiming(false)
     }
@@ -299,10 +328,19 @@ export default function ClaimNFTPage() {
                   <div className="text-sm text-gray-600">
                     <p className="font-medium mb-1">Requirements:</p>
                     <ul className="list-disc list-inside space-y-1">
-                      <li>Must have attended the event</li>
-                      <li>Check-in verification required</li>
+                      <li>Must have checked in at the event</li>
+                      <li>Available after check-in during the event</li>
                     </ul>
                   </div>
+                  
+                  {/* Show info about when POAP can be claimed */}
+                  {event.date && new Date(event.date + ' ' + (event.time || '')).getTime() > Date.now() && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-xs text-blue-700">
+                        <strong>Note:</strong> POAPs will be available after you check in when the event starts on {event.date} at {event.time || 'start time'}.
+                      </p>
+                    </div>
+                  )}
 
                   {!user?.walletAddress ? (
                     <Button disabled className="w-full">
@@ -327,6 +365,15 @@ export default function ClaimNFTPage() {
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Checking Status...
                     </Button>
+                  ) : event.date && new Date(event.date + ' ' + (event.time || '')).getTime() > Date.now() ? (
+                    <div>
+                      <Button disabled className="w-full mb-2">
+                        Event Not Started
+                      </Button>
+                      <p className="text-xs text-center text-gray-500">
+                        POAPs available after event starts
+                      </p>
+                    </div>
                   ) : (
                     <Button 
                       onClick={handleClaimPOAP}

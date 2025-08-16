@@ -177,8 +177,8 @@ const EventDashboard: React.FC = () => {
                   <Calendar className="h-3 w-3" />
                   <span className="truncate">{event.date}</span>
                 </div>
-                <div className="flex gap-2 mt-4">
-                  <Link href={`/event/${event.id}`} className="flex-1">
+                <div className="mt-4">
+                  <Link href={`/event/${event.id}`} className="block">
                     <Button
                       variant="outline"
                       className="w-full py-2 text-sm"
@@ -186,35 +186,19 @@ const EventDashboard: React.FC = () => {
                       View Details
                     </Button>
                   </Link>
-                  {event.rsvps && event.rsvps.includes(user?.walletAddress || '') ? (
-                    <>
-                      {event.requiresApproval ? (
-                        <Button
-                          className="flex-1 bg-yellow-400 text-white py-2 rounded-lg cursor-not-allowed"
-                          disabled
-                        >
-                          Pending
-                        </Button>
-                      ) : (
-                        <Button
-                          className="flex-1 bg-green-600 text-white py-2 rounded-lg cursor-not-allowed"
-                          disabled
-                        >
-                          Registered
-                        </Button>
-                      )}
-                    </>
-                  ) : (
-                    <Button
-                      className="flex-1 bg-blue-600 text-white hover:bg-blue-700 py-2 rounded-lg text-sm"
-                      onClick={() => handleRegister(event.id)}
-                    >
-                      Register
-                    </Button>
-                  )}
                 </div>
-                {event.attendance && event.attendance.includes(user?.walletAddress || '') && (
-                  <p className="mt-1 text-green-600 font-semibold text-center text-sm">Checked In</p>
+                {event.rsvps && event.rsvps.includes(user?.walletAddress || '') && (
+                  <div className="mt-2 text-center">
+                    {event.attendance && event.attendance.includes(user?.walletAddress || '') ? (
+                      <Badge className="bg-green-100 text-green-800 border-green-200">
+                        ✓ Checked In
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                        ✓ Registered
+                      </Badge>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

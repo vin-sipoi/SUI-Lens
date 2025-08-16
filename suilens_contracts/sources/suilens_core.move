@@ -1162,6 +1162,58 @@ module suilens_contracts::suilens_core {
         mark_attendance(registry, event_id, attendee, clock, ctx);
     }
 
+    /// Self check-in function for attendees using QR code
+    /// Allows registered attendees to check themselves in during the event
+    public fun self_checkin(
+        registry: &mut GlobalRegistry,
+        event_id: ID,
+        verification_code: String,
+        clock: &Clock,
+        ctx: &mut TxContext
+    ) {
+        let attendee = tx_context::sender(ctx);
+        let current_time = clock::timestamp_ms(clock);
+        
+        // Verify verification code is not empty
+        assert!(string::length(&verification_code) > 0, E_INVALID_TICKET);
+        
+        // Get the event
+        assert!(table::contains(&registry.events, event_id), E_EVENT_NOT_FOUND);
+        let event = table::borrow(&registry.events, event_id);
+        
+        // Verify event timing (must be during the event)
+        assert!(current_time >= event.start_date, E_EVENT_NOT_STARTED);
+        assert!(current_time <= event.end_date, E_EVENT_ENDED);
+        
+        // Verify attendee is registered for the event
+        assert!(
+            vec_set::contains(&event.attendees, &attendee) || 
+            vec_set::contains(&event.approved_attendees, &attendee),
+            E_NOT_REGISTERED
+        );
+        
+        // Initialize attendance records if needed
+        if (!table::contains(&registry.attendance_records, event_id)) {
+            table::add(&mut registry.attendance_records, event_id, vec_set::empty());
+        };
+        
+        let attendance_set = table::borrow_mut(&mut registry.attendance_records, event_id);
+        
+        // Check if already checked in
+        assert!(!vec_set::contains(attendance_set, &attendee), E_ALREADY_CHECKED_IN);
+        
+        // Mark as attended
+        vec_set::insert(attendance_set, attendee);
+        
+        // Emit attendance event
+        event::emit(AttendanceMarked {
+            event_id,
+            attendee,
+            checked_in_by: attendee, // Self check-in
+            check_in_time: current_time,
+        });
+    }
+
     /// Update critical event parameters (creator only, before event starts)
     public fun update_event_critical(
         registry: &mut GlobalRegistry,
