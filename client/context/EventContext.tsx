@@ -22,6 +22,8 @@ interface Event {
   endDate?: string
   time: string
   endTime?: string
+  startTimestamp?: number
+  endTimestamp?: number
   location: string
   capacity?: string
   ticketPrice?: string
@@ -258,6 +260,8 @@ export function EventProvider({ children }: { children: ReactNode }) {
               time: eventData.start_date ? new Date(parseInt(eventData.start_date)).toLocaleTimeString() : '',
               endDate: eventData.end_date ? new Date(parseInt(eventData.end_date)).toLocaleDateString() : undefined,
               endTime: eventData.end_date ? new Date(parseInt(eventData.end_date)).toLocaleTimeString() : undefined,
+              startTimestamp: eventData.start_date ? parseInt(eventData.start_date) : undefined,
+              endTimestamp: eventData.end_date ? parseInt(eventData.end_date) : undefined,
               location: eventData.location || '',
               capacity: eventData.capacity || eventData.max_attendees ? (eventData.capacity || eventData.max_attendees).toString() : 'Unlimited',
               ticketPrice: eventData.price?.toString() || eventData.ticket_price?.toString() || '0',

@@ -106,6 +106,14 @@ export default function EventDetailsPage() {
   
   const isFull = event?.capacity && event?.rsvps?.length >= parseInt(event.capacity)
   const isEventCreator = event?.creator === user?.walletAddress
+  
+  // Check if event has started and ended using timestamps
+  const now = Date.now()
+  const eventStartTime = event?.startTimestamp || 0
+  const eventEndTime = event?.endTimestamp || (eventStartTime ? eventStartTime + (24 * 60 * 60 * 1000) : 0) // Default to 24 hours after start
+  const hasEventStarted = eventStartTime && now >= eventStartTime
+  const hasEventEnded = eventEndTime && now > eventEndTime
+  const canCheckIn = hasEventStarted && !hasEventEnded
 
   const handleRegister = async () => {
     if (!user?.walletAddress) {
@@ -542,19 +550,48 @@ export default function EventDetailsPage() {
                   {/* Check-in Button for Attendees */}
                   {isRegistered && !hasAttended && (
                     <>
-                      <Button 
-                        variant="outline" 
-                        className="sm:w-auto"
-                        onClick={() => setShowScanner(true)}
-                      >
-                        <Camera className="w-4 h-4 mr-2" />
-                        Check In
-                      </Button>
-                      {/* Show check-in availability notice */}
-                      {event.date && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Check-in available during event hours only
-                        </p>
+                      {!hasEventStarted ? (
+                        <div>
+                          <Button 
+                            variant="outline" 
+                            className="sm:w-auto"
+                            disabled
+                          >
+                            <Clock className="w-4 h-4 mr-2" />
+                            Check-in Not Yet Available
+                          </Button>
+                          <p className="text-xs text-amber-600 mt-1">
+                            Check-in will be available on {event.date} at {event.time}
+                          </p>
+                        </div>
+                      ) : hasEventEnded ? (
+                        <div>
+                          <Button 
+                            variant="outline" 
+                            className="sm:w-auto"
+                            disabled
+                          >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Event Ended
+                          </Button>
+                          <p className="text-xs text-red-600 mt-1">
+                            Check-in is no longer available
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <Button 
+                            variant="outline" 
+                            className="sm:w-auto"
+                            onClick={() => setShowScanner(true)}
+                          >
+                            <Camera className="w-4 h-4 mr-2" />
+                            Check In
+                          </Button>
+                          <p className="text-xs text-green-600 mt-1">
+                            ✅ Check-in is now available
+                          </p>
+                        </>
                       )}
                     </>
                   )}
