@@ -12,7 +12,8 @@ import {
   Heart,
   Menu,
   X,
-  RefreshCw
+  RefreshCw,
+  MapPin
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -73,12 +74,12 @@ const EventDashboard: React.FC = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
           {/* Search Bar */}
-          <div className="relative w-full sm:max-w-md">
+          <div className="relative w-full sm:max-w-2xl">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               type="text"
               placeholder="Search for community or event..."
-              className="w-full pl-10 py-2 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 py-2 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:w-[600px]"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
@@ -147,7 +148,7 @@ const EventDashboard: React.FC = () => {
             </div>
           </div>
         ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
           {filteredEvents.map((event) => (
             <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
               <div className="h-48 relative overflow-hidden bg-gray-100">
@@ -156,32 +157,37 @@ const EventDashboard: React.FC = () => {
                   alt={event.title} 
                   className="w-full h-full object-cover transition-transform hover:scale-105 duration-300" 
                 />
-                <div className="absolute top-2 right-2">
-                  <button className="p-1.5 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white">
-                    <Heart className="h-4 w-4 text-gray-600 hover:text-red-500" />
-                  </button>
-                </div>
               </div>
               <div className="p-4">
-                <div className="mb-2">
-                  <Badge variant="outline" className="text-xs font-medium text-blue-600 bg-blue-50 border-blue-200">
-                    {event.type}
-                  </Badge>
-                </div>
                 <Link href={`/event/${event.id}`}>
-                  <h3 className="text-lg font-bold line-clamp-1 cursor-pointer hover:underline">
+                  <h3 className="text-lg text-[#101928] font-bold line-clamp-1 cursor-pointer hover:underline">
                     {event.title}
                   </h3>
                 </Link>
-                <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                <div className="flex items-center font-medium text-sm text-[#667185] mt-1">
                   <Calendar className="h-3 w-3" />
-                  <span className="truncate">{event.date}</span>
+                  <span className="truncate">{new Date(event.date).toLocaleDateString()}</span>
+                  <span className="mx-2"></span>
+                  <MapPin className="h-3 w-3" />
+                  <span className="truncate">{event.location}</span>
                 </div>
-                <div className="mt-4">
+                <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                  {event.description || "No description available."}
+                </p>
+                <div className="mt-4 py-2 gap-2 flex flex-col sm:flex-row lg:flex-col">
                   <Link href={`/event/${event.id}`} className="block">
                     <Button
                       variant="outline"
-                      className="w-full py-2 text-sm"
+                      className="w-full py-2 bg-[#4DA2FF] text-sm text-white rounded-3xl hover:bg-[#3a8cd4] hover:text-white"
+                    >
+                      Register
+                    </Button>
+                  </Link>
+
+                  <Link href={`/event/${event.id}`} className="block">
+                    <Button
+                      variant="outline"
+                      className="w-full py-2 text-sm border-[#4DA2FF] rounded-3xl text-[#4DA2FF]  hover:text-[#4DA2FF]"
                     >
                       View Details
                     </Button>

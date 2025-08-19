@@ -22,7 +22,8 @@ import {
   QrCode,
   DollarSign,
   Camera,
-  Download
+  Download,
+  XCircle
 } from 'lucide-react'
 import Link from 'next/link'
 import { useEnokiTransaction } from '@/hooks/useEnokiTransaction'
@@ -35,7 +36,7 @@ import { generateEventQRCode, downloadQRCode } from '@/utils/qrCodeUtils'
 export default function EventDetailsPage() {
   const router = useRouter()
   const params = useParams()
-  const eventId = params.id as string
+  const eventId = params?.id as string
   const { user } = useUser()
   const { getEvent, updateEvent, fetchEvents } = useEventContext()
   const { signAndExecuteTransaction } = useEnokiTransaction()
