@@ -16,19 +16,39 @@ import { ProfileDropdown } from "../landing/ProfileDropDown"
 import { useEventContext } from "@/context/EventContext"
 
 export default function DashboardPage() {
+  
   type Event = {
     id: string
    
   }
+
   const { events } = useEventContext()
-  const { user, logout } = useUser()
   
-  // Filter events created by the current user
+  const { user, logout } = useUser()
+
   const myEvents = events.filter(event => 
     event.creator === user?.walletAddress ||
     event.organizer?.name === user?.walletAddress || 
     event.organizer?.name === user?.name
   )
+  
+  
+  const userEvents = myEvents // For compatibility with the template
+  const [activeTab, setActiveTab] = useState("my-events")
+  const [sidebarSection, setSidebarSection] = useState<string>("overview")
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false)
+  const [showUpcoming, setShowUpcoming] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
+  const [selectedEventTitle, setSelectedEventTitle] = useState<string>("")
+  const [mounted, setMounted] = useState(false)
+
+  
+  
+  // Filter events created by the current user
   
   // Filter events the user is registered for
   const registeredEvents = events.filter(event => 
@@ -50,19 +70,6 @@ export default function DashboardPage() {
       return !isUpcoming(event.date)
     }
   })
-
-  const userEvents = myEvents // For compatibility with the template
-  const [activeTab, setActiveTab] = useState("my-events")
-  const [sidebarSection, setSidebarSection] = useState<string>("overview")
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false)
-  const [showUpcoming, setShowUpcoming] = useState(true)
-  const [loading, setLoading] = useState(false)
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
-  const [selectedEventTitle, setSelectedEventTitle] = useState<string>("")
-  const [mounted, setMounted] = useState(false)
 
     //Filter upcoming and past events
   const filteredEventsForDisplay = myEvents.filter(event => {
