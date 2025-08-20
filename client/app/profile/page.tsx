@@ -71,7 +71,7 @@ export default function Profile() {
 
   // Handle refresh parameter from URL
   useEffect(() => {
-    const shouldRefresh = searchParams.get('refresh');
+    const shouldRefresh = searchParams?.get('refresh');
     if (shouldRefresh === 'true' && walletAddress) {
       // Small delay to ensure any blockchain updates are reflected
       setTimeout(() => {
