@@ -12,7 +12,6 @@ import { ConnectButton } from "@mysten/dapp-kit"
 import Image from "next/image"
 import GuestList from "@/components/GuestList"
 import { useUser } from "../../context/UserContext"
-import { ProfileDropdown } from "../landing/ProfileDropDown"
 import { useEventContext } from "@/context/EventContext"
 
 export default function DashboardPage() {
@@ -46,42 +45,36 @@ export default function DashboardPage() {
   const [selectedEventTitle, setSelectedEventTitle] = useState<string>("")
   const [mounted, setMounted] = useState(false)
 
-  
-  
-  // Filter events created by the current user
-  
-  // Filter events the user is registered for
   const registeredEvents = events.filter(event => 
     event.rsvps?.includes(user?.walletAddress || '')
   )
 
   // Helper function to check if event is upcoming
-  const isUpcoming = (eventDate: string) => {
-    const today = new Date()
-    const eventDateObj = new Date(eventDate)
-    return eventDateObj >= today
+  const isUpcoming = (event: any) => {
+    const now = new Date()
+    now.setHours(0, 0, 0, 0) // Set to start of today for consistent comparison
+    
+    // Use timestamp if available (more reliable), otherwise parse date string
+    let eventDate: Date
+    if (event.startTimestamp) {
+      eventDate = new Date(event.startTimestamp)
+    } else if (event.date) {
+      // Handle various date formats that might come from toLocaleDateString()
+      eventDate = new Date(event.date)
+    } else {
+      return false
+    }
+    
+    eventDate.setHours(0, 0, 0, 0) // Set to start of day for comparison
+    return eventDate >= now // Include today and future dates
   }
 
-  // Filter events by upcoming/past status
-  const filteredEvents = myEvents.filter(event => {
-    if (showUpcoming) {
-      return isUpcoming(event.date)
-    } else {
-      return !isUpcoming(event.date)
-    }
-  })
-
-    //Filter upcoming and past events
+  // Filter events for display - use single consistent logic
   const filteredEventsForDisplay = myEvents.filter(event => {
-    const eventDate = new Date(event.date);
-    const now = new Date();
-    
     if (showUpcoming) {
-      // Show upcoming events (future dates)
-      return eventDate > now;
+      return isUpcoming(event)
     } else {
-      // Show past events (past dates)
-      return eventDate <= now;
+      return !isUpcoming(event)
     }
   });
 
