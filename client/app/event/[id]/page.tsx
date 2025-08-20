@@ -32,6 +32,8 @@ import { toast } from 'sonner'
 import Header from '@/app/components/Header'
 import QRScanner from '@/components/QRScanner'
 import { generateEventQRCode, downloadQRCode } from '@/utils/qrCodeUtils'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function EventDetailsPage() {
   const router = useRouter()
@@ -443,6 +445,31 @@ export default function EventDetailsPage() {
                 <p className="text-gray-600 whitespace-pre-wrap">{event.description}</p>
               </div>
 
+              {/* Map location */}
+
+
+
+               {/* Registration Form */}
+                  <div className="border-t pt-9 mb-6">
+                    <h2 className="text-4xl font-semibold text-[#101928] pb-4 mb-4"> Registration</h2>
+                    
+                    <form>
+                      <div className="flex flex-col  gap-4">
+                        <Label>
+                          Full Name
+                          <Input placeholder="Your Name" className="my-4" />
+                        </Label>
+
+                        <Label>
+                          Email Address
+                          <Input placeholder="Your Email" className="my-4" />
+                        </Label>
+                      </div>
+                      <Button type="submit" className="w-full bg-[#101928] rounded-3xl">
+                        Register
+                      </Button>
+                    </form>
+                  </div>
               {/* NFT Rewards Section */}
               <div className="border-t pt-6 mb-6">
                 <h2 className="text-xl font-semibold mb-4">🎁 NFT Rewards</h2>

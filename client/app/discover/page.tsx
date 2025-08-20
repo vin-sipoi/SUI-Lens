@@ -175,14 +175,7 @@ const EventDashboard: React.FC = () => {
                   {event.description || "No description available."}
                 </p>
                 <div className="mt-4 py-2 gap-2 flex flex-col sm:flex-row lg:flex-col">
-                  <Link href={`/event/${event.id}`} className="block">
-                    <Button
-                      variant="outline"
-                      className="w-full py-2 bg-[#4DA2FF] text-sm text-white rounded-3xl hover:bg-[#3a8cd4] hover:text-white"
-                    >
-                      Register
-                    </Button>
-                  </Link>
+                  
 
                   <Link href={`/event/${event.id}`} className="block">
                     <Button
