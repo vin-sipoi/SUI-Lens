@@ -158,8 +158,9 @@ export function EventProvider({ children }: { children: ReactNode }) {
                 }
                 
                 if (eventId && attendeesList.length > 0) {
-                  attendanceMap.set(eventId, attendeesList)
-                  console.log(`Event ${eventId}: ${attendeesList.length} attendees checked in`)
+                  const eventIdStr = typeof eventId === 'string' ? eventId : (eventId?.toString?.() ?? JSON.stringify(eventId))
+                  attendanceMap.set(eventIdStr, attendeesList)
+                  console.log(`Event ${eventIdStr}: ${attendeesList.length} attendees checked in`)
                 }
               }
             } catch (err) {
@@ -189,7 +190,15 @@ export function EventProvider({ children }: { children: ReactNode }) {
           })
 
           console.log('Event object:', field.objectId, eventObject)
-          console.log('Event data fields:', eventObject.data?.content?.fields)
+          if (
+            eventObject.data?.content &&
+            eventObject.data.content.dataType === 'moveObject' &&
+            'fields' in eventObject.data.content
+          ) {
+            console.log('Event data fields:', (eventObject.data.content as { fields: any }).fields)
+          } else {
+            console.log('Event data fields: not a moveObject or missing fields')
+          }
 
           if (eventObject.data?.content && eventObject.data.content.dataType === 'moveObject') {
             const wrapper = eventObject.data.content.fields as any
