@@ -13,6 +13,7 @@ import Image from "next/image"
 import GuestList from "@/components/GuestList"
 import { useUser } from "../../context/UserContext"
 import { useEventContext } from "@/context/EventContext"
+import Header from "../components/Header"
 
 export default function DashboardPage() {
   
@@ -37,7 +38,6 @@ export default function DashboardPage() {
   const [sidebarSection, setSidebarSection] = useState<string>("overview")
   const [showDropdown, setShowDropdown] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false)
   const [showUpcoming, setShowUpcoming] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -128,184 +128,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen w-full flex flex-col bg-white">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-50 w-full">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 z-20">
-            <Image
-              src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png"
-              alt="Suilens Logo"
-              width={28}
-              height={28}
-              className="object-contain"
-            />
-            <span className="text-lg font-semibold text-[#020B15]">
-              Suilens
-            </span>
-          </Link>
-
-          {/* Center Nav - Desktop Only */}
-          <nav className="hidden md:flex flex-1 justify-center">
-            <ul className="flex gap-4 lg:gap-8 text-sm font-medium text-gray-500">
-              <li>
-                <Link href="/">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link href="/communities">Communities</Link>
-              </li>
-              <li>
-                <Link href="/discover">Discover Events</Link>
-              </li>
-              <li>
-                <Link href="/bounties">Bounties</Link>
-              </li>
-              <li>
-                <Link href="/dashboard" className="text-black font-semibold">Dashboard</Link>
-              </li>
-            </ul>
-          </nav>
-
-          {/* Mobile menu button */}
-          <button
-            className="md:hidden p-2 text-gray-600 hover:text-gray-900 focus:outline-none z-20"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? (
-              <X className="h-6 w-6" aria-hidden="true" />
-            ) : (
-              <Menu className="h-6 w-6" aria-hidden="true" />
-            )}
-          </button>
-
-          {/* Right Side - Desktop */}
-          <div className="hidden md:flex items-center gap-4">
-            {!user && (
-              <>
-                <Link href="/auth/signin">
-                  <Button className="bg-transparent text-blue-500 hover:bg-blue-100 border border-blue-500 px-4 py-2 rounded-lg">
-                    Login
-                  </Button>
-                </Link>
-                <Link href="/auth/signup">
-                  <Button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
-                    Sign Up
-                  </Button>
-                </Link>
-              </>
-            )}
-            {user && (
-              <>
-                <Link href="/create">
-                  <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-                    Create Event
-                  </Button>
-                </Link>
-                <Link href="/profile">
-                  {mounted ? (
-                    <img
-                      src={user.avatarUrl || '/placeholder-user.jpg'}
-                      alt="Profile"
-                      className="w-8 h-8 rounded-full border border-gray-200"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full border border-gray-200 bg-gray-200 animate-pulse" />
-                  )}
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile Navigation Menu */}
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-10 bg-white pt-16 pb-6 px-4">
-            <nav className="flex flex-col space-y-6">
-              <Link
-                href="/"
-                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link
-                href="/communities"
-                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Communities
-              </Link>
-              <Link
-                href="/discover"
-                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Discover Events
-              </Link>
-              <Link
-                href="/bounties"
-                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Bounties
-              </Link>
-              <Link
-                href="/dashboard"
-                className="text-lg font-medium text-gray-900 py-2 border-b border-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
-
-              {/* Mobile Auth Buttons */}
-              <div className="flex flex-col space-y-4 pt-4">
-                {!user ? (
-                  <>
-                    <Link
-                      href="/auth/signin"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Button className="w-full bg-transparent text-blue-500 hover:bg-blue-100 border border-blue-500 py-2 rounded-lg">
-                        Login
-                      </Button>
-                    </Link>
-                    
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      href="/create"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Button className="w-full bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white py-2 rounded-xl">
-                        Create Event
-                      </Button>
-                    </Link>
-                    <Link
-                      href="/profile"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Button className="w-full bg-transparent text-gray-700 hover:bg-gray-100 border border-gray-300 py-2 rounded-lg flex items-center justify-center gap-2">
-                        {mounted ? (
-                          <img
-                            src={user.avatarUrl || '/placeholder-user.jpg'}
-                            alt="Profile"
-                            className="w-6 h-6 rounded-full border border-gray-200"
-                          />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full border border-gray-200 bg-gray-200 animate-pulse" />
-                        )}
-                        My Profile
-                      </Button>
-                    </Link>
-                  </>
-                )}
-              </div>
-            </nav>
-          </div>
-        )}
-      </header>
+      <Header />
 
       {/* Main Layout Container */}
       <div className="flex flex-1 w-full">

@@ -212,40 +212,14 @@ export default function Header() {
 
           {/* Right Side - Desktop */}
           <div className="hidden md:flex items-center gap-4">
-            {!user && (
-              <>
-                <Link href="/auth/signin">
-                  <Button className="bg-transparent text-blue-500 hover:bg-blue-100 border border-blue-500 px-4 py-2 rounded-lg">
-                    Login
-                  </Button>
-                </Link>
-                <Link href="/auth/signup">
-                  <Button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
-                    Sign Up
-                  </Button>
-                </Link>
-              </>
-            )}
             {user && (
-              <>
-                <Link href="/create">
-                  <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-                    Create Event
-                  </Button>
-                </Link>
-                <Link href="/profile">
-                  {mounted ? (
-                    <img
-                      src={user.avatarUrl || '/placeholder-user.jpg'}
-                      alt="Profile"
-                      className="w-8 h-8 rounded-full border border-gray-200"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full border border-gray-200 bg-gray-200 animate-pulse" />
-                  )}
-                </Link>
-              </>
+              <Link href="/create">
+                <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
+                  Create Event
+                </Button>
+              </Link>
             )}
+            <WalletConnect />
           </div>
         </div>
 
@@ -311,47 +285,19 @@ export default function Header() {
 
               {/* Mobile Auth Buttons */}
               <div className="flex flex-col space-y-4 pt-4">
-                {!user ? (
-                  <>
-                    <Link
-                      href="/auth/signin"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Button className="w-full bg-transparent text-blue-500 hover:bg-blue-100 border border-blue-500 py-2 rounded-lg">
-                        Login
-                      </Button>
-                    </Link>
-                    
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      href="/create"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Button className="w-full bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white py-2 rounded-xl">
-                        Create Event
-                      </Button>
-                    </Link>
-                    <Link
-                      href="/profile"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Button className="w-full bg-transparent text-gray-700 hover:bg-gray-100 border border-gray-300 py-2 rounded-lg flex items-center justify-center gap-2">
-                        {mounted ? (
-                          <img
-                            src={user.avatarUrl || '/placeholder-user.jpg'}
-                            alt="Profile"
-                            className="w-6 h-6 rounded-full border border-gray-200"
-                          />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full border border-gray-200 bg-gray-200 animate-pulse" />
-                        )}
-                        My Profile
-                      </Button>
-                    </Link>
-                  </>
+                {user && (
+                  <Link
+                    href="/create"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Button className="w-full bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white py-2 rounded-xl">
+                      Create Event
+                    </Button>
+                  </Link>
                 )}
+                <div className="w-full">
+                  <WalletConnect />
+                </div>
               </div>
             </nav>
           </div>
@@ -377,23 +323,10 @@ export default function Header() {
 								</button>
 							))}
 
-							{/* Show Sign In/Sign Up buttons ONLY when NOT authenticated */}
-							{!isAuthenticated && (
-								<div className="pt-3 mt-3 border-t border-gray-200 space-y-3">
-									<button
-										onClick={handleSignIn}
-										className="w-full px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors border border-gray-300 rounded-lg"
-									>
-										Sign In
-									</button>
-									<button
-										onClick={handleSignUp}
-										className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
-									>
-										Sign Up
-									</button>
-								</div>
-							)}
+							{/* Show WalletConnect for authentication */}
+							<div className="pt-3 mt-3 border-t border-gray-200">
+								<WalletConnect />
+							</div>
 						</nav>
 					</div>
 				</div>
