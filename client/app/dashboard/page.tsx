@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
-import { Calendar, MapPin, Users, Plus, BarChart3, Menu, X, Home, Users as UsersIcon, FileText, BarChart2, Target } from "lucide-react"
+import { Calendar, MapPin, Users, Plus, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import { EmptyStateIllustration } from "@/components/empty-state-illustration"
 import { ConnectButton } from "@mysten/dapp-kit"
 import Image from "next/image"
 import GuestList from "@/components/GuestList"
+import Sidebar from "@/components/Sidebar"
 import { useUser } from "../../context/UserContext"
 import { useEventContext } from "@/context/EventContext"
 import Header from "../components/Header"
@@ -37,8 +38,6 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("my-events")
   const [sidebarSection, setSidebarSection] = useState<string>("overview")
   const [showDropdown, setShowDropdown] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [isMobile, setIsMobile] = useState(false)
   const [showUpcoming, setShowUpcoming] = useState(true)
   const [loading, setLoading] = useState(false)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
@@ -78,42 +77,10 @@ export default function DashboardPage() {
     }
   });
 
-
-  // Handle responsive behavior
+  // Set mounted state
   useEffect(() => {
     setMounted(true);
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 1024;
-      setIsMobile(mobile);
-      if (mobile) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
-    };
-    
-    // Check on initial load
-    checkMobile();
-    
-    // Add resize listener
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  // Close sidebar when clicking outside on mobile
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (isMobile && sidebarOpen) {
-        const sidebar = document.getElementById('sidebar');
-        if (sidebar && !sidebar.contains(event.target as Node)) {
-          setSidebarOpen(false);
-        }
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isMobile, sidebarOpen]);
 
   // Simulate loading when toggle changes
   useEffect(() => {
@@ -132,141 +99,11 @@ export default function DashboardPage() {
 
       {/* Main Layout Container */}
       <div className="flex flex-1 w-full">
-        {/* Mobile Sidebar Toggle */}
-        <button 
-          onClick={() => setSidebarOpen(!sidebarOpen)} 
-          className="lg:hidden fixed bottom-6 right-6 z-30 w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg"
-          aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-        >
-          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-
         {/* Sidebar */}
-        <aside 
-          id="sidebar"
-          className={`${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-          } fixed lg:static top-0 left-0 z-20 w-64 lg:w-64 min-h-screen bg-[#F6FBFF] text-[#0B1620] py-6 flex flex-col transition-transform duration-300 ease-in-out`}
-        >
-          <nav className="flex-1 flex flex-col px-4 gap-2">
-            <button 
-              onClick={() => {
-                setSidebarSection("overview");
-                if (isMobile) setSidebarOpen(false);
-              }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-colors ${
-                sidebarSection === "overview" 
-                  ? "text-white bg-[#1A2332]" 
-                  : "text-gray-400 hover:text-white hover:bg-[#1A2332]"
-              }`}
-            >
-              <Image src="/material-symbols_dashboard-rounded.svg" alt="overviewicon" width={20} height={20} className="flex-shrink-0"/>
-              Overview
-            </button>
-            
-            <button
-              onClick={() => {
-                setSidebarSection("guests");
-                if (isMobile) setSidebarOpen(false);
-              }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-colors ${
-                sidebarSection === "guests" 
-                  ? "text-white bg-[#1A2332]" 
-                  : "text-gray-400 hover:text-white hover:bg-[#1A2332]"
-              }`}
-            >
-              <Image src="/Vector (2).svg" alt="guesticon" width={20} height={20} className="flex-shrink-0"/>
-              Guests
-            </button>
-            
-            <button
-              onClick={() => {
-                setSidebarSection("registrations");
-                if (isMobile) setSidebarOpen(false);
-              }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-colors ${
-                sidebarSection === "registrations" 
-                  ? "text-white bg-[#1A2332]" 
-                  : "text-gray-400 hover:text-white hover:bg-[#1A2332]"
-              }`}
-            >
-              <Image src="/Vector (3).png" alt="reg" width={20} height={20} className="flex-shrink-0"/>
-              Registration
-            </button>
-            
-            <button
-              onClick={() => {
-                setSidebarSection("blast");
-                if (isMobile) setSidebarOpen(false);
-              }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-colors ${
-                sidebarSection === "blast" 
-                  ? "text-white bg-[#1A2332]" 
-                  : "text-gray-400 hover:text-white hover:bg-[#1A2332]"
-              }`}
-            >
-              <Image src="/Vector (1).svg" alt="reg" width={20} height={20} className="flex-shrink-0"/>
-              Blast
-            </button>
-
-            <button
-              onClick={() => {
-                setSidebarSection("mynfts");
-                if (isMobile) setSidebarOpen(false);
-              }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-colors ${
-                sidebarSection === "mynfts" 
-                  ? "text-white bg-[#1A2332]" 
-                  : "text-gray-400 hover:text-white hover:bg-[#1A2332]"
-              }`}
-            >
-              <Image src="/mynfts.svg" alt="reg" width={20} height={20} className="flex-shrink-0"/>
-              My NFTs
-            </button>
-              
-            <div className="mt-6">
-
-              <span className="text-gray-500 font-medium text-base uppercase tracking-wider px-4 mb-3 block">INSIGHTS</span>
-
-              <button 
-                onClick={() => {
-                  if (isMobile) setSidebarOpen(false);
-                }}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm text-gray-400 hover:text-white hover:bg-[#1A2332] transition-colors w-full"
-              >
-                <Image src="/Vector (3).svg" alt="" width={20} height={20} className="flex-shrink-0"/>
-                Statistics
-              </button>
-              <button 
-                onClick={() => {
-                  if (isMobile) setSidebarOpen(false);
-                }}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm text-gray-400 hover:text-white hover:bg-[#1A2332] transition-colors w-full">
-                  <Link 
-                    href="/bounties" 
-                    className="flex items-center gap-3 w-full"
-                    
-                    onClick={() => {
-                      if (isMobile) setSidebarOpen(false);
-                    }}
-                  >
-                    <Image src="/Vector (4).svg" alt="" width={20} height={20} className="flex-shrink-0"/>
-                    Bounties
-                  </Link>
-                </button>  
-            </div>
-
-         
-          </nav>
-        </aside>
-
-        {/* Overlay for mobile when sidebar is open */}
-        {isMobile && sidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-10"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
+        <Sidebar 
+          activeSection={sidebarSection} 
+          onSectionChange={setSidebarSection}
+        />
         
         {/* Main Content */}
         <div className="flex-1 w-full min-w-0">
@@ -280,8 +117,8 @@ export default function DashboardPage() {
               <div className="space-y-6">
                 <h1 className="text-[#000000] font-semibold text-4xl">My Overall Stats</h1>
                 {/* Analytics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <Card className="overflow-hidden border-2 border-[#667185] shadow-xl bg-white text-[#667185] rounded-2xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <Card className="overflow-hidden border-2 border-[#667185] bg-white text-[#667185] rounded-2xl">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -299,7 +136,7 @@ export default function DashboardPage() {
                       </div>
                     </CardContent>
                   </Card>
-                  <Card className="overflow-hidden border-2 border-[#667185] shadow-xl bg-white text-[#667185] rounded-2xl">
+                  <Card className="overflow-hidden border-2 border-[#667185] bg-white text-[#667185] rounded-2xl">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -319,7 +156,7 @@ export default function DashboardPage() {
                       </div>
                     </CardContent>
                   </Card>
-                  <Card className="overflow-hidden border-2 border-[#667185] shadow-xl bg-white text-[#667185] rounded-2xl">
+                  <Card className="overflow-hidden border-2 border-[#667185] bg-white text-[#667185] rounded-2xl">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -339,7 +176,7 @@ export default function DashboardPage() {
                       </div>
                     </CardContent>
                   </Card>
-                  <Card className="overflow-hidden border-2 border-[#667185] shadow-xl bg-white text-[#667185] rounded-2xl">
+                  <Card className="overflow-hidden border-2 border-[#667185] bg-white text-[#667185] rounded-2xl">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -352,7 +189,7 @@ export default function DashboardPage() {
                           </div>                          
                         </div>
                         <div className="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center m-4">
-                          <BarChart2 className="w-5 h-5" />
+                          <BarChart3 className="w-5 h-5" />
                         </div>
                       </div>
                     </CardContent>
@@ -377,14 +214,14 @@ export default function DashboardPage() {
                       </div>
                     </div>
                 {loading && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
                     {Array.from({ length: 4 }).map((_, i) => (
                       <div key={i} className="bg-gray-100 h-40 rounded-xl animate-pulse" />
                     ))}
                   </div>
                 )}
                 {!loading && filteredEventsForDisplay.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
                     {filteredEventsForDisplay.map((event) => (
                       <div 
                         key={event.id} 
@@ -401,10 +238,10 @@ export default function DashboardPage() {
                         }}
                       >
                         <Card
-                          className="base-card-light group overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 rounded-2xl"
+                          className="base-card-light group overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 rounded-2xl"
                         >
                           <Link href={`/event/${event.id}/admin`}>
-                            <div className="h-40 bg-gray-100 relative overflow-hidden">
+                            <div className="h-32 bg-gray-100 relative overflow-hidden">
                               {event.bannerUrl ? (
                                 <img 
                                   src={event.bannerUrl} 
@@ -420,24 +257,24 @@ export default function DashboardPage() {
                                 </span>
                               </div>
                             </div>
-                            <CardContent className="p-4">
-                              <h3 className="font-semibold text-lg mb-2 line-clamp-1">{event.title}</h3>
-                              <div className="space-y-2 text-sm text-gray-600">
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="w-4 h-4" />
+                            <CardContent className="p-3">
+                              <h3 className="font-semibold text-sm mb-2 line-clamp-1">{event.title}</h3>
+                              <div className="space-y-1 text-xs text-gray-600">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
                                   <span>{event.date}</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <MapPin className="w-4 h-4" />
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" />
                                   <span className="line-clamp-1">{event.location}</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <Users className="w-4 h-4" />
+                                <div className="flex items-center gap-1">
+                                  <Users className="w-3 h-3" />
                                   <span>{event.rsvps?.length || 0} registered</span>
                                 </div>
                               </div>
-                              <div className="mt-3 pt-3 border-t">
-                                <Button variant="outline" size="sm" className="w-full text-blue-600 hover:bg-blue-50">
+                              <div className="mt-2 pt-2 border-t">
+                                <Button variant="outline" size="sm" className="w-full text-blue-600 hover:bg-blue-50 text-xs h-7">
                                   Manage Event →
                                 </Button>
                               </div>
@@ -474,11 +311,11 @@ export default function DashboardPage() {
               <TabsContent value="registered" className="space-y-6 w-full">
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Registered Events</h2>
                 {registeredEvents.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
                     {registeredEvents.map((event) => (
                       <Card key={event.id} className="base-card-light overflow-hidden rounded-2xl">
                         <Link href={`/event/${event.id}`}>
-                          <div className="h-40 bg-gray-100 relative overflow-hidden">
+                          <div className="h-32 bg-gray-100 relative overflow-hidden">
                             {event.bannerUrl ? (
                               <img 
                                 src={event.bannerUrl} 
@@ -494,15 +331,15 @@ export default function DashboardPage() {
                               </span>
                             </div>
                           </div>
-                          <CardContent className="p-4">
-                            <h3 className="font-semibold text-lg mb-2 line-clamp-1">{event.title}</h3>
-                            <div className="space-y-2 text-sm text-gray-600">
-                              <div className="flex items-center gap-2">
-                                <Calendar className="w-4 h-4" />
+                          <CardContent className="p-3">
+                            <h3 className="font-semibold text-sm mb-2 line-clamp-1">{event.title}</h3>
+                            <div className="space-y-1 text-xs text-gray-600">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
                                 <span>{event.date}</span>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <MapPin className="w-4 h-4" />
+                              <div className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
                                 <span className="line-clamp-1">{event.location}</span>
                               </div>
                             </div>
