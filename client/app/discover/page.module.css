@@ -1,0 +1,374 @@
+/* Page module for Discover page - converted from styled-jsx */
+
+.hideScrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.hideScrollbar::-webkit-scrollbar { display: none; }
+
+.card {
+  width: 360px;
+  height: 460px;
+  background: #FFFFFF;
+  border-radius: 18px;
+  box-shadow: 0 6px 16px rgba(16,25,40,0.06);
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* allow children to shrink inside this fixed height */
+  min-height: 0;
+}
+
+.cardImageWrap { width: 100%; display: flex; justify-content: center; }
+.cardImage { width: 320px; height: 180px; border-radius: 12px; overflow: hidden; margin-top: 6px; flex: none; }
+
+.cardInner {
+  width: 300px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* Make inner area flexible so buttons can be pinned to the bottom and never overflow the card */
+  flex: 1 1 auto;
+  box-sizing: border-box;
+  /* allow inner children to shrink (important for overflow in flex column) */
+  min-height: 0;
+}
+
+.cardTitle {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 120%;
+  color: #101928;
+  margin: 0;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cardMeta { color: 667185; font-size: 12px; }
+
+.cardDesc {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  font-size: 12px;
+  line-height: 145%;
+  color: #667185;
+  /* allow description to take space but prevent it from pushing buttons out */
+  max-height: 56px;
+  overflow: hidden;
+  /* let the description shrink when necessary */
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.cardButtons {
+  width: 100%;
+  
+  padding-bottom: 12px;
+  box-sizing: border-box;
+  /* never shrink, so buttons remain the height they need */
+  flex: 0 0 auto;
+}
+
+.primaryBtn {
+  width: 100%;
+  max-width: 300px;
+  height: 44px;
+  border-radius: 22px;
+  background: #4DA2FF;
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 15px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.secondaryBtn {
+  width: 100%;
+  max-width: 300px;
+  height: 44px;
+  border-radius: 22px;
+  background: #FFFFFF;
+  border: 1px solid #4DA2FF;
+  color: #4DA2FF;
+  font-weight: 600;
+  font-size: 15px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.tagPill { padding: 4px 8px; height: 36px; border-radius: 14px; display: inline-flex; align-items: center; }
+.noUnderline { text-decoration: none; }
+
+/* -------------------------------------------------------------------------
+   Figma specification reference (original tokens)
+   These classes are provided as a canonical reference so the page covers
+   all requirements without changing the current scaled layout. Apply
+   them if you need to revert to exact Figma sizes for QA.
+   ------------------------------------------------------------------------- */
+
+/* Container - full Figma page */
+.pageSpec_fullWidth {
+  position: relative;
+  width: 1728px;
+  height: 1796px;
+  background: #F0F2F5;
+}
+
+/* Search / Frame 1618867839 (exact Figma) */
+.spec_searchFrame_exact {
+  position: absolute;
+  width: 1113px;
+  height: 66px;
+  left: calc(50% - 1113px/2 - 198.5px);
+  top: 145px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 40px;
+}
+
+/* Hidden label / helper text (spec) */
+.spec_labelHidden {
+  position: absolute;
+  visibility: hidden;
+  width: 375px;
+  height: 20px;
+  left: 515px;
+  top: 191px;
+  font-family: 'Inter';
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 145%;
+  color: #101928;
+}
+
+.spec_helperHidden {
+  position: absolute;
+  visibility: hidden;
+  width: 375px;
+  height: 20px;
+  left: 515px;
+  top: 279px;
+  font-family: 'Inter';
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 145%;
+  color: #667185;
+}
+
+/* Frame 53091 - tag row (spec) */
+.spec_frame_53091 {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 18px;
+  position: absolute;
+  width: 540px;
+  height: 40px;
+  left: 60px;
+  top: 239px;
+}
+
+/* Button / secondary (spec variants) */
+.spec_btn_secondary_82x40 {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 12px;
+  gap: 10px;
+  width: 82px;
+  height: 40px;
+  background: #FFFFFF;
+  border: 1.5px solid #D0D5DD;
+  border-radius: 16px;
+}
+
+.spec_btn_secondary_77x36 {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 12px;
+  gap: 10px;
+  width: 77px;
+  height: 36px;
+  background: #E4F1FF;
+  border: 1.5px solid #4DA2FF;
+  border-radius: 16px;
+}
+
+.spec_btn_secondary_103x36 {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 12px;
+  gap: 10px;
+  width: 103px;
+  height: 36px;
+  background: #FFFFFF;
+  border: 1.5px solid #D0D5DD;
+  border-radius: 16px;
+}
+
+.spec_btn_secondary_114x36 { width: 114px; height: 36px; }
+.spec_btn_secondary_92x36 { width: 92px; height: 36px; }
+
+/* Button container / primary (spec) */
+.spec_actions_container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  width: 184px;
+  height: 40px;
+  margin: 0 auto;
+}
+
+.spec_primary_btn {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 16px;
+  gap: 10px;
+  width: 120px;
+  height: 40px;
+  background: #4DA2FF;
+  border-radius: 16px;
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Header spec */
+.spec_header {
+  position: absolute;
+  width: 1728px;
+  height: 88px;
+  left: 0px;
+  top: 0px;
+  background: #FFFFFF;
+  padding: 0 101px 0 100px;
+  box-sizing: border-box;
+}
+
+/* Community card exact spec (reference) */
+.spec_card_exact {
+  width: 499.69px;
+  height: 624.85px;
+  background: #FFFFFF;
+  border-radius: 25.7669px;
+}
+
+.spec_card_image_exact {
+  position: absolute;
+  width: 444.48px;
+  height: 266.87px;
+  left: calc(50% - 444.48px/2 + 0.92px);
+  top: calc(50% - 266.87px/2 - 159.66px);
+  border-radius: 18.4049px;
+}
+
+.spec_cardsContainer {
+  position: absolute;
+  left: 60px;
+  top: 100px;
+  width: 1527.08px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Page root for positioning and centering (used by page.tsx) */
+.pageRoot {
+  /* layout variables to keep frames vertically aligned */
+  --start-top: 100px;
+  --gap-vertical: 24px;
+  --search-height: 56px;
+  --tags-height: 36px;
+  /* uniform left offset for content within the centered root */
+  --content-left: 80px;
+
+  /* centered fixed-width root to prevent absolute children from creating horizontal overflow */
+  max-width: 1280px;
+  margin: 0 auto;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Align left edges using --content-left so search, tags, and cards share the same start */
+.searchFrame {
+  position: absolute;
+  width: 820px;
+  height: var(--search-height);
+  left: var(--content-left);
+  transform: none;
+  top: var(--start-top);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 28px;
+}
+
+.tagsFrame {
+  /* match the search frame width so left-aligned start and visible width are consistent */
+  position: absolute;
+  width: 820px;
+  max-width: calc(100% - var(--content-left) - 40px);
+  box-sizing: border-box;
+  height: var(--tags-height);
+  left: var(--content-left);
+  transform: none;
+  top: calc(var(--start-top) + var(--search-height) + var(--gap-vertical));
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  /* allow overflow with hidden scrollbar when there are many tags */
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.cardsContainer {
+  position: absolute;
+  left: var(--content-left);
+  transform: none;
+top: calc(var(--start-top) + var(--search-height) + var(--gap-vertical) + var(--tags-height) + 0px); /* Reduced to 0px */
+  width: min(1160px, calc(100% - 40px));
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .pageRoot { padding: 0 12px; --content-left: 12px; }
+  .searchFrame, .spec_searchFrame_exact { top: 100px; width: calc(100% - 40px); height: auto; left: var(--content-left); }
+  .tagsFrame, .spec_frame_53091 { top: 170px; width: calc(100% - 40px); justify-content: flex-start; gap: 8px; left: var(--content-left); }
+  .cardsContainer, .spec_cardsContainer { top: 60px; gap: 12px; width: calc(100% - 40px); left: var(--content-left); }
+}

@@ -21,6 +21,7 @@ import EventDetails from '@/components/EventDetails';
 import { useEventContext } from '@/context/EventContext'
 import { useUser } from '@/context/UserContext'
 import Header from "../components/Header"
+import styles from './page.module.css'
 
 const EventDashboard: React.FC = () => {
   const { events, updateEvent, isLoading, fetchEvents } = useEventContext()
@@ -36,6 +37,16 @@ const EventDashboard: React.FC = () => {
     { id: "developers", label: "Developers" },
     { id: "creators", label: "Content Creators" },
   ]
+
+  // derive categories from events, remove empty and exclude any literal 'all'
+  const eventCategories = Array.from(new Set(
+    events
+      .map(e => (e.category || '').toString().toLowerCase().trim())
+      .filter(Boolean)
+  )).filter(c => c !== 'all')
+
+  // Do NOT include an 'All' tag here — the top category pills already include 'All'
+  const tags = eventCategories.map(c => ({ id: c, label: c.split(/[-_\s]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') }))
 
   const filteredEvents = events
     .filter(event =>
@@ -66,44 +77,47 @@ const EventDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
+    <div className={`${styles.pageRoot} bg-[#F0F2F5] min-h-screen`}> 
       {/* Header */}
       <Header />
 
       {/* Search and Filter Section */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
-          {/* Search Bar */}
-          <div className="relative w-full sm:max-w-2xl">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              type="text"
-              placeholder="Search for community or event..."
-              className="w-full pl-10 py-2 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:w-[600px]"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 relative">
+        {/* Frame 1618867839 - centered absolute frame per Figma */}
+        <div className={`${styles.searchFrame} flex items-center gap-[28px]`}>
+          {/* Input Frame */}
+          <div className="input-frame flex items-center gap-[10px] p-3 w-[760px] h-[56px] bg-[#F3F5F7] border border-[#D0D5DD] rounded-[8px] box-border">
+            {/* Left Content */}
+            <div className="flex items-center gap-[8px] flex-grow">
+              <Search className="w-4 h-4 text-[#667185] flex-none" />
+
+              <div className="flex items-center gap-[2px] w-[204px] h-[20px]">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={e => setSearchTerm((e.target as HTMLInputElement).value)}
+                  placeholder="Search for community or event..."
+                  aria-label="Search"
+                  className="bg-transparent border-none outline-none font-sans font-normal text-[14px] leading-[145%] text-[#101928] w-full"
+                />
+              </div>
+            </div>
+
+            {/* Right content hidden per Figma (kept for future use) */}
+            <div className="hidden" />
           </div>
 
-          {/* Filter Button - Only on mobile */}
-          <Button className="sm:hidden w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
-            <Filter className="h-4 w-4" />
-            Filter
-          </Button>
-
-          {/* Refresh Button */}
-          <Button 
-            onClick={() => fetchEvents()}
-            disabled={isLoading}
-            className="flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh</span>
-          </Button>
+          {/* Button / primary (Refresh) */}
+          <div className="refresh-frame flex items-center justify-center w-[110px] h-[56px] border border-[#D0D5DD] rounded-[10px] p-[6px] box-border">
+            <button onClick={() => fetchEvents && fetchEvents()} disabled={isLoading} className="flex items-center justify-center gap-[6px] w-full h-full bg-transparent border-none p-0" style={{ cursor: isLoading ? 'not-allowed' : 'pointer' }}>
+              <RefreshCw className={`${isLoading ? 'animate-spin' : ''} w-3 h-3 text-black`} />
+              <span className="font-semibold text-[10px] leading-[130%] text-[#101928]">Refresh</span>
+            </button>
+          </div>
         </div>
 
-        {/* Category Pills */}
-        <div className="flex flex-nowrap overflow-x-auto pb-2 gap-2 sm:gap-3 hide-scrollbar">
+        {/* Category Pills (unchanged positioning below the frame) */}
+        <div className="pt-[180px] flex flex-nowrap overflow-x-auto pb-2 gap-2 sm:gap-3 hide-scrollbar">
           {categories.map((category) => (
             <button
               key={category.id}
@@ -120,97 +134,74 @@ const EventDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Event Grid */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-10">
-        {isLoading ? (
-          <div className="text-center py-12">
-            <div className="bg-white rounded-lg shadow-sm p-8 max-w-md mx-auto">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading events...</h3>
-              <p className="text-gray-600">Fetching events from the blockchain</p>
-            </div>
-          </div>
-        ) : filteredEvents.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="bg-white rounded-lg shadow-sm p-8 max-w-md mx-auto">
-              <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No events found</h3>
-              <p className="text-gray-600 mb-4">
-                {searchTerm ? 
-                  `No events matching "${searchTerm}"` : 
-                  "Be the first to create an event!"}
-              </p>
-              <Link href="/create">
-                <Button className="bg-blue-600 text-white hover:bg-blue-700">
-                  Create Event
-                </Button>
-              </Link>
-            </div>
-          </div>
-        ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
-          {filteredEvents.map((event) => (
-            <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="h-48 relative overflow-hidden bg-gray-100">
-                <img 
-                  src={event.bannerUrl || event.image || 'https://via.placeholder.com/400x300?text=Event'} 
-                  alt={event.title} 
-                  className="w-full h-full object-cover transition-transform hover:scale-105 duration-300" 
-                />
-              </div>
-              <div className="p-4">
-                <Link href={`/event/${event.id}`}>
-                  <h3 className="text-lg text-[#101928] font-bold line-clamp-1 cursor-pointer hover:underline">
-                    {event.title}
-                  </h3>
-                </Link>
-                <div className="flex items-center font-medium text-sm text-[#667185] mt-1">
-                  <Calendar className="h-3 w-3" />
-                  <span className="truncate">{new Date(event.date).toLocaleDateString()}</span>
-                  <span className="mx-2"></span>
-                  <MapPin className="h-3 w-3" />
-                  <span className="truncate">{event.location}</span>
+      {/* Event Grid - Figma absolute frames */}
+      <div className="relative w-full h-[1400px]">
+        {/* Tags Frame (Frame 53091) */}
+        <div className={`${styles.tagsFrame} flex items-center gap-2`}>
+          {/* Render tags dynamically from events (no hardcoded values) */}
+          {tags.map((tag, idx) => {
+             const isActive = selectedCategory === (tag.id)
+             const bg = isActive ? '#E4F1FF' : '#FFFFFF'
+             const border = isActive ? '1.5px solid #4DA2FF' : '1.5px solid #D0D5DD'
+             const color = isActive ? '#4DA2FF' : '#667185'
+             return (
+               <button
+                 key={tag.id + "-tag-" + idx}
+                 onClick={() => setSelectedCategory(tag.id === 'all' ? 'all' : tag.id)}
+                 className={`${styles.tagPill} flex items-center justify-center px-2 py-1 h-[40px] rounded-[16px]`}
+                 style={{ background: bg, border: border, cursor: 'pointer' }}
+               >
+                 <div className="flex items-center gap-[4px]">
+                   <div className="w-4 h-4 rounded-sm" style={{ background: isActive ? '#4DA2FF' : '#667185' }} />
+                   <span className="font-semibold text-[14px] leading-[145%]" style={{ color }}>{tag.label}</span>
+                 </div>
+               </button>
+             )
+           })}
+         </div>
+
+        {/* Cards Container — standard layout for all events (wraps into rows of 3 using fixed card width) */}
+        <div className={`${styles.cardsContainer}`}>
+          {filteredEvents.map((event, i) => (
+            <div key={event.id} className={`${styles.card}`}>
+              {/* Community card image — centered and sized to Figma spec (444.48 x 266.87) */}
+              <div className={`${styles.cardImageWrap} flex justify-center`}>
+                <div className={`${styles.cardImage} overflow-hidden`}>
+                  <img src={event.bannerUrl || event.image || 'https://via.placeholder.com/444x267'} alt={event.title} className="w-full h-full object-cover block" />
                 </div>
-                <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                  {event.description || "No description available."}
-                </p>
-                <div className="mt-4 py-2 gap-2 flex flex-col sm:flex-row lg:flex-col">
-                  <Link href={`/event/${event.id}`} className="block">
-                    <Button
-                      variant="outline"
-                      className="w-full py-2 bg-[#4DA2FF] text-sm text-white rounded-3xl hover:bg-[#3a8cd4] hover:text-white"
-                    >
-                      Register
-                    </Button>
+              </div>
+
+              {/* Inner content container centered (width: 415.95px) */}
+              <div className={`${styles.cardInner} flex flex-col gap-[12.88px]`}>
+                <div className="flex flex-col gap-[12.88px]">
+                  <h3 className={`${styles.cardTitle} overflow-hidden truncate`} title={event.title}>{event.title}</h3>
+                  <div className={`${styles.cardMeta} flex items-center gap-[12.88px]`}>
+                    <div className="flex items-center gap-[4.37px]">
+                      <Calendar className="w-[10.2px] h-[10.2px] text-[#667185]" />
+                      <span>{new Date(event.date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center gap-[4.37px]">
+                      <MapPin className="w-[10.2px] h-[10.2px] text-[#667185]" />
+                      <span>{event.location || 'Online'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <p className={`${styles.cardDesc}`}>{event.description || ''}</p>
+
+                <div className={`${styles.cardButtons} flex flex-col gap-[10px] mt-auto`}>
+                  <Link href={`/event/${event.id}`} className={`no-underline ${styles.noUnderline}`}>
+                    <div className={`${styles.primaryBtn} flex items-center justify-center`}>Register</div>
                   </Link>
 
-                  <Link href={`/event/${event.id}`} className="block">
-                    <Button
-                      variant="outline"
-                      className="w-full py-2 text-sm border-[#4DA2FF] rounded-3xl text-[#4DA2FF]  hover:text-[#4DA2FF]"
-                    >
-                      View Details
-                    </Button>
+                  <Link href={`/event/${event.id}`} className={`no-underline ${styles.noUnderline}`}>
+                    <div className={`${styles.secondaryBtn} flex items-center justify-center`}>View Details</div>
                   </Link>
                 </div>
-                {event.rsvps && event.rsvps.includes(user?.walletAddress || '') && (
-                  <div className="mt-2 text-center">
-                    {event.attendance && event.attendance.includes(user?.walletAddress || '') ? (
-                      <Badge className="bg-green-100 text-green-800 border-green-200">
-                        ✓ Checked In
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-                        ✓ Registered
-                      </Badge>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
-          ))}
+           ))}
         </div>
-        )}
       </div>
 
       {/* Event Details Inline */}
@@ -221,17 +212,6 @@ const EventDashboard: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Custom CSS for hiding scrollbars */}
-      <style jsx global>{`
-        .hide-scrollbar {
-          -ms-overflow-style: none;  /* IE and Edge */
-          scrollbar-width: none;  /* Firefox */
-        }
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none; /* Chrome, Safari and Opera */
-        }
-      `}</style>
     </div>
   )
 }
