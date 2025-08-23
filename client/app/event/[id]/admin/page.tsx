@@ -24,7 +24,6 @@ import {
   Clock,
   TrendingUp,
   Calendar,
-  CalendarDays,
   MapPin,
   Ticket,
   Award,
@@ -36,9 +35,7 @@ import {
   RefreshCw,
   Wallet,
   Plus,
-  Image,
-  ChartColumnBig,
-  AlertTriangle
+  Image
 } from 'lucide-react'
 import Link from 'next/link'
 import { useEnokiTransaction } from '@/hooks/useEnokiTransaction'
@@ -47,7 +44,6 @@ import { toast } from 'sonner'
 import Header from '@/app/components/Header'
 import { generateEventQRCode, downloadQRCode } from '@/utils/qrCodeUtils'
 import { formatAddress } from '@/lib/utils'
-import Sidebar from '@/components/Sidebar'
 
 interface AttendeeData {
   address: string
@@ -59,7 +55,7 @@ interface AttendeeData {
 export default function EventAdminPage() {
   const router = useRouter()
   const params = useParams()
-  const eventId = params?.id as string
+  const eventId = params.id as string
   const { user } = useUser()
   const { getEvent, updateEvent, fetchEvents } = useEventContext()
   const { signAndExecuteTransaction } = useEnokiTransaction()
@@ -126,54 +122,18 @@ export default function EventAdminPage() {
   // Check if POAP collection exists for this event
   useEffect(() => {
     const checkPoapCollection = async () => {
-      if (!eventId || !event) return
+      if (!eventId) return
       
       setCheckingPoapStatus(true)
       try {
-        // Check multiple sources for POAP existence:
-        // 1. Event data from creation (if POAP was uploaded during event creation)
-        // 2. LocalStorage (if POAP was created after event creation)
-        // 3. Any other POAP-related fields in the event object
-        
+        // For now, we always assume no collection exists initially
+        // The collection will only exist after it's been created via createPOAPCollection
+        // We store this in localStorage as a temporary solution
         const poapKey = `poap_collection_${eventId}`
-        const hasLocalCollection = localStorage.getItem(poapKey) === 'true'
-        
-        // Check if event has POAP data from creation
-        const hasEventPoapData = !!(
-          event.poapImageUrl || 
-          event.poapName || 
-          event.poapDescription ||
-          event.poap_image ||
-          event.poap_collection_id ||
-          event.hasPoapCollection
-        )
-        
-        console.log('POAP Check:', {
-          hasLocalCollection,
-          hasEventPoapData,
-          poapImageUrl: event.poapImageUrl,
-          poapName: event.poapName,
-          eventKeys: Object.keys(event)
-        })
-        
-        if (hasLocalCollection || hasEventPoapData) {
-          setPoapCollection({ exists: true })
-          
-          // If we have event POAP data, update the form with it
-          if (hasEventPoapData && !poapFormData.imageUrl) {
-            setPoapFormData(prev => ({
-              ...prev,
-              name: event.poapName || prev.name,
-              description: event.poapDescription || prev.description,
-              imageUrl: event.poapImageUrl || event.poap_image || prev.imageUrl
-            }))
-          }
-        } else {
-          setPoapCollection(null)
-        }
+        const hasCollection = localStorage.getItem(poapKey) === 'true'
+        setPoapCollection(hasCollection ? { exists: true } : null)
       } catch (error) {
         console.error('Error checking POAP collection:', error)
-        setPoapCollection(null)
       } finally {
         setCheckingPoapStatus(false)
       }
@@ -355,160 +315,175 @@ export default function EventAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className='flex items-center'>
-        <img className='ml-4' src="/suilenslogo.png" alt="" width={50} height={50}/>
-        <p className='text-[#04101D] font-normal'>Suilens</p>
-      </div>
-     
-      <div className="flex flex-1 mt-1">
-        <div className='mt-14'>
-          <Sidebar 
-            activeSection={activeTab} 
-            onSectionChange={setActiveTab} 
-          />
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-6">
+          <Link href="/dashboard" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Link>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Event Admin Panel</h1>
+              <p className="text-gray-600 mt-1">{event.title}</p>
+            </div>
+            <Link href={`/event/${eventId}`}>
+              <Button variant="outline">
+                <Eye className="w-4 h-4 mr-2" />
+                View Public Page
+              </Button>
+            </Link>
+          </div>
         </div>
-       
-        <main className="flex-1 overflow-auto">
-          <div className=" mx-auto px-4 py-8">
-            {/* Header */}
-            <div className="mb-6">
-              <div className='flex flex-row gap-2 font-medium text-sm mb-5'>
-              <Link href="/dashboard" className="inline-flex items-center text-[#667185] hover:text-gray-900 mb-4">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Go Back
-              </Link>
-              <p className='text-[#667185]'>Dashboard / <span className='text-gray-900 font-medium'> Manage event</span></p>
 
-              </div>
-              
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Card>
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-semibold text-[#101928]">Event Admin Panel</h1>
-                  <p className="text-gray-600 mt-1">{event.title}</p>
+                  <p className="text-sm text-gray-600">Registered</p>
+                  <p className="text-2xl font-bold">{stats.totalRegistered}</p>
+                  {event.capacity && (
+                    <p className="text-xs text-gray-500">of {event.capacity}</p>
+                  )}
                 </div>
-                
+                <Users className="h-8 w-8 text-blue-500" />
               </div>
-            </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Attended</p>
+                  <p className="text-2xl font-bold">{stats.totalAttended}</p>
+                  <p className="text-xs text-gray-500">{stats.attendanceRate}% rate</p>
+                </div>
+                <UserCheck className="h-8 w-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Revenue</p>
+                  <p className="text-2xl font-bold">
+                    {event.isFree ? 'Free' : `$${stats.totalRevenue}`}
+                  </p>
+                  {!event.isFree && (
+                    <p className="text-xs text-gray-500">${event.ticketPrice} per ticket</p>
+                  )}
+                </div>
+                <DollarSign className="h-8 w-8 text-yellow-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Spots Left</p>
+                  <p className="text-2xl font-bold">{stats.spotsRemaining}</p>
+                  <p className="text-xs text-gray-500">
+                    {stats.spotsRemaining === 'Unlimited' ? 'No limit' : 'Available'}
+                  </p>
+                </div>
+                <Ticket className="h-8 w-8 text-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="attendees">Attendees</TabsTrigger>
+            <TabsTrigger value="checkin">Check-in</TabsTrigger>
             <TabsTrigger value="poap">POAP</TabsTrigger>
             <TabsTrigger value="financials">Financials</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="container space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <ChartColumnBig className='text-[#101928] mb-10'/>
-                      <p className="text-sm font-medium text-[#667185]">Total Registered</p>
-                      <p className="text-3xl font-bold text-[#101928]">{stats.totalRegistered}</p>
-                    </div>
-                    
+          <TabsContent value="overview" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Event Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Date & Time</p>
+                    <p className="font-medium">{event.date} at {event.time}</p>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {stats.totalRegistered > 0 ? `${stats.attendanceRate}%` : 'No registrations yet'}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CheckCircle className='text-[#101928] mb-10'/>
-                      <p className="text-sm font-medium text-[#667185]">Checked In</p>
-                      <p className="text-3xl font-bold text-[#101928]">{stats.totalAttended}</p>
-                    </div>
-                    
+                  <div>
+                    <p className="text-sm text-gray-600">Location</p>
+                    <p className="font-medium">{event.location}</p>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {stats.totalRegistered > 0 ? `${stats.attendanceRate}% of registered` : 'No check-ins yet'}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <DollarSign className='text-[#101928] mb-10'/>
-                      <p className="text-sm font-medium text-[#667185]">Revenue</p>
-                      <p className="text-3xl font-bold text-[#101928]">
-                        {event.isFree ? 'Free' : `$${stats.totalRevenue}`}
-                      </p>
-                    </div>
-                    
+                  <div>
+                    <p className="text-sm text-gray-600">Category</p>
+                    <Badge>{event.category || 'General'}</Badge>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {event.isFree ? 'Free event' : `$${event.ticketPrice} per ticket`}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CalendarDays className='text-[#101928] mb-10'/>
-                      <p className="text-sm font-medium text-[#667185]">Spots Left</p>
-                      <p className="text-3xl font-bold text-[#101928]">
-                        {typeof stats.spotsRemaining === 'number' ? stats.spotsRemaining : '∞'}
-                      </p>
-                    </div>
-                    
+                  <div>
+                    <p className="text-sm text-gray-600">Status</p>
+                    <Badge variant="outline" className="bg-green-50">
+                      Active
+                    </Badge>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {typeof stats.spotsRemaining === 'number' ? 'Limited capacity' : 'Unlimited capacity'}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Event Detail */}
-            <div className="bg-white p-6 mt-7">
-              <h2 className="text-2xl font-bold text-[#101928] my-4">{event.title}</h2>
-              <div className="flex flex-wrap gap-4 text-sm text-[#667185] mb-4">
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  <span>{event.date ? new Date(event.date).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  }) : '8th August, 2025'}</span>
                 </div>
-                <span>|</span>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  <span>{event.date ? new Date(event.date).toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit',
-                    hour12: true 
-                  }) : '10:00AM'}</span>
+                
+                <div className="pt-4 border-t">
+                  <p className="text-sm text-gray-600 mb-2">Event ID</p>
+                  <div className="flex items-center gap-2">
+                    <code className="text-xs bg-gray-100 p-2 rounded flex-1 truncate">
+                      {eventId}
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => copyToClipboard(eventId)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <span>|</span>
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
-                  <span>{event.location || 'Lagos, Nigeria'}</span>
-                </div>
-              </div>
-              
-              <div className="border-t pt-4 mt-10">
-                <h3 className="text-xl font-semibold text-[#101928] mb-3">About this event</h3>
-                <p className="text-[#667185] leading-relaxed">
-                  {event.description || 'Lorem ipsum dolor sit amet consectetur. Imperdiet facilisis nibh sed facilisi velit congue curabitur. Id feugiat rhoncus risus egestas. Lorem ipsum dolor sit amet consectetur. Imperdiet facilisis nibh sed facilisi velit congue curabitur. Id'}
-                </p>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Button variant="outline" onClick={() => setActiveTab('attendees')}>
+                  <Users className="w-4 h-4 mr-2" />
+                  View Attendee List
+                </Button>
+                <Button variant="outline" onClick={() => setActiveTab('checkin')}>
+                  <QrCode className="w-4 h-4 mr-2" />
+                  Generate QR Code
+                </Button>
+                <Button variant="outline" onClick={() => router.push(`/event/${eventId}/edit`)}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Edit Event
+                </Button>
+                {!event.isFree && stats.totalRevenue > 0 && (
+                  <Button variant="outline" onClick={() => setActiveTab('financials')}>
+                    <Wallet className="w-4 h-4 mr-2" />
+                    Withdraw Funds
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Attendees Tab */}
@@ -628,403 +603,334 @@ export default function EventAdminPage() {
             </Card>
           </TabsContent>
 
+          {/* Check-in Tab */}
+          <TabsContent value="checkin" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Event Check-in QR Code</CardTitle>
+                <CardDescription>
+                  Generate and download a QR code for attendees to scan at your event
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {eventQRCode ? (
+                  <div className="space-y-6">
+                    <div className="bg-white p-8 rounded-lg border flex justify-center">
+                      <img 
+                        src={eventQRCode} 
+                        alt="Event Check-in QR Code"
+                        className="w-64 h-64"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Button onClick={handleDownloadQRCode} className="w-full">
+                        <Download className="w-4 h-4 mr-2" />
+                        Download QR Code
+                      </Button>
+                      <Button 
+                        onClick={handleGenerateQRCode}
+                        variant="outline"
+                        disabled={generatingQR}
+                        className="w-full"
+                      >
+                        {generatingQR ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Regenerating...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Regenerate QR Code
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-blue-900 mb-2">How to use:</h4>
+                      <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                        <li>Download and print this QR code</li>
+                        <li>Display it prominently at your event venue</li>
+                        <li>Attendees scan it using the SuiLens app to check in</li>
+                        <li>Once checked in, they can claim their POAP after the event</li>
+                      </ol>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <QrCode className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-6">No QR code generated yet</p>
+                    <Button 
+                      onClick={handleGenerateQRCode}
+                      disabled={generatingQR}
+                      size="lg"
+                    >
+                      {generatingQR ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <QrCode className="w-4 h-4 mr-2" />
+                          Generate Check-in QR Code
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Manual Check-in</CardTitle>
+                <CardDescription>
+                  Manually mark attendees as present if they can't scan the QR code
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  variant="outline"
+                  onClick={() => setActiveTab('attendees')}
+                  className="w-full"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Go to Attendee List
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* POAP Tab */}
           <TabsContent value="poap" className="space-y-6">
-            {checkingPoapStatus ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-              </div>
-            ) : poapCollection?.exists ? (
-              <div className="space-y-6">
-                {/* Active State - POAP Collection Active Banner */}
-                <div className="bg-green-50 border-l-4 border-green-500 p-4 flex items-start justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                    <div>
-                      <h4 className="font-medium text-green-900">POAP Collection Active</h4>
-                      <p className="text-sm text-green-700 mt-1">
-                        {event.poapImageUrl || event.poap_image ? 
-                          'Your POAP collection is set up. Attendees who check in can now claim their POAPs.' :
-                          'POAP collection created successfully. Attendees who check in can now claim their POAPs.'
-                        }
-                      </p>
-                    </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Award className="h-6 w-6 text-purple-600" />
+                    POAP Collection Management
                   </div>
-                  <button className="text-green-600 hover:text-green-800">
-                    <XCircle className="h-5 w-5" />
-                  </button>
-                </div>
-                
-                {/* POAP Badge Design Section */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">POAP Badge Design</h3>
-                  <div className="w-[160px] h-[160px]">
-                    <img 
-                      src={poapFormData.imageUrl || event.poapImageUrl || event.poap_image || "/download (2) 1.png"}
-                      alt="POAP Badge Design"
-                      className="w-full h-full object-cover rounded-lg border-2 border-gray-200"
-                      onError={(e) => {
-                        // Fallback to default image if the POAP image fails to load
-                        (e.target as HTMLImageElement).src = "/download (2) 1.png"
-                      }}
-                    />
+                </CardTitle>
+                <CardDescription>
+                  Create and manage Proof of Attendance Protocol badges for your event
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {checkingPoapStatus ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
                   </div>
-                  {(poapFormData.name || event.poapName) && (
-                    <div className="mt-3">
-                      <p className="font-medium text-gray-900">{poapFormData.name || event.poapName}</p>
-                      {(poapFormData.description || event.poapDescription) && (
-                        <p className="text-sm text-gray-600 mt-1">{poapFormData.description || event.poapDescription}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-                
-                {/* How POAPs Work Section */}
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                      <span className="text-xs font-bold text-white">i</span>
-                    </div>
-                    <h4 className="font-medium text-blue-900">How POAPs Work</h4>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-3">
-                      <span className="flex items-center justify-center w-5 h-5 bg-blue-500 text-white text-xs font-bold rounded-full flex-shrink-0 mt-0.5">1</span>
-                      <p className="text-sm text-blue-800">Attendees must check in to claim their POAP</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <span className="flex items-center justify-center w-5 h-5 bg-blue-500 text-white text-xs font-bold rounded-full flex-shrink-0 mt-0.5">2</span>
-                      <p className="text-sm text-blue-800">Each person can claim only one per event</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <span className="flex items-center justify-center w-5 h-5 bg-blue-500 text-white text-xs font-bold rounded-full flex-shrink-0 mt-0.5">3</span>
-                      <p className="text-sm text-blue-800">POAPs are permanent proof of attendance on the blockchain</p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Troubleshooting Section */}
-                <div>
-                  <p className="text-sm text-gray-700 mb-3">Having issues with POAP claiming?</p>
-                  <Button 
-                    onClick={() => {
-                      const poapKey = `poap_collection_${eventId}`
-                      localStorage.removeItem(poapKey)
-                      setPoapCollection(null)
-                      toast.info('You can now recreate the POAP collection')
-                    }}
-                    variant="outline"
-                    size="sm"
-                    className="text-red-600 border-red-300 hover:bg-red-50"
-                  >
-                    Reset POAP
-                  </Button>
-                </div>
-              </div>
-            ) : creatingPoap ? (
-              <div className="space-y-6">
-                {/* Success State - Upload Success Banner */}
-                <div className="bg-green-50 border-l-4 border-green-500 p-4 flex items-start justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                    <div>
-                      <h4 className="font-medium text-green-900">Upload Success</h4>
-                      <p className="text-sm text-green-700 mt-1">
-                        Create a POAP collection to enable attendees to claim proof of attendance badges.
-                      </p>
-                    </div>
-                  </div>
-                  <button className="text-green-600 hover:text-green-800">
-                    <XCircle className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Award className="h-6 w-6 text-gray-700" />
-                    <h3 className="text-lg font-semibold text-gray-900">POAPs Collection Management</h3>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-6">Create and manage proof of attendance protocol badges for your event</p>
-
-                  <div>
-                    <Label htmlFor="poap-name" className="text-sm font-medium text-gray-700">POAP Name *</Label>
-                    <Input
-                      id="poap-name"
-                      value={poapFormData.name}
-                      onChange={(e) => setPoapFormData({ ...poapFormData, name: e.target.value })}
-                      placeholder="Enter event name"
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="poap-description" className="text-sm font-medium text-gray-700">Description</Label>
-                    <Textarea
-                      id="poap-description"
-                      value={poapFormData.description}
-                      onChange={(e) => setPoapFormData({ ...poapFormData, description: e.target.value })}
-                      className="mt-1"
-                      rows={3}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Upload Image</Label>
-                    <div className="mt-1 border-2 border-dashed border-green-300 rounded-lg p-8 text-center bg-green-50">
-                      <div className="flex flex-col items-center">
-                        <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
-                        <p className="text-sm text-gray-700 mb-1">Uploading Document...</p>
-                        <p className="text-xs text-gray-500">Uploaded document</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-3 text-blue-600 border-blue-300 hover:bg-blue-50"
-                        >
-                          Remove Upload
-                        </Button>
+                ) : poapCollection?.exists ? (
+                  <div className="space-y-4">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-green-900">POAP Collection Active</h4>
+                          <p className="text-sm text-green-700 mt-1">
+                            Your POAP collection is set up. Attendees who check in can now claim their POAPs.
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="poap-supply" className="text-sm font-medium text-gray-700">Max Supply (Optional)</Label>
-                    <Input
-                      id="poap-supply"
-                      type="text"
-                      value={poapFormData.maxSupply}
-                      onChange={(e) => setPoapFormData({ ...poapFormData, maxSupply: e.target.value })}
-                      placeholder="Leave empty for unlimited"
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <Button 
-                    onClick={handleCreatePoapCollection}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Create POAP
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Initial State - No POAP collection yet */}
-                <div className="bg-orange-50 border-l-4 border-orange-500 p-4 flex items-start justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
-                    <div>
-                      <h4 className="font-medium text-orange-900">No POAP collection yet</h4>
-                      <p className="text-sm text-orange-700 mt-1">
-                        {event.poapImageUrl || event.poap_image ? 
-                          'Your event has POAP data but the collection needs to be activated.' :
-                          'Create a POAP collection to enable attendees to claim proof of attendance badges.'
-                        }
-                      </p>
+                    
+                    {poapFormData.imageUrl && (
+                      <div className="mt-4">
+                        <p className="text-sm text-gray-600 mb-2">POAP Badge Design:</p>
+                        <img 
+                          src={poapFormData.imageUrl} 
+                          alt="POAP Badge"
+                          className="w-32 h-32 rounded-lg object-cover border"
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="bg-purple-50 p-4 rounded-lg mt-4">
+                      <h4 className="font-medium text-purple-900 mb-2">How POAPs Work:</h4>
+                      <ol className="text-sm text-purple-800 space-y-1 list-decimal list-inside">
+                        <li>Attendees must check in at your event</li>
+                        <li>After checking in, they can claim their POAP</li>
+                        <li>Each attendee can only claim one POAP per event</li>
+                        <li>POAPs serve as permanent proof of attendance on the blockchain</li>
+                      </ol>
+                    </div>
+                    
+                    {/* Add option to recreate if there's an issue */}
+                    <div className="mt-4 pt-4 border-t">
+                      <p className="text-sm text-gray-600 mb-2">Having issues with POAP claiming?</p>
                       <Button 
-                        onClick={() => setCreatingPoap(true)}
+                        onClick={() => {
+                          // Clear the collection status and allow recreation
+                          const poapKey = `poap_collection_${eventId}`
+                          localStorage.removeItem(poapKey)
+                          setPoapCollection(null)
+                          toast.info('You can now recreate the POAP collection')
+                        }}
+                        variant="outline"
                         size="sm"
-                        className="mt-2 bg-orange-600 hover:bg-orange-700 text-white"
                       >
-                        {event.poapImageUrl || event.poap_image ? 'Activate POAP' : 'Create POAP'}
+                        Reset POAP Collection
                       </Button>
                     </div>
                   </div>
-                  <button className="text-orange-600 hover:text-orange-800">
-                    <XCircle className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Award className="h-6 w-6 text-gray-700" />
-                    <h3 className="text-lg font-semibold text-gray-900">POAPs Collection Management</h3>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-6">Create and manage proof of attendance protocol badges for your event</p>
-
-                  <div>
-                    <Label htmlFor="poap-name" className="text-sm font-medium text-gray-700">POAP Name *</Label>
-                    <Input
-                      id="poap-name"
-                      value={poapFormData.name}
-                      onChange={(e) => setPoapFormData({ ...poapFormData, name: e.target.value })}
-                      placeholder="Enter event name"
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="poap-description" className="text-sm font-medium text-gray-700">Description</Label>
-                    <Textarea
-                      id="poap-description"
-                      value={poapFormData.description}
-                      onChange={(e) => setPoapFormData({ ...poapFormData, description: e.target.value })}
-                      className="mt-1"
-                      rows={3}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Upload Image</Label>
-                    {poapFormData.imageUrl || event.poapImageUrl || event.poap_image ? (
-                      <div className="mt-1 border-2 border-dashed border-green-300 rounded-lg p-4 text-center bg-green-50">
-                        <img 
-                          src={poapFormData.imageUrl || event.poapImageUrl || event.poap_image}
-                          alt="POAP Preview"
-                          className="w-24 h-24 mx-auto rounded-lg object-cover border mb-3"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none'
-                          }}
-                        />
-                        <p className="text-sm text-green-700 mb-1">Image ready for POAP</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-blue-600 border-blue-300 hover:bg-blue-50"
-                          onClick={() => setPoapFormData({...poapFormData, imageUrl: ''})}
-                        >
-                          Change Image
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="mt-1 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                        <div className="flex flex-col items-center">
-                          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                            <Image className="h-6 w-6 text-gray-400" />
-                          </div>
-                          <p className="text-sm text-blue-600 mb-1 cursor-pointer hover:text-blue-700">
-                            Click to upload or drag and drop
+                ) : (
+                  <div className="space-y-6">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <Award className="h-5 w-5 text-amber-600 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-amber-900">No POAP Collection Yet</h4>
+                          <p className="text-sm text-amber-700 mt-1">
+                            Create a POAP collection to enable attendees to claim proof of attendance badges.
                           </p>
-                          <p className="text-xs text-gray-500">SVG, PNG, JPG or GIF (max. 800x400px)</p>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="mt-3 text-blue-600 border-blue-300 hover:bg-blue-50"
-                          >
-                            Browse Files
-                          </Button>
                         </div>
                       </div>
-                    )}
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="poap-name">POAP Name *</Label>
+                        <Input
+                          id="poap-name"
+                          value={poapFormData.name}
+                          onChange={(e) => setPoapFormData({ ...poapFormData, name: e.target.value })}
+                          placeholder="e.g., DevCon 2024 POAP"
+                          className="mt-1"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="poap-description">Description *</Label>
+                        <Textarea
+                          id="poap-description"
+                          value={poapFormData.description}
+                          onChange={(e) => setPoapFormData({ ...poapFormData, description: e.target.value })}
+                          placeholder="Describe what this POAP represents..."
+                          className="mt-1"
+                          rows={3}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="poap-image">Badge Image URL *</Label>
+                        <Input
+                          id="poap-image"
+                          value={poapFormData.imageUrl}
+                          onChange={(e) => setPoapFormData({ ...poapFormData, imageUrl: e.target.value })}
+                          placeholder="https://example.com/poap-badge.png"
+                          className="mt-1"
+                        />
+                        {poapFormData.imageUrl && (
+                          <div className="mt-2">
+                            <img 
+                              src={poapFormData.imageUrl} 
+                              alt="POAP Preview"
+                              className="w-24 h-24 rounded-lg object-cover border"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none'
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="poap-supply">Max Supply (Optional)</Label>
+                        <Input
+                          id="poap-supply"
+                          type="number"
+                          value={poapFormData.maxSupply}
+                          onChange={(e) => setPoapFormData({ ...poapFormData, maxSupply: e.target.value })}
+                          placeholder="Leave empty for unlimited"
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Limit the number of POAPs that can be claimed. Leave empty for unlimited.
+                        </p>
+                      </div>
+                      
+                      <Button 
+                        onClick={handleCreatePoapCollection}
+                        disabled={creatingPoap || !poapFormData.name || !poapFormData.description || !poapFormData.imageUrl}
+                        className="w-full bg-purple-600 hover:bg-purple-700"
+                      >
+                        {creatingPoap ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Creating POAP Collection...
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Create POAP Collection
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-gray-900 mb-2">What are POAPs?</h4>
+                      <p className="text-sm text-gray-600 mb-3">
+                        POAPs (Proof of Attendance Protocol) are special NFT badges that prove someone attended your event.
+                        They're valuable digital collectibles that attendees can keep forever.
+                      </p>
+                      <h4 className="font-medium text-gray-900 mb-2">Benefits:</h4>
+                      <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                        <li>Increase attendee engagement and retention</li>
+                        <li>Create lasting memories for your community</li>
+                        <li>Build on-chain reputation for attendees</li>
+                        <li>Enable future token-gated experiences</li>
+                      </ul>
+                    </div>
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="poap-supply" className="text-sm font-medium text-gray-700">Max Supply (Optional)</Label>
-                    <Input
-                      id="poap-supply"
-                      type="text"
-                      value={poapFormData.maxSupply}
-                      onChange={(e) => setPoapFormData({ ...poapFormData, maxSupply: e.target.value })}
-                      placeholder="Leave empty for unlimited"
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <Button 
-                    onClick={handleCreatePoapCollection}
-                    disabled={!poapFormData.name || !poapFormData.description}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    {event.poapImageUrl || event.poap_image ? 'Activate POAP Collection' : 'Create POAP'}
-                  </Button>
-                </div>
-              </div>
-            )}
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Financials Tab */}
           <TabsContent value="financials" className="space-y-6">
-            {/* Financial Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <ChartColumnBig className='text-[#101928] mb-10'/>
-                      <p className="text-sm font-medium text-[#667185]">Total Balance</p>
-                      <p className="text-3xl font-bold text-[#101928]">
-                        ${event.isFree ? '0' : (stats.totalRevenue * 0.95).toFixed(0)}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Ticket className='text-[#101928] mb-10'/>
-                      <p className="text-sm font-medium text-[#667185]">Ticket Price</p>
-                      <p className="text-3xl font-bold text-[#101928]">
-                        {event.isFree ? 'Free' : `$${event.ticketPrice}`}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Users className='text-[#101928] mb-10'/>
-                      <p className="text-sm font-medium text-[#667185]">Spots Left</p>
-                      <p className="text-3xl font-bold text-[#101928]">
-                        {typeof stats.spotsRemaining === 'number' ? stats.spotsRemaining : '390'}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Free Event Warning */}
-            {event.isFree && (
-              <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r-lg">
-                <div className="flex items-start">
-                  <AlertTriangle className="h-5 w-5 text-orange-400 mt-0.5 mr-3 flex-shrink-0" />
+            <Card>
+              <CardHeader>
+                <CardTitle>Financial Overview</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="text-orange-800 font-medium">This is a free event</h4>
-                    <p className="text-orange-700 text-sm mt-1">There are no revenue recorded from this event.</p>
+                    <p className="text-sm text-gray-600">Ticket Price</p>
+                    <p className="text-2xl font-bold">
+                      {event.isFree ? 'Free' : `$${event.ticketPrice}`}
+                    </p>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* Paid Event Financial Details */}
-            {!event.isFree && (
-              <div className="space-y-6">
-                <div className="bg-white rounded-lg border p-6">
-                  <h3 className="text-lg font-semibold text-[#101928] mb-4">Revenue Breakdown</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <p className="text-sm text-[#667185]">Total Revenue</p>
-                      <p className="text-2xl font-bold text-[#101928]">${stats.totalRevenue}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-[#667185]">Platform Fee (5%)</p>
-                      <p className="text-2xl font-bold text-[#101928]">${(stats.totalRevenue * 0.05).toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-[#667185]">Tickets Sold</p>
-                      <p className="text-2xl font-bold text-[#101928]">{stats.totalRegistered}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-[#667185]">Available for Withdrawal</p>
-                      <p className="text-2xl font-bold text-green-600">${(stats.totalRevenue * 0.95).toFixed(2)}</p>
-                    </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Total Revenue</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      ${stats.totalRevenue}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Tickets Sold</p>
+                    <p className="text-2xl font-bold">{stats.totalRegistered}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Platform Fee (5%)</p>
+                    <p className="text-2xl font-bold">
+                      ${(stats.totalRevenue * 0.05).toFixed(2)}
+                    </p>
                   </div>
                 </div>
 
-                {stats.totalRevenue > 0 && (
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h4 className="font-medium text-green-900">Ready for Withdrawal</h4>
-                        <p className="text-sm text-green-700">Funds available after platform fee deduction</p>
-                      </div>
-                      <p className="text-2xl font-bold text-green-600">${(stats.totalRevenue * 0.95).toFixed(2)}</p>
+                {!event.isFree && stats.totalRevenue > 0 && (
+                  <div className="pt-6 border-t">
+                    <div className="bg-green-50 p-4 rounded-lg mb-4">
+                      <h4 className="font-medium text-green-900 mb-2">Available for Withdrawal</h4>
+                      <p className="text-3xl font-bold text-green-600">
+                        ${(stats.totalRevenue * 0.95).toFixed(2)}
+                      </p>
+                      <p className="text-sm text-green-700 mt-1">After 5% platform fee</p>
                     </div>
 
                     <Button 
@@ -1050,12 +956,16 @@ export default function EventAdminPage() {
                     </p>
                   </div>
                 )}
-              </div>
-            )}
+
+                {event.isFree && (
+                  <div className="bg-gray-50 p-6 rounded-lg text-center">
+                    <p className="text-gray-600">This is a free event with no revenue</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
-          </div>
-        </main>
       </div>
     </div>
   )
