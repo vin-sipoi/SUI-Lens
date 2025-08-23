@@ -16,7 +16,7 @@ const POAPsSection = () => {
                 <p className="text-[#E4F1FF] font-normal mb-8 text-base sm:text-lg lg:text-2xl opacity-90 leading-relaxed">
                   Reward attendees with Proof of Attendance Protocol (POAP) NFTs for joining your event.
                 </p>
-                <button className="text-[#E4F1FF] font-normal border border-[#E4F1FF] px-6 py-2 rounded-lg text-sm sm:text-base">
+                <button className="text-[#E4F1FF] font-normal border border-[#E4F1FF] px-6 py-2 rounded-lg text-sm sm:text-base" onClick={() => window.location.href = '/create'}>
                   Create an event
                 </button>
               </div>

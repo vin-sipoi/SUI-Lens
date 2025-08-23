@@ -71,7 +71,7 @@ export default function Profile() {
 
   // Handle refresh parameter from URL
   useEffect(() => {
-    const shouldRefresh = searchParams.get('refresh');
+    const shouldRefresh = searchParams?.get('refresh');
     if (shouldRefresh === 'true' && walletAddress) {
       // Small delay to ensure any blockchain updates are reflected
       setTimeout(() => {
@@ -134,6 +134,43 @@ export default function Profile() {
     setIsEditingEmail(false);
   };
 
+  // Add loading state to prevent hydration mismatch
+  const [isClient, setIsClient] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsClient(true);
+    // Simulate loading completion after user data is available
+    const timer = setTimeout(() => setIsLoading(false), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Use consistent avatar URL during SSR and initial client render
+  const getAvatarUrl = () => {
+    if (!isClient) {
+      return "https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens";
+    }
+    return user?.avatarUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens";
+  };
+
+  // Prevent wallet button from appearing during SSR
+  const shouldShowWalletButton = isClient && (walletAddress || enokiAddress);
+
+  if (isLoading && !isClient) {
+    return (
+      <div className="min-h-screen bg-gray-50 w-full">
+        <Header />
+        <div className="flex justify-center items-center h-96">
+          <div className="animate-pulse">
+            <div className="w-16 h-16 bg-gray-300 rounded-full mb-4"></div>
+            <div className="h-4 bg-gray-300 rounded w-32 mb-2"></div>
+            <div className="h-3 bg-gray-300 rounded w-24"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 w-full">
       <Header />
@@ -146,7 +183,7 @@ export default function Profile() {
               <div className="relative">
                 <div className="relative group">
                   <img
-                    src={user?.avatarUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens"}
+                    src={getAvatarUrl()}
                     alt="Profile"
                     className="w-16 h-16 rounded-full object-cover border-4 border-white shadow-lg"
                     style={{
@@ -189,7 +226,7 @@ export default function Profile() {
                 <span className="text-gray-500 text-xs font-medium uppercase tracking-wider">
                   Wallet Address
                 </span>
-                {(walletAddress || enokiAddress) && (
+                {shouldShowWalletButton && (
                   <button
                     onClick={() => setShowWallet(true)}
                     className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs font-medium"
