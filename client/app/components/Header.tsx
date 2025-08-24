@@ -11,6 +11,8 @@ import { useEffect, useState } from 'react';
 import { ProfileDropdown } from '../landing/ProfileDropDown';
 import { useUser } from '@/context/UserContext';
 import { WalletConnect } from '@/components/auth/WalletConnect';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { GoogleLogin } from '@/components/auth/GoogleLogin';
 import { useZkLogin } from '@mysten/enoki/react';
 import { useEnokiFlow } from '@mysten/enoki/react';
 import { Button } from '@/components/ui/button';
@@ -110,9 +112,11 @@ export default function Header() {
 		{ name: 'Home', href: '/' },
 		{ name: 'Communities', href: '/communities' },
 		{ name: 'Explore', href: '/discover' },
-		{ name: 'Dashboard', href: '/dashboard' },
 		{ name: 'Bounties', href: '/bounties' },
 	];
+
+  // Remove dashboard from the nav list when the user is not authenticated
+  const filteredNavItems = navItems.filter(item => !(item.name === 'Dashboard' && !isAuthenticated));
 
 	// Handle navigation - no authentication check for public pages
 	const handleNavigation = (href: string) => {
@@ -155,46 +159,26 @@ export default function Header() {
           {/* Center Nav - Desktop Only */}
           <nav className="hidden md:flex flex-1 justify-center">
             <ul className="flex gap-4 lg:gap-8 text-sm font-medium text-gray-500">
-              <li>
-                <Link 
-                  href="/"
-                  className={isLinkActive('/') ? 'text-black font-bold' : 'text-gray-500 hover:text-gray-700'}
-                >
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/communities"
-                  className={isLinkActive('/communities') ? 'text-black font-bold' : 'text-gray-500 hover:text-gray-700'}
-                >
-                  Communities
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/discover"
-                  className={isLinkActive('/discover') ? 'text-black font-bold' : 'text-gray-500 hover:text-gray-700'}
-                >
-                  Discover Events
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/bounties"
-                  className={isLinkActive('/bounties') ? 'text-black font-bold' : 'text-gray-500 hover:text-gray-700'}
-                >
-                  Bounties
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/dashboard"
-                  className={isLinkActive('/dashboard') ? 'text-black font-bold' : 'text-gray-500 hover:text-gray-700'}
-                >
-                  Dashboard
-                </Link>
-              </li>
+              {filteredNavItems.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className={isLinkActive(item.href) ? 'text-black font-bold' : 'text-gray-500 hover:text-gray-700'}
+                  >
+                    {item.name === 'Explore' ? 'Discover Events' : item.name}
+                  </Link>
+                </li>
+              ))}
+              {isAuthenticated && (
+                <li>
+                  <Link
+                    href="/dashboard"
+                    className={isLinkActive('/dashboard') ? 'text-black font-bold' : 'text-gray-500 hover:text-gray-700'}
+                  >
+                    Dashboard
+                  </Link>
+                </li>
+              )}
             </ul>
           </nav>
 
@@ -212,14 +196,31 @@ export default function Header() {
 
           {/* Right Side - Desktop */}
           <div className="hidden md:flex items-center gap-4">
-            {user && (
+            {/* Create Event button (desktop) - only when authenticated */}
+            {isAuthenticated && (
               <Link href="/create">
-                <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-                  Create Event
-                </Button>
+                <Button className="bg-[#4DA2FF] text-white px-4 py-2 rounded-xl">Create Event</Button>
               </Link>
             )}
-            <WalletConnect />
+            {/* If user is authenticated, WalletConnect will render the avatar/profile dropdown */}
+            {!isAuthenticated && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="text-white bg-[#4DA2FF] border px-4 py-2 rounded-xl hover:text-white hover:bg-[#4DA2FF]">Sign in</Button>
+                </DialogTrigger>
+                <DialogContent className="flex flex-col items-center  w-[95%] max-w-sm mx-auto bg-white text-black">
+                  <DialogHeader>
+                    <DialogTitle className="text-[#1C1C1C] font-semibold text-2xl">Get Started On SuiLens</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <p className="text-sm text-[#888888] mb-6">A wallet will be assigned to you when you create an account.</p>
+                    <GoogleLogin className="w-full text-[#101928] bg-[#D0D5DD] flex items-center justify-center gap-2" />
+                  </div>
+                  <DialogFooter />
+                </DialogContent>
+              </Dialog>
+            )}
+            {isAuthenticated && <WalletConnect />}
           </div>
         </div>
 
@@ -227,66 +228,25 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-10 bg-white pt-16 pb-6 px-4">
             <nav className="flex flex-col space-y-6">
-              <Link
-                href="/"
-                className={`text-lg py-2 border-b border-gray-100 ${
-                  isLinkActive('/') 
-                    ? 'font-bold text-black' 
-                    : 'font-medium text-gray-900'
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link
-                href="/communities"
-                className={`text-lg py-2 border-b border-gray-100 ${
-                  isLinkActive('/communities') 
-                    ? 'font-bold text-black' 
-                    : 'font-medium text-gray-900'
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Communities
-              </Link>
-              <Link
-                href="/discover"
-                className={`text-lg py-2 border-b border-gray-100 ${
-                  isLinkActive('/discover') 
-                    ? 'font-bold text-black' 
-                    : 'font-medium text-gray-900'
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Discover Events
-              </Link>
-              <Link
-                href="/bounties"
-                className={`text-lg py-2 border-b border-gray-100 ${
-                  isLinkActive('/bounties') 
-                    ? 'font-bold text-black' 
-                    : 'font-medium text-gray-900'
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Bounties
-              </Link>
-              <Link
-                href="/dashboard"
-                className={`text-lg py-2 border-b border-gray-100 ${
-                  isLinkActive('/dashboard') 
-                    ? 'font-bold text-black' 
-                    : 'font-medium text-gray-900'
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
+              {filteredNavItems.map(item => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`text-lg py-2 border-b border-gray-100 ${
+                    isLinkActive(item.href)
+                      ? 'font-bold text-black'
+                      : 'font-medium text-gray-900'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {item.name === 'Explore' ? 'Discover Events' : item.name}
+                </Link>
+              ))}
 
               {/* Mobile Auth Buttons */}
               <div className="flex flex-col space-y-4 pt-4">
-                {user && (
-                  <Link
+                {user && ( 
+                  <Link 
                     href="/create"
                     onClick={() => setMobileMenuOpen(false)}
                   >
@@ -296,7 +256,25 @@ export default function Header() {
                   </Link>
                 )}
                 <div className="w-full">
-                  <WalletConnect />
+                  {!isAuthenticated ? (
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button className="w-full bg-white text-black border py-2 rounded-xl">Sign in</Button>
+                      </DialogTrigger>
+                      <DialogContent className="w-[95%] max-w-sm mx-auto bg-white text-black">
+                        <DialogHeader>
+                          <DialogTitle className="text-black">Sign in</DialogTitle>
+                        </DialogHeader>
+                        <div className="py-4">
+                          <p className="text-sm text-gray-700 mb-4">Sign in to continue.</p>
+                          <GoogleLogin className="w-full bg-blue-600 text-white hover:bg-blue-500 flex items-center justify-center gap-2" />
+                        </div>
+                        <DialogFooter />
+                      </DialogContent>
+                    </Dialog>
+                  ) : (
+                    <WalletConnect />
+                  )}
                 </div>
               </div>
             </nav>
@@ -309,7 +287,7 @@ export default function Header() {
 				<div className="fixed left-0 right-0 top-[72px] z-[9999] bg-white shadow-lg border-b border-gray-200 lg:hidden">
 					<div className="px-4 py-4 max-h-[70vh] overflow-y-auto">
 						<nav className="flex flex-col space-y-3">
-							{navItems.map((item) => (
+              {filteredNavItems.map((item) => (
 								<button
 									key={item.name}
 									onClick={() => handleNavigation(item.href)}
@@ -323,10 +301,12 @@ export default function Header() {
 								</button>
 							))}
 
-							{/* Show WalletConnect for authentication */}
-							<div className="pt-3 mt-3 border-t border-gray-200">
-								<WalletConnect />
-							</div>
+                            {/* Show WalletConnect for authentication (only when authenticated) */}
+                            {isAuthenticated && (
+                              <div className="pt-3 mt-3 border-t border-gray-200">
+                                <WalletConnect />
+                              </div>
+                            )}
 						</nav>
 					</div>
 				</div>

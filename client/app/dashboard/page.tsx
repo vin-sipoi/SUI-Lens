@@ -39,6 +39,7 @@ export default function DashboardPage() {
   const [sidebarSection, setSidebarSection] = useState<string>("overview")
   const [showDropdown, setShowDropdown] = useState(false)
   const [showUpcoming, setShowUpcoming] = useState(true)
+  const [regShowUpcoming, setRegShowUpcoming] = useState(true)
   const [loading, setLoading] = useState(false)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
   const [selectedEventTitle, setSelectedEventTitle] = useState<string>("")
@@ -111,7 +112,22 @@ export default function DashboardPage() {
           <main className="w-full p-4 sm:p-6 lg:p-8">
             {sidebarSection === "guests" ? (
               <div className="pt-4 sm:pt-8 w-full">
-                <GuestList />
+                <GuestList eventId={selectedEventId} />
+              </div>
+            ) : sidebarSection === "registration" ? (
+              <div className="pt-4 sm:pt-8 w-full">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Registrants</h2>
+                  <div className="flex items-center gap-4">
+                    <span className={regShowUpcoming ? "font-normal text-[#667185]" : "text-[#667185]"}>Upcoming</span>
+                    <Switch 
+                      checked={!regShowUpcoming}
+                      onCheckedChange={() => setRegShowUpcoming(!regShowUpcoming)}
+                      aria-label="Toggle past/Upcoming registrants"
+                    />
+                    <span className={!regShowUpcoming ? "font-normal text-[#667185]" : "text-[#667185]"}>Past</span>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="space-y-6">
@@ -195,9 +211,7 @@ export default function DashboardPage() {
                     </CardContent>
                   </Card>                  
                 </div>
-              </div>
-            )}
-            
+
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsContent value="my-events" className="space-y-6 w-full">
                 <div className="flex flex-row justify-between items-center">
@@ -214,14 +228,14 @@ export default function DashboardPage() {
                       </div>
                     </div>
                 {loading && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
                     {Array.from({ length: 4 }).map((_, i) => (
                       <div key={i} className="bg-gray-100 h-40 rounded-xl animate-pulse" />
                     ))}
                   </div>
                 )}
                 {!loading && filteredEventsForDisplay.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
                     {filteredEventsForDisplay.map((event) => (
                       <div 
                         key={event.id} 
@@ -238,7 +252,7 @@ export default function DashboardPage() {
                         }}
                       >
                         <Card
-                          className="base-card-light group overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 rounded-2xl"
+                          className="base-card-light group overflow-hidden border border-gray-400 transition-all duration-200 rounded-2xl"
                         >
                           <Link href={`/event/${event.id}/admin`}>
                             <div className="h-32 bg-gray-100 relative overflow-hidden">
@@ -251,33 +265,43 @@ export default function DashboardPage() {
                               ) : (
                                 <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600" />
                               )}
-                              <div className="absolute top-2 right-2">
-                                <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
-                                  Creator
-                                </span>
-                              </div>
+                              
                             </div>
                             <CardContent className="p-3">
-                              <h3 className="font-semibold text-sm mb-2 line-clamp-1">{event.title}</h3>
-                              <div className="space-y-1 text-xs text-gray-600">
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="w-3 h-3" />
-                                  <span>{event.date}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
+                              <div className="flex flex-row justify-between items-center my-3">
+                              <h3 className="font-semibold text-sm text-[#101928] mb-2 line-clamp-1">{event.title}</h3>
+
+                               <span>{event.date}</span>
+                              </div>
+                              
+                              <div className="text-sm flex items-center justify-between gap-4 my-3">
+                                <div className="flex items-center gap-2 text-[#667185]  font-medium line-clamp-1">
                                   <MapPin className="w-3 h-3" />
-                                  <span className="line-clamp-1">{event.location}</span>
+                                  <span>{event.location}</span>
                                 </div>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 text-[#667185]">
                                   <Users className="w-3 h-3" />
                                   <span>{event.rsvps?.length || 0} registered</span>
                                 </div>
                               </div>
-                              <div className="mt-2 pt-2 border-t">
-                                <Button variant="outline" size="sm" className="w-full text-blue-600 hover:bg-blue-50 text-xs h-7">
-                                  Manage Event →
+                              <div className="mt-2">
+                                <span className={`px-2 py-0.5 text-xs rounded-full ${isUpcoming(event) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'}`}>
+                                  Status: 
+                                  {isUpcoming(event) ? ' Upcoming' : ' Past'}
+                                </span>
+                              </div>
+
+                              <div className="mt-2 pt-2 flex items-center justify-between gap-2">
+                                <div>
+                                  <button className="text-[#101928] bg-[#E4F1FF] text-xs h-7 px-3">
+                                    {event.category || 'General'}
+                                  </button>
+                                </div>
+                                <Button variant="outline" size="sm" className="text-[#101928] hover:bg-[#E4F1FF] text-xs h-7 border border-black">
+                                  Manage Event
                                 </Button>
                               </div>
+                              
                             </CardContent>
                           </Link>
                         </Card>
@@ -310,8 +334,10 @@ export default function DashboardPage() {
               </TabsContent>
               <TabsContent value="registered" className="space-y-6 w-full">
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Registered Events</h2>
+
+
                 {registeredEvents.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
                     {registeredEvents.map((event) => (
                       <Card key={event.id} className="base-card-light overflow-hidden rounded-2xl">
                         <Link href={`/event/${event.id}`}>
@@ -357,6 +383,8 @@ export default function DashboardPage() {
                 )}
               </TabsContent>
             </Tabs>
+              </div>
+            )}
           </main>
         </div>
       </div>

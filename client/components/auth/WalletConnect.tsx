@@ -161,5 +161,7 @@ export function WalletConnect() {
     );
   }
 
-  return <GoogleLogin />;
+  // When not connected, don't render the login UI here.
+  // The parent (Header) is responsible for showing the Sign in button/dialog.
+  return null;
 }

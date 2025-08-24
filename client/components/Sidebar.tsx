@@ -43,12 +43,6 @@ const mainItems: SidebarItem[] = [
     icon: "/Vector (1).svg",
     alt: "reg"
   },
-  {
-    id: "mynfts",
-    label: "My NFTs",
-    icon: "/mynfts.svg",
-    alt: "reg"
-  }
 ]
 
 const insightItems = [

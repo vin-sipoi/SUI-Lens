@@ -35,6 +35,8 @@ import QRScanner from '@/components/QRScanner'
 import { generateEventQRCode, downloadQRCode } from '@/utils/qrCodeUtils'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { SlBadge } from "react-icons/sl";
+import { RiNftLine } from "react-icons/ri";
 
 export default function EventDetailsPage() {
   const router = useRouter()
@@ -345,10 +347,10 @@ export default function EventDetailsPage() {
         </div>
 
         {/* Event Details */}
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto pr-4 py-8">
           <h1 className='pb-6 text-[#101928] font-semibold text-5xl'>{event.title}</h1>
           {/* Event Info Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6 mb-8 p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6 mb-8 py-6 pr-6">
             <div className="flex items-center text-gray-700">
               <div className='flex flex-row gap-2 text-[#667185] font-normal text-lg'>
                 <p>{event.date}</p>
@@ -391,7 +393,7 @@ export default function EventDetailsPage() {
           {/* Registration Section */}
           <div className="mb-8">
             <h2 className="text-3xl font-semibold mb-4 text-[#101928]">Registration</h2>
-            <div className="p-6">
+            <div className="py-6">
               {isRegistered ? (
                 /* Registration Success Message */
                 <div className="border-l-4 border-green-500 bg-green-50 p-4 rounded-lg">
@@ -439,9 +441,6 @@ export default function EventDetailsPage() {
                   </Button>
                 </form>
               )}
-
-              {/* Check-in Button for Attendees */}
-              
               
               {/* Show Attended Status */}
               {hasAttended && (
@@ -470,7 +469,7 @@ export default function EventDetailsPage() {
             <div className="grid md:grid-cols-2 gap-4">
               {event.nftImageUrl && (
                 <div className="border border-blue-200 bg-blue-50/50 rounded-lg p-4 relative">
-                  <Ticket className="w-6 h-6 text-blue-600 absolute top-4 right-4" />
+                  <RiNftLine className='w-6 h-6 text-[#101928] absolute top-4 right-4'/>
                   <div className="pr-8">
                     <h3 className="font-semibold text-xl text-[#101928] mb-1">Event NFT</h3>
                     <p className="text-sm font-normal text-gray-600 mb-2">
@@ -509,7 +508,8 @@ export default function EventDetailsPage() {
               
               {event.poapImageUrl && (
                 <div className="border border-purple-200 bg-purple-50/50 rounded-lg p-4 relative">
-                  <Award className="w-6 h-6 text-purple-600 absolute top-4 right-4" />
+                  
+                  <SlBadge className='w-6 h-6 text-[#101928] absolute top-4 right-4'/>
                   <div className="pr-8">
                     <h3 className="font-medium mb-1">POAP Badge</h3>
                     <p className="text-sm text-gray-600 mb-2">

@@ -11,6 +11,9 @@ export type Event = {
 	attendees: number;
 	category: string;
 	link?: string;
+	rsvps?: string[] | { [key: string]: any }[];
+	attendance?: string[];
+	rsvpTimes?: Record<string, string>;
 };
 
 interface EventCardProps {
