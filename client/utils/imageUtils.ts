@@ -111,7 +111,7 @@ export const uploadImageToImgBB = async (
 
     // Make API request with timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     const response = await axios.post('https://api.imgbb.com/1/upload', formData, {
       signal: controller.signal,

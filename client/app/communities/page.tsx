@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '../../context/UserContext';
 import { Menu, X, Search } from 'lucide-react';
+import Header from '../components/Header';
 
 export default function CommunityEventsPage(){
   const account = useCurrentAccount();
@@ -196,55 +197,7 @@ export default function CommunityEventsPage(){
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50">
-              <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-                <Link href="/landing" className="flex items-center space-x-3 ">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-                  <Image 
-                    src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png" 
-                    alt="Suilens Logo" 
-                    width={60}
-                    height={60}
-                    className="object-contain"
-                  />
-                </div>
-                <span className="text-2xl font-bold text-[#020B15]">Suilens</span>
-                </Link>
-      
-                <nav className="hidden lg:flex text-sm font-inter items-center space-x-8">
-                  <Link href='/' className="text-gray-800 font-semibold "></Link>
-                  {["Communities", "Discover", "Dashboard","Bounties"].map((item) => (
-                    <Link
-                      key={item}
-                      href={`/${item.toLowerCase().replace(' ', '-')}`}
-                      className="text-gray-600  font-medium transition-colors"
-                    >
-                      {item}
-                    </Link>
-                  ))}
-                </nav>
-      
-                <div className="flex text-sm items-center space-x-4">                                    
-                  <Link href='/create'>
-                    <Button className="bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white px-6 rounded-xl">
-                    Create Event
-                    </Button>
-                  </Link>
-                  {/* Only show ConnectButton if not logged in */}
-                  {!user ? (
-                    <ConnectButton />
-                  ) : (
-                    <Link href="/profile">
-                      <img
-                        src={user.avatarUrl || "https://via.placeholder.com/100"}
-                        alt="Profile"
-                        className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer"
-                      />
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </header>
+      <Header />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -301,17 +254,14 @@ export default function CommunityEventsPage(){
 
                     {/* Action Row: Button & Flag */}
                     <div className="flex items-center justify-between mt-4">
-                      <Link 
-                        href={event.link}
-                        className="block w-full max-w-[80%] mr-2"
-                      >
-                        
-                      <button className='w-auto text-sm font-normal p-2.5 bg-gray-100 text-black border-2 border-black rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors'
-                      disabled>
-                        View Community Events  
-                      </button>
-
-                      </Link>
+                      <div className="block w-full max-w-[80%] mr-2">
+                        <button 
+                          className='w-auto text-sm font-normal p-2.5 bg-gray-100 text-gray-500 border-2 border-gray-300 rounded-full flex items-center justify-center cursor-not-allowed opacity-60'
+                          disabled
+                        >
+                          View Community Events  
+                        </button>
+                      </div>
                       <div className="flex-shrink-0 ml-2">
                         <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg sm:text-xl">
                           <Image 
