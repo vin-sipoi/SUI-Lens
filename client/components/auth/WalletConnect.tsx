@@ -88,8 +88,10 @@ export function WalletConnect() {
     router.push('/');
   };
 
-  const displayAddress = currentAccount?.address || enokiAddress;
-  const isConnected = !!(displayAddress);
+
+  const displayAddress = currentAccount?.address || enokiAddress || user?.walletAddress;
+  // Always show profile icon if user is authenticated (user exists)
+  const isConnected = !!user;
 
   const handleCopyAddress = () => {
     if (displayAddress) {
@@ -161,7 +163,6 @@ export function WalletConnect() {
     );
   }
 
-  // When not connected, don't render the login UI here.
-  // The parent (Header) is responsible for showing the Sign in button/dialog.
+  // When not authenticated, don't render anything
   return null;
 }

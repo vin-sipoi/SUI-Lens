@@ -266,6 +266,7 @@ export default function CreateEventPage() {
         poapEnabled: poapData.name ? true : false,
         qrCode: qrData.qrCodeImage,
         eventUrl: qrData.eventUrl,
+        rsvpTimes: undefined
       })
 
       // First, ensure user has a profile (create if not exists)

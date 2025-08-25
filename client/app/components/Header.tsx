@@ -196,14 +196,7 @@ export default function Header() {
 
           {/* Right Side - Desktop */}
           <div className="hidden md:flex items-center gap-4">
-            {/* Create Event button (desktop) - only when authenticated */}
-            {isAuthenticated && (
-              <Link href="/create">
-                <Button className="bg-[#4DA2FF] text-white px-4 py-2 rounded-xl">Create Event</Button>
-              </Link>
-            )}
-            {/* If user is authenticated, WalletConnect will render the avatar/profile dropdown */}
-            {!isAuthenticated && (
+            {!isAuthenticated ? (
               <Dialog>
                 <DialogTrigger asChild>
                   <Button className="text-white bg-[#4DA2FF] border px-4 py-2 rounded-xl hover:text-white hover:bg-[#4DA2FF]">Sign in</Button>
@@ -219,8 +212,14 @@ export default function Header() {
                   <DialogFooter />
                 </DialogContent>
               </Dialog>
+            ) : (
+              <>
+                <Link href="/create">
+                  <Button className="bg-[#4DA2FF] text-white px-4 py-2 rounded-xl">Create Event</Button>
+                </Link>
+                <WalletConnect />
+              </>
             )}
-            {isAuthenticated && <WalletConnect />}
           </div>
         </div>
 
@@ -245,18 +244,8 @@ export default function Header() {
 
               {/* Mobile Auth Buttons */}
               <div className="flex flex-col space-y-4 pt-4">
-                {user && ( 
-                  <Link 
-                    href="/create"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Button className="w-full bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white py-2 rounded-xl">
-                      Create Event
-                    </Button>
-                  </Link>
-                )}
-                <div className="w-full">
-                  {!isAuthenticated ? (
+                {!isAuthenticated ? (
+                  <div className="w-full">
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button className="w-full bg-white text-black border py-2 rounded-xl">Sign in</Button>
@@ -272,10 +261,20 @@ export default function Header() {
                         <DialogFooter />
                       </DialogContent>
                     </Dialog>
-                  ) : (
+                  </div>
+                ) : (
+                  <>
+                    <Link 
+                      href="/create"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Button className="w-full bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white py-2 rounded-xl">
+                        Create Event
+                      </Button>
+                    </Link>
                     <WalletConnect />
-                  )}
-                </div>
+                  </>
+                )}
               </div>
             </nav>
           </div>
