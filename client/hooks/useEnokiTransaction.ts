@@ -13,7 +13,12 @@ export function useEnokiTransaction() {
   const signAndExecuteTransaction = async (transaction: Transaction) => {
     if (!address) {
       toast.error('Please connect your wallet first');
-      throw new Error('No wallet connected');
+      // Instead of throwing, return a user-friendly error object
+      return {
+        success: false,
+        error: 'Wallet not connected',
+        message: 'Please connect your wallet to continue'
+      };
     }
 
     try {
@@ -31,7 +36,7 @@ export function useEnokiTransaction() {
       });
 
       // Build the transaction
-      const txBytes = await transaction.build({ client: suiClient });
+      const txBytes = await transaction.build({ client: suiClient as any });
 
       toast.loading('Please approve the transaction...');
 
@@ -53,11 +58,18 @@ export function useEnokiTransaction() {
       toast.success('Transaction successful!');
       console.log('Transaction result:', result);
       
-      return result;
+      return {
+        success: true,
+        data: result
+      };
     } catch (error: any) {
       console.error('Transaction failed:', error);
       toast.error(error.message || 'Transaction failed');
-      throw error;
+      return {
+        success: false,
+        error: error.message || 'Transaction failed',
+        message: 'Transaction failed. Please try again.'
+      };
     }
   };
 

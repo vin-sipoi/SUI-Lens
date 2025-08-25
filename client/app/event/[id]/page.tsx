@@ -51,6 +51,16 @@ export default function EventDetailsPage() {
   const [eventQRCode, setEventQRCode] = useState<string | null>(null)
   const [generatingQR, setGeneratingQR] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  
+  // Add form state management
+  const [registrationForm, setRegistrationForm] = useState({
+    name: '',
+    email: ''
+  })
+  const [formErrors, setFormErrors] = useState({
+    name: '',
+    email: ''
+  })
 
   useEffect(() => {
     const loadEvent = async () => {
@@ -119,7 +129,39 @@ export default function EventDetailsPage() {
   const hasEventEnded = eventEndTime && now > eventEndTime
   const canCheckIn = hasEventStarted && !hasEventEnded
 
-  const handleRegister = async () => {
+  const saveRegistrationToDatabase = async (registrationData: any) => {
+    try {
+      const response = await fetch('http://localhost:3005/api/registrations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userEmail: registrationData.email,
+          userName: registrationData.name || 'Anonymous',
+          eventId: registrationData.eventId,
+          userAddress: registrationData.userAddress,
+          registeredAt: new Date().toISOString()
+        })
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Registration save failed:', response.status, errorText)
+        return null
+      }
+
+      const result = await response.json()
+      console.log('Registration saved to database successfully:', result.data?.id || result.id)
+      return result
+    } catch (error) {
+      console.error('Error saving registration (non-blocking):', error)
+      return null
+    }
+  }
+
+  // Updated handleRegister function to accept form data
+  const handleRegister = async (formData = null) => {
     if (!user?.walletAddress) {
       toast.error('Please connect your wallet first')
       router.push('/auth/signin')
@@ -132,6 +174,26 @@ export default function EventDetailsPage() {
       return
     }
 
+    // If called from form, validate form data
+    if (formData) {
+      const errors = {}
+      if (!formData.name.trim()) {
+        errors.name = 'Name is required'
+      }
+      if (!formData.email.trim()) {
+        errors.email = 'Email is required'
+      } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+        errors.email = 'Please enter a valid email address'
+      }
+
+      if (Object.keys(errors).length > 0) {
+        setFormErrors(errors)
+        return
+      }
+      
+      setFormErrors({ name: '', email: '' })
+    }
+
     setRegistering(true)
 
     try {
@@ -139,7 +201,7 @@ export default function EventDetailsPage() {
       // This is a workaround - in production, you'd check if profile exists first
       try {
         const profileTx = await suilensService.createProfile(
-          user.name || 'SuiLens User',
+          formData?.name || user.name || 'SuiLens User',
           'Active member of the SuiLens community',
           'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.walletAddress
         )
@@ -161,12 +223,33 @@ export default function EventDetailsPage() {
       console.log('Registration result:', result)
       
       // Check if transaction was successful
-      if (result.effects?.status?.status === 'success') {
+      if (result.success && result.data?.effects?.status?.status === 'success') {
+        // Save registration to database (use form data if available, fallback to user data)
+        const registrationData = {
+          email: formData?.email || user?.email,
+          name: formData?.name || user?.name || 'Anonymous',
+          eventId: eventId,
+          userId: user.walletAddress
+        }
+        
+        if (registrationData.email) {
+          const dbResult = await saveRegistrationToDatabase(registrationData)
+          if (!dbResult) {
+            console.warn('Database registration failed, but blockchain registration succeeded')
+            // Don't fail the entire process if database save fails
+          }
+        }
+        
         // Update local state immediately
         if (event) {
           const updatedRsvps = [...(event.rsvps || []), user.walletAddress]
           updateEvent(eventId, { rsvps: updatedRsvps })
           setEvent({ ...event, rsvps: updatedRsvps })
+        }
+        
+        // Clear form on success
+        if (formData) {
+          setRegistrationForm({ name: '', email: '' })
         }
         
         toast.success('Successfully registered for the event!')
@@ -176,13 +259,38 @@ export default function EventDetailsPage() {
           await refreshEventData()
         }, 3000) // Wait 3 seconds for blockchain to update
       } else {
-        throw new Error('Transaction failed')
+        // Handle transaction failure with better error messages
+        const errorMessage = result.error || 'Transaction failed';
+        console.error('Transaction failed:', errorMessage);
+        throw new Error(errorMessage);
       }
     } catch (error: any) {
       console.error('Error registering for event:', error)
       toast.error(error.message || 'Failed to register for event')
     } finally {
       setRegistering(false)
+    }
+  }
+
+  // Add form submission handler
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await handleRegister(registrationForm)
+  }
+
+  // Add input change handler
+  const handleInputChange = (field: string, value: string) => {
+    setRegistrationForm(prev => ({
+      ...prev,
+      [field]: value
+    }))
+    
+    // Clear error when user starts typing
+    if (formErrors[field]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }))
     }
   }
 
@@ -317,14 +425,70 @@ export default function EventDetailsPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      {/* Back Button */}
-      <div className="px-4 pt-4">
-        <Link href="/discover">
-          <Button variant="secondary" size="sm" className="bg-white/90 hover:bg-white">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+      {/* Hero Section with Banner */}
+      <div className="relative h-64 md:h-96 bg-gray-200">
+        {event.bannerUrl ? (
+          <img 
+            src={event.bannerUrl} 
+            alt={event.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600" />
+        )}
+        <div className="absolute inset-0 bg-black bg-opacity-40" />
+        
+        {/* Back Button */}
+        <div className="absolute top-4 left-4">
+          <Link href="/discover">
+            <Button variant="secondary" size="sm" className="bg-white/90 hover:bg-white">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+          </Link>
+        </div>
+
+        {/* Share and Like Buttons */}
+        <div className="absolute top-4 right-4 flex gap-2">
+          <Button 
+            variant="secondary" 
+            size="icon"
+            onClick={handleShare}
+            className="bg-white/90 hover:bg-white"
+          >
+            <Share2 className="w-4 h-4" />
           </Button>
-        </Link>
+          <Button 
+            variant="secondary" 
+            size="icon"
+            className="bg-white/90 hover:bg-white"
+          >
+            <Heart className="w-4 h-4" />
+          </Button>
+          {/* Debug: Force refresh to check blockchain state */}
+          <Button 
+            variant="secondary" 
+            size="sm"
+            onClick={async () => {
+              console.log('=== FORCE REFRESH DEBUG ===')
+              console.log('Current event attendance:', event?.attendance)
+              console.log('User wallet:', user?.walletAddress)
+              console.log('Fetching fresh from blockchain...')
+              await fetchEvents()
+              const fresh = getEvent(eventId)
+              console.log('Fresh event data:', fresh)
+              console.log('Fresh attendance list:', fresh?.attendance)
+              if (fresh) {
+                setEvent(fresh)
+                toast.info(`Refreshed: ${fresh.attendance?.length || 0} checked in`)
+              }
+            }}
+            className="bg-yellow-500 hover:bg-yellow-600 text-white"
+            title="Force refresh from blockchain"
+          >
+            Debug Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Event Content */}
@@ -407,146 +571,212 @@ export default function EventDetailsPage() {
                     </div>
                   </div>
                 </div>
-              ) : (
-                /* Registration Form */
-                <form onSubmit={(e) => { e.preventDefault(); handleRegister(); }}>
-                  <div className="flex flex-col gap-4">
-                    <Label>
-                      Full Name
-                      <Input placeholder="Your Name" className="my-4" />
-                    </Label>
+              </div>
 
-                    <Label>
-                      Email Address
-                      <Input placeholder="Your Email" className="my-4" />
-                    </Label>
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-[#101928] rounded-3xl"
-                    disabled={registering || isFull}
-                  >
-                    {registering ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Registering...
-                      </>
-                    ) : isFull ? (
-                      'Event Full'
-                    ) : (
-                      'Register'
-                    )}
-                  </Button>
-                </form>
-              )}
+              {/* Description */}
+              <div className="border-t pt-6 mb-6">
+                <h2 className="text-xl font-semibold mb-3">About This Event</h2>
+                <p className="text-gray-600 whitespace-pre-wrap">{event.description}</p>
+              </div>
 
-              {/* Check-in Button for Attendees */}
-              
-              
-              {/* Show Attended Status */}
-              {hasAttended && (
-                <div className="mt-4 text-center">
-                  <Button 
-                    variant="outline" 
-                    disabled
-                    className="bg-green-50 px-8 py-2 rounded-full"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                    Checked In
-                  </Button>
-                </div>
-              )}
+              {/* Map location */}
 
-              {event.requiresApproval && !isRegistered && (
-                <p className="text-sm text-amber-600 mt-3 text-center">
-                  ⚠️ This event requires approval from the organizer
-                </p>
-              )}
-            </div>
-          </div>
-          {/* NFT Rewards Section */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-semibold mb-4 text-[#101928]">NFT Rewards</h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              {event.nftImageUrl && (
-                <div className="border border-blue-200 bg-blue-50/50 rounded-lg p-4 relative">
-                  <Ticket className="w-6 h-6 text-blue-600 absolute top-4 right-4" />
-                  <div className="pr-8">
-                    <h3 className="font-semibold text-xl text-[#101928] mb-1">Event NFT</h3>
-                    <p className="text-sm font-normal text-gray-600 mb-2">
-                      Claim your commemorative NFT after registering
-                    </p>
-                    <img 
-                      src={event.nftImageUrl} 
-                      alt="Event NFT"
-                      className="w-full h-32 rounded-lg object-cover mt-2"
-                    />
-                    <h2 className='font-semibold text-sm my-4'>Requirements</h2>
-                    <ul className="list-disc list-inside text-[#667185]">
-                      <li>Must have registered for the event</li>
-                      <li>One NFT per attendee</li>
-                    </ul>
+
+
+               {/* Registration Form */}
+                  <div className="border-t pt-9 mb-6">
+                    <h2 className="text-4xl font-semibold text-[#101928] pb-4 mb-4"> Registration</h2>
+                    
+                    <form>
+                      <div className="flex flex-col  gap-4">
+                        <Label>
+                          Full Name
+                          <Input placeholder="Your Name" className="my-4" />
+                        </Label>
+
+                        <Label>
+                          Email Address
+                          <Input placeholder="Your Email" className="my-4" />
+                        </Label>
+                      </div>
+                      <Button type="submit" className="w-full bg-[#101928] rounded-3xl">
+                        Register
+                      </Button>
+                    </form>
                   </div>
-                  <Button 
-                    className='mt-5 w-full' 
-                    disabled={!isRegistered}
-                    variant={!isRegistered ? "outline" : "default"}
-                  >
-                    {!isRegistered ? (
-                      <>
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Register to Claim NFT
-                      </>
-                    ) : (
-                      <>
-                        <Ticket className="w-4 h-4 mr-2" />
-                        Claim NFT
-                      </>
-                    )}
-                  </Button>
+              {/* NFT Rewards Section */}
+              <div className="border-t pt-6 mb-6">
+                <h2 className="text-xl font-semibold mb-4">🎁 NFT Rewards</h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {event.nftImageUrl && (
+                    <Card className="border-blue-200 bg-blue-50/50">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <Ticket className="w-6 h-6 text-blue-600 mt-1" />
+                          <div className="flex-1">
+                            <h3 className="font-medium mb-1">Event NFT</h3>
+                            <p className="text-sm text-gray-600 mb-2">
+                              Claim your commemorative NFT after registering
+                            </p>
+                            {event.nftImageUrl && (
+                              <img 
+                                src={event.nftImageUrl} 
+                                alt="Event NFT"
+                                className="w-20 h-20 rounded-lg object-cover"
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  
+                  {event.poapImageUrl && (
+                    <Card className="border-purple-200 bg-purple-50/50">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <Award className="w-6 h-6 text-purple-600 mt-1" />
+                          <div className="flex-1">
+                            <h3 className="font-medium mb-1">POAP Badge</h3>
+                            <p className="text-sm text-gray-600 mb-2">
+                              Exclusive badge for attendees who check in
+                            </p>
+                            {event.poapImageUrl && (
+                              <img 
+                                src={event.poapImageUrl} 
+                                alt="POAP"
+                                className="w-20 h-20 rounded-lg object-cover"
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
-              )}
-              
-              {event.poapImageUrl && (
-                <div className="border border-purple-200 bg-purple-50/50 rounded-lg p-4 relative">
-                  <Award className="w-6 h-6 text-purple-600 absolute top-4 right-4" />
-                  <div className="pr-8">
-                    <h3 className="font-medium mb-1">POAP Badge</h3>
-                    <p className="text-sm text-gray-600 mb-2">
-                      Exclusive badge for attendees who check in
-                    </p>
-                    <img 
-                      src={event.poapImageUrl} 
-                      alt="POAP Badge"
-                      className="w-full h-32 rounded-lg object-cover mt-2"
-                    />
-                    <h2 className='font-semibold text-sm my-4'>Requirements</h2>
-                    <ul className="list-disc list-inside text-[#667185]">
-                      <li>Must have checked in at the event</li>
-                      <li>Available after check in at Event</li>
-                    </ul>
-                  </div>
-                  <Button 
-                    className='mt-5 w-full'
-                    disabled={!hasAttended}
-                    variant={!hasAttended ? "outline" : "default"}
-                  >
-                    {!hasAttended ? (
-                      <>
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Check-in to Claim POAP
-                      </>
-                    ) : (
-                      <>
-                        <Award className="w-4 h-4 mr-2" />
-                        Claim POAP Badge
-                      </>
-                    )}
-                  </Button>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="border-t pt-6">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  {!user?.walletAddress ? (
+                    <Link href="/auth/signin" className="flex-1">
+                      <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                        Sign In to Register
+                      </Button>
+                    </Link>
+                  ) : isRegistered ? (
+                    <>
+                      <div className="flex-1">
+                        <Button 
+                          disabled 
+                          className="w-full bg-green-600"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          You're Registered
+                        </Button>
+                      </div>
+                      {(event.nftImageUrl || event.poapImageUrl) && (
+                        <Link href={`/event/${eventId}/claim-nft`} className="flex-1">
+                          <Button variant="outline" className="w-full">
+                            <Award className="w-4 h-4 mr-2" />
+                            Claim NFTs
+                          </Button>
+                        </Link>
+                      )}
+                    </>
+                  ) : isFull ? (
+                    <Button disabled className="flex-1">
+                      Event Full
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={handleRegister}
+                      disabled={registering}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    >
+                      {registering ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Registering...
+                        </>
+                      ) : (
+                        <>
+                          <Ticket className="w-4 h-4 mr-2" />
+                          Register for Event
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  
+                  {/* Check-in Button for Attendees */}
+                  {isRegistered && !hasAttended && (
+                    <>
+                      {!hasEventStarted ? (
+                        <div>
+                          <Button 
+                            variant="outline" 
+                            className="sm:w-auto"
+                            disabled
+                          >
+                            <Clock className="w-4 h-4 mr-2" />
+                            Check-in Not Yet Available
+                          </Button>
+                          <p className="text-xs text-amber-600 mt-1">
+                            Check-in will be available on {event.date} at {event.time}
+                          </p>
+                        </div>
+                      ) : hasEventEnded ? (
+                        <div>
+                          <Button 
+                            variant="outline" 
+                            className="sm:w-auto"
+                            disabled
+                          >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Event Ended
+                          </Button>
+                          <p className="text-xs text-red-600 mt-1">
+                            Check-in is no longer available
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <Button 
+                            variant="outline" 
+                            className="sm:w-auto"
+                            onClick={() => setShowScanner(true)}
+                          >
+                            <Camera className="w-4 h-4 mr-2" />
+                            Check In
+                          </Button>
+                          <p className="text-xs text-green-600 mt-1">
+                            ✅ Check-in is now available
+                          </p>
+                        </>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* Show Attended Status */}
+                  {hasAttended && (
+                    <Button 
+                      variant="outline" 
+                      disabled
+                      className="sm:w-auto bg-green-50"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                      Checked In
+                    </Button>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+
+                {event.requiresApproval && !isRegistered && (
+                  <p className="text-sm text-amber-600 mt-3">
+                    ⚠️ This event requires approval from the organizer
+                  </p>
+                )}
+              </div>
 
           {/* Event Creator QR Code Management */}
           {isEventCreator && (

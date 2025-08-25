@@ -1,38 +1,38 @@
 {
-  "name": "Sui-lens-api",
+  "name": "sui-lens-email-server",
   "version": "1.0.0",
-  "description": "sui lens api using Node.js and Express",
+  "description": "Backend server for email registration and blast email functionality",
   "main": "index.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:seed": "sequelize-cli db:seed:all"
   },
-  "keywords": [],
-  "author": "Kaotik",
-  "license": "ISC",
   "dependencies": {
-    "argon2": "^0.41.1",
-    "cookie-parser": "^1.4.7",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "csurf": "^1.11.0",
-    "dotenv": "^16.6.1",
-    "express": "^4.21.1",
-    "express-rate-limit": "^7.4.1",
-    "express-session": "^1.18.1",
-    "google-auth-library": "^9.14.2",
-    "googleapis": "^144.0.0",
-    "helmet": "^8.0.0",
-    "joi": "^17.13.3",
+    "dotenv": "^16.3.1",
     "jsonwebtoken": "^9.0.2",
-    "nodemailer": "^6.9.16",
-    "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0",
-    "pg": "^8.13.1",
+    "next": "^14.0.0",
+    "nodemailer": "^6.9.7",
+    "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",
-    "sequelize": "^6.37.5"
+    "sequelize": "^6.35.2",
+    "validator": "^13.11.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.0"
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/node": "^20.0.0",
+    "@types/nodemailer": "^6.4.14",
+    "@types/pg": "^8.10.9",
+    "@types/react": "19.1.10",
+    "@types/validator": "^13.11.7",
+    "sequelize-cli": "^6.6.2",
+    "typescript": "^5.0.0"
   }
 }

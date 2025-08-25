@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import type React from "react"
 import { useState, useEffect } from "react"
@@ -7,8 +7,6 @@ import { useUser } from "../../context/UserContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
 import {
   Dialog,
   DialogContent,
@@ -18,6 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import Image from "next/image"
 import {
   ArrowLeft,
@@ -36,27 +35,86 @@ import Link from "next/link"
 import { useEventContext } from "@/context/EventContext"
 import { mintPOAP, suilensService } from "@/lib/sui-client"
 import Header from '@/app/components/Header'
+import LocationInput from '@/components/LocationInput'
 import { uploadImageToImgBB, validateImageFile } from '@/utils/imageUtils'
 import { toast } from 'sonner'
 import { useEnokiTransaction } from '@/hooks/useEnokiTransaction'
 import { Transaction } from '@mysten/sui/transactions'
+import TransactionIdExtractor from '@/lib/transaction-id-extractor';
+
+// Backend API service
+const saveEventToDatabase = async (eventData: any) => {
+  try {
+    const eventId = eventData.id; // Blockchain event ID
+    if (!eventId) {
+      throw new Error('Event ID is missing');
+    }
+
+    const response = await fetch('http://localhost:3005/api/events', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: eventId,
+        title: eventData.title,
+        description: eventData.description,
+        startDate: new Date(`${eventData.date} ${eventData.time}`).toISOString(),
+        endDate: new Date(`${eventData.endDate || eventData.date} ${eventData.endTime || eventData.time}`).toISOString(),
+        location: eventData.location,
+        latitude: eventData.latitude,
+        longitude: eventData.longitude,
+        category: eventData.category,
+        capacity: eventData.capacity ? parseInt(eventData.capacity) : 100,
+        ticketPrice: eventData.isFree ? 0 : (parseInt(eventData.ticketPrice) || 0),
+        isFree: eventData.isFree,
+        requiresApproval: eventData.requiresApproval,
+        isPrivate: eventData.isPrivate,
+        timezone: eventData.timezone || 'UTC',
+        bannerUrl: eventData.bannerUrl,
+        nftImageUrl: eventData.nftImageUrl,
+        poapImageUrl: eventData.poapImageUrl,
+        qrCode: eventData.qrCode,
+        eventUrl: eventData.eventUrl,
+        poapEnabled: eventData.poapEnabled,
+        poapName: eventData.poapName,
+        poapDescription: eventData.poapDescription,
+        createdBy: eventData.createdBy,
+        suiEventId: eventData.suiEventId,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Database save failed:', response.status, errorData);
+      throw new Error(`Database save failed: ${errorData.message || 'Unknown error'}`);
+    }
+
+    const result = await response.json();
+    console.log('Event saved to database successfully:', result.id);
+    return result;
+  } catch (error) {
+    console.error('Error saving to database:', error);
+    throw error;
+  }
+};
 
 export default function CreateEventPage() {
-  const { user } = useUser()
-  const router = useRouter()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { addEvent } = useEventContext()
-  const { signAndExecuteTransaction } = useEnokiTransaction()
+  const { user } = useUser();
+  const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { addEvent } = useEventContext();
+  const { signAndExecuteTransaction } = useEnokiTransaction();
 
   // Redirect to signin if not logged in
   useEffect(() => {
     if (!user) {
       const timeoutId = setTimeout(() => {
-        router.push('/auth/signin')
-      }, 100)
-      return () => clearTimeout(timeoutId)
+        router.push('/auth/signin');
+      }, 100);
+      return () => clearTimeout(timeoutId);
     }
-  }, [user, router])
+  }, [user, router]);
 
   const [eventData, setEventData] = useState({
     title: "",
@@ -72,230 +130,226 @@ export default function CreateEventPage() {
     isFree: true,
     requiresApproval: false,
     isPrivate: false,
-    timezone: "GMT+03:00 Nairobi",
-  })
+    timezone: "UTC",
+    latitude: 0,
+    longitude: 0,
+  });
 
-  const [isCreating, setIsCreating] = useState(false)
-  const [ticketDialogOpen, setTicketDialogOpen] = useState(false)
-  const [capacityDialogOpen, setCapacityDialogOpen] = useState(false)
-  const [poapDialogOpen, setPoapDialogOpen] = useState(false)
+  const [isCreating, setIsCreating] = useState(false);
+  const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
+  const [capacityDialogOpen, setCapacityDialogOpen] = useState(false);
+  const [poapDialogOpen, setPoapDialogOpen] = useState(false);
   const [tempTicketData, setTempTicketData] = useState({
     isFree: eventData.isFree,
     ticketPrice: eventData.ticketPrice,
-  })
+  });
   const [tempCapacityData, setTempCapacityData] = useState({
     capacity: eventData.capacity,
-  })
+  });
 
-  // Three separate image states
   const [bannerImage, setBannerImage] = useState<{
     file: File | null;
     preview: string | null;
     url: string | null;
-  }>({ file: null, preview: null, url: null })
+  }>({ file: null, preview: null, url: null });
 
   const [nftImage, setNftImage] = useState<{
     file: File | null;
     preview: string | null;
     url: string | null;
-  }>({ file: null, preview: null, url: null })
+  }>({ file: null, preview: null, url: null });
 
   const [poapImage, setPoapImage] = useState<{
     file: File | null;
     preview: string | null;
     url: string | null;
-  }>({ file: null, preview: null, url: null })
+  }>({ file: null, preview: null, url: null });
 
-  // Upload states
   const [uploadingImages, setUploadingImages] = useState({
     banner: false,
     nft: false,
     poap: false,
-  })
+  });
 
-  // POAP data state
   const [poapData, setPoapData] = useState({
     name: "",
     description: "",
-  })
+  });
 
-  // Handle image upload for each type
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     imageType: 'banner' | 'nft' | 'poap'
   ) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    // Validate file
-    const validation = validateImageFile(file)
+    const validation = validateImageFile(file);
     if (!validation.valid) {
-      toast.error(validation.error)
-      return
-    }
-
-    // Create preview
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const preview = event.target?.result as string
-      
-      // Update the appropriate state
+      toast.error(validation.error);
+      // Reset the image state to avoid inconsistent UI
       if (imageType === 'banner') {
-        setBannerImage({ file, preview, url: null })
+        setBannerImage({ file: null, preview: null, url: null });
       } else if (imageType === 'nft') {
-        setNftImage({ file, preview, url: null })
+        setNftImage({ file: null, preview: null, url: null });
       } else if (imageType === 'poap') {
-        setPoapImage({ file, preview, url: null })
+        setPoapImage({ file: null, preview: null, url: null });
       }
+      return;
     }
-    reader.readAsDataURL(file)
-  }
 
-  // Upload images to imgBB and return the URLs
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const preview = event.target?.result as string;
+
+      if (imageType === 'banner') {
+        setBannerImage({ file, preview, url: null });
+      } else if (imageType === 'nft') {
+        setNftImage({ file, preview, url: null });
+      } else if (imageType === 'poap') {
+        setPoapImage({ file, preview, url: null });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const uploadImagesToCloud = async () => {
     const imageUrls = {
       bannerUrl: bannerImage.url || '',
       nftImageUrl: nftImage.url || '',
       poapImageUrl: poapImage.url || ''
-    }
-    
-    const uploads: Promise<void>[] = []
-    
-    // Upload banner image
+    };
+
+    const uploads: Promise<void>[] = [];
+
     if (bannerImage.file && !bannerImage.url) {
+      setUploadingImages(prev => ({ ...prev, banner: true }));
       uploads.push(
         uploadImageToImgBB(bannerImage.file, `${eventData.title}_banner_${Date.now()}`)
           .then(url => {
-            setBannerImage(prev => ({ ...prev, url }))
-            imageUrls.bannerUrl = url
+            setBannerImage(prev => ({ ...prev, url }));
+            imageUrls.bannerUrl = url;
           })
-      )
+          .finally(() => setUploadingImages(prev => ({ ...prev, banner: false })))
+      );
     }
-    
-    // Upload NFT image
+
     if (nftImage.file && !nftImage.url) {
+      setUploadingImages(prev => ({ ...prev, nft: true }));
       uploads.push(
         uploadImageToImgBB(nftImage.file, `${eventData.title}_nft_${Date.now()}`)
           .then(url => {
-            setNftImage(prev => ({ ...prev, url }))
-            imageUrls.nftImageUrl = url
+            setNftImage(prev => ({ ...prev, url }));
+            imageUrls.nftImageUrl = url;
           })
-      )
+          .finally(() => setUploadingImages(prev => ({ ...prev, nft: false })))
+      );
     }
-    
-    // Upload POAP image
+
     if (poapImage.file && !poapImage.url) {
+      setUploadingImages(prev => ({ ...prev, poap: true }));
       uploads.push(
         uploadImageToImgBB(poapImage.file, `${eventData.title}_poap_${Date.now()}`)
           .then(url => {
-            setPoapImage(prev => ({ ...prev, url }))
-            imageUrls.poapImageUrl = url
+            setPoapImage(prev => ({ ...prev, url }));
+            imageUrls.poapImageUrl = url;
           })
-      )
+          .finally(() => setUploadingImages(prev => ({ ...prev, poap: false })))
+      );
     }
-    
-    if (uploads.length > 0) {
-      toast.info('Uploading images...')
-      await Promise.all(uploads)
-      toast.success('Images uploaded successfully!')
-    }
-    
-    return imageUrls
-  }
 
-  // Generate QR code using qr-server.com API (free, no API key needed)
+    if (uploads.length > 0) {
+      toast.info('Uploading images...');
+      await Promise.all(uploads);
+      toast.success('Images uploaded successfully!');
+    }
+
+    return imageUrls;
+  };
+
   const generateQRCode = async (eventId: string) => {
     try {
-      const eventUrl = `${window.location.origin}/event/${eventId}/register`
-      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`
-      
+      const eventUrl = `${window.location.origin}/event/${eventId}/register`;
+      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`;
       return {
-        qrCodeUrl: qrCodeUrl,
-        eventUrl: eventUrl,
+        qrCodeUrl,
+        eventUrl,
         qrCodeImage: qrCodeUrl,
-      }
+      };
     } catch (error) {
-      console.error('Error generating QR code:', error)
-      // Fallback to the same URL
-      const eventUrl = `${window.location.origin}/event/${eventId}/register`
-      return {
-        qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`,
-        eventUrl: eventUrl,
-        qrCodeImage: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventUrl)}`,
-      }
+      console.error('Error generating QR code:', error);
+      toast.error('Failed to generate QR code');
+      throw error;
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsCreating(true)
+    e.preventDefault();
+    setIsCreating(true);
 
     try {
       // Validate required fields
       if (!eventData.title || !eventData.description || !eventData.date || !eventData.time || !eventData.location) {
-        toast.error('Please fill in all required fields')
-        setIsCreating(false)
-        return
+        toast.error('Please fill in all required fields');
+        return;
       }
 
-      // Validate that at least banner image is uploaded
+      // Validate banner image
       if (!bannerImage.file) {
-        toast.error('Please upload at least an event banner image')
-        setIsCreating(false)
-        return
+        toast.error('Please upload an event banner image');
+        return;
       }
 
-      // Upload images to imgBB and get the URLs
-      const imageUrls = await uploadImagesToCloud()
+      // Validate date format
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(eventData.date) || (eventData.endDate && !/^\d{4}-\d{2}-\d{2}$/.test(eventData.endDate))) {
+        toast.error('Invalid date format. Please use YYYY-MM-DD');
+        return;
+      }
 
-      // Create event ID locally
-      const eventId = `event_${Date.now()}`
+      // Validate numeric fields
+      if (eventData.capacity && isNaN(parseInt(eventData.capacity))) {
+        toast.error('Capacity must be a valid number');
+        return;
+      }
+      if (!eventData.isFree && eventData.ticketPrice && isNaN(parseInt(eventData.ticketPrice))) {
+        toast.error('Ticket price must be a valid number');
+        return;
+      }
 
-      // Generate QR code for the event
-      const qrData = await generateQRCode(eventId)
+      // Upload images
+      const imageUrls = await uploadImagesToCloud();
 
-      // Add event to context with image URLs
-      addEvent({
-        id: eventId,
-        type: "",
-        ...eventData,
-        bannerUrl: imageUrls.bannerUrl,
-        nftImageUrl: imageUrls.nftImageUrl,
-        poapImageUrl: imageUrls.poapImageUrl,
-        requiresApproval: eventData.requiresApproval,
-        poapEnabled: poapData.name ? true : false,
-        qrCode: qrData.qrCodeImage,
-        eventUrl: qrData.eventUrl,
-      })
+      // Create profile if not exists
+      if (!user) {
+        toast.error('User not authenticated');
+        router.push('/auth/signin');
+        return;
+      }
 
-      // First, ensure user has a profile (create if not exists)
       try {
-        // Try to create a profile first (will fail if already exists, but that's okay)
-        const profileTx = new Transaction()
+        const profileTx = new Transaction();
+        if (!process.env.NEXT_PUBLIC_PACKAGE_ID || !process.env.NEXT_PUBLIC_EVENT_REGISTRY_ID) {
+          throw new Error('Missing environment variables for package or registry ID');
+        }
         profileTx.moveCall({
           target: `${process.env.NEXT_PUBLIC_PACKAGE_ID}::suilens_core::create_profile`,
           arguments: [
-            profileTx.object(process.env.NEXT_PUBLIC_EVENT_REGISTRY_ID!),
-            profileTx.pure.string(user?.name || 'Event Creator'),
+            profileTx.object(process.env.NEXT_PUBLIC_EVENT_REGISTRY_ID),
+            profileTx.pure.string(user.name || 'Event Creator'),
             profileTx.pure.string('Event creator on SUI-Lens'),
-            profileTx.pure.string(user?.avatarUrl || user?.picture || 'https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens'),
-            profileTx.object('0x6'), // Clock object
+            profileTx.pure.string(user.avatarUrl || user.picture || 'https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens'),
+            profileTx.object('0x6'),
           ],
-        })
-        
-        // Try to execute profile creation (ignore if fails - profile might already exist)
-        try {
-          await signAndExecuteTransaction(profileTx)
-          toast.info('Profile created successfully!')
-        } catch (profileError: any) {
-          // Profile might already exist, that's okay
-          console.log('Profile creation skipped (may already exist):', profileError.message)
-        }
-      } catch (error) {
-        console.log('Profile check:', error)
+        });
+
+        await signAndExecuteTransaction(profileTx);
+        toast.success('Profile created successfully!');
+      } catch (profileError: any) {
+        console.log('Profile creation skipped (may already exist):', profileError.message);
+        toast.info('Profile creation skipped (may already exist)');
       }
 
-      // Now create the event with the uploaded image URLs
+      // Create event on blockchain
+      toast.info('Creating event on blockchain...');
       const tx = await suilensService.createEvent({
         name: eventData.title,
         description: eventData.description,
@@ -310,50 +364,120 @@ export default function CreateEventPage() {
         ticketPrice: eventData.isFree ? 0 : parseInt(eventData.ticketPrice) || 0,
         requiresApproval: eventData.requiresApproval,
         poapTemplate: poapData.name || '',
-      })
-      
-      // Execute the transaction with Enoki zkLogin
-      const result = await signAndExecuteTransaction(tx)
-      console.log('Create event transaction result:', result)
+      });
 
-      toast.success('Event created successfully!')
-      
-      // Redirect to discover page
-      router.push(`/discover`)
-    } catch (error) {
-      console.error('Error creating event:', error)
-      toast.error('Failed to create event. Please try again.')
+      const result = await signAndExecuteTransaction(tx);
+      console.log('Create event transaction result:', result);
+
+      // Extract blockchain event ID
+      let blockchainEventId: string | undefined;
+      try {
+        blockchainEventId = TransactionIdExtractor.extractEventId(result as any);
+        if (!blockchainEventId) {
+          throw new Error('Failed to extract event ID from transaction');
+        }
+      } catch (error) {
+        console.error('Failed to extract event ID:', error);
+        toast.error('Failed to get event ID from blockchain transaction');
+        throw error;
+      }
+
+      console.log('Blockchain Event ID:', blockchainEventId);
+      toast.success('Event created on blockchain!');
+
+      // Generate QR code
+      const qrData = await generateQRCode(blockchainEventId);
+
+      // Prepare complete event data
+      const completeEventData = {
+        id: blockchainEventId,
+        title: eventData.title,
+        description: eventData.description,
+        date: eventData.date,
+        time: eventData.time,
+        endDate: eventData.endDate,
+        endTime: eventData.endTime,
+        location: eventData.location,
+        latitude: eventData.latitude,
+        longitude: eventData.longitude,
+        category: eventData.category,
+        capacity: eventData.capacity,
+        ticketPrice: eventData.ticketPrice,
+        isFree: eventData.isFree,
+        requiresApproval: eventData.requiresApproval,
+        isPrivate: eventData.isPrivate,
+        timezone: eventData.timezone,
+        bannerUrl: imageUrls.bannerUrl,
+        nftImageUrl: imageUrls.nftImageUrl,
+        poapImageUrl: imageUrls.poapImageUrl,
+        qrCode: qrData.qrCodeImage,
+        eventUrl: qrData.eventUrl,
+        poapEnabled: !!poapData.name,
+        poapName: poapData.name,
+        poapDescription: poapData.description,
+        createdBy: user.id || user.email || 'unknown',
+        suiEventId: blockchainEventId,
+      };
+
+      // Add to local context
+      addEvent(completeEventData);
+
+      // Save to database
+      toast.info('Saving event details...');
+      try {
+        const dbResult = await saveEventToDatabase(completeEventData);
+        if (dbResult) {
+          toast.success('Event saved to database!');
+        } else {
+          console.warn('Database save completed but returned null');
+          toast.warning('Event created but database sync may be delayed');
+        }
+      } catch (dbError) {
+        console.error('Database save failed:', dbError);
+        toast.warning('Event created successfully but database sync may be delayed');
+      }
+
+      toast.success('Event created successfully!');
+      router.push(`/discover`);
+
+    } catch (error: any) {
+      console.error('Error creating event:', error);
+      toast.error(error.message || 'Failed to create event. Please try again.');
     } finally {
-      setIsCreating(false)
+      setIsCreating(false);
     }
-  }
+  };
 
   const handleTicketSave = () => {
     setEventData({
       ...eventData,
       isFree: tempTicketData.isFree,
       ticketPrice: tempTicketData.ticketPrice,
-    })
-    setTicketDialogOpen(false)
-  }
+    });
+    setTicketDialogOpen(false);
+  };
 
   const handleCapacitySave = () => {
     setEventData({
       ...eventData,
       capacity: tempCapacityData.capacity,
-    })
-    setCapacityDialogOpen(false)
-  }
+    });
+    setCapacityDialogOpen(false);
+  };
 
   const handlePoapSave = () => {
-    setPoapDialogOpen(false)
-  }
+    setEventData({
+      ...eventData,
+      poapEnabled: !!poapData.name,
+      poapName: poapData.name,
+      poapDescription: poapData.description,
+    });
+    setPoapDialogOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <Header />
-      {/* Form Section with Back Button */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="mb-6">
           <Link href="/landing" className="inline-flex items-center text-gray-600 hover:text-gray-900">
@@ -364,11 +488,9 @@ export default function CreateEventPage() {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Create Event</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Three Image Upload Sections */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-gray-800">Event Images</h2>
             
-            {/* 1. Event Banner */}
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
@@ -404,7 +526,6 @@ export default function CreateEventPage() {
               </div>
             </div>
 
-            {/* 2. Event NFT Image */}
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
@@ -440,7 +561,6 @@ export default function CreateEventPage() {
               </div>
             </div>
 
-            {/* 3. POAP Badge Design */}
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
@@ -477,7 +597,6 @@ export default function CreateEventPage() {
             </div>
           </div>
 
-          {/* Event Name */}
           <div>
             <Label htmlFor="eventName" className="text-sm font-medium text-gray-700 mb-2 block">
               Event Name *
@@ -492,7 +611,6 @@ export default function CreateEventPage() {
             />
           </div>
 
-          {/* Start Date & Time */}
           <div>
             <Label className="text-sm font-medium text-gray-700 mb-2 block">Start *</Label>
             <div className="grid grid-cols-2 gap-3">
@@ -513,7 +631,6 @@ export default function CreateEventPage() {
             </div>
           </div>
 
-          {/* End Date & Time */}
           <div>
             <Label className="text-sm font-medium text-gray-700 mb-2 block">End</Label>
             <div className="grid grid-cols-2 gap-3">
@@ -532,22 +649,22 @@ export default function CreateEventPage() {
             </div>
           </div>
 
-          {/* Event Location */}
           <div>
-            <Label htmlFor="location" className="text-sm font-medium text-gray-700 mb-2 block">
-              Event Location *
-            </Label>
-            <Input
-              id="location"
-              placeholder="Offline location or virtual link"
+            <LocationInput
               value={eventData.location}
-              onChange={(e) => setEventData({ ...eventData, location: e.target.value })}
-              className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-              required
+              onChange={(value) => setEventData({ ...eventData, location: value })}
+              onCoordinatesChange={(lat, lng) => {
+                setEventData(prev => ({
+                  ...prev,
+                  latitude: lat,
+                  longitude: lng
+                }));
+              }}
+              label="Event Location"
+              placeholder="Enter venue name or address"
             />
           </div>
 
-          {/* Add Description */}
           <div>
             <Label htmlFor="description" className="text-sm font-medium text-gray-700 mb-2 block">
               Add Description *
@@ -563,7 +680,6 @@ export default function CreateEventPage() {
             />
           </div>
 
-          {/* Tickets */}
           <div>
             <Label className="text-sm font-medium text-gray-700 mb-2 block">Tickets</Label>
             <Dialog open={ticketDialogOpen} onOpenChange={setTicketDialogOpen}>
@@ -576,7 +692,7 @@ export default function CreateEventPage() {
                     setTempTicketData({
                       isFree: eventData.isFree,
                       ticketPrice: eventData.ticketPrice,
-                    })
+                    });
                   }}
                 >
                   <span>{eventData.isFree ? "Free" : `$${eventData.ticketPrice || "0"}`}</span>
@@ -593,7 +709,7 @@ export default function CreateEventPage() {
                       id="free-ticket"
                       checked={tempTicketData.isFree}
                       onCheckedChange={(checked) =>
-                        setTempTicketData({ ...tempTicketData, isFree: checked })
+                        setTempTicketData({ ...tempTicketData, isFree: checked, ticketPrice: checked ? '' : tempTicketData.ticketPrice })
                       }
                     />
                     <Label htmlFor="free-ticket">Free Event</Label>
@@ -629,7 +745,6 @@ export default function CreateEventPage() {
             </Dialog>
           </div>
 
-          {/* Require Approval */}
           <div className="flex items-center justify-between py-2">
             <Label htmlFor="approval" className="text-sm font-medium text-gray-700">
               Require Approval
@@ -641,7 +756,6 @@ export default function CreateEventPage() {
             />
           </div>
 
-          {/* Maximum Capacity */}
           <div>
             <Label className="text-sm font-medium text-gray-700 mb-2 block">Maximum Capacity</Label>
             <Dialog open={capacityDialogOpen} onOpenChange={setCapacityDialogOpen}>
@@ -653,7 +767,7 @@ export default function CreateEventPage() {
                   onClick={() => {
                     setTempCapacityData({
                       capacity: eventData.capacity,
-                    })
+                    });
                   }}
                 >
                   <span>{eventData.capacity || "Unlimited"}</span>
@@ -697,7 +811,6 @@ export default function CreateEventPage() {
             </Dialog>
           </div>
 
-          {/* POAP Details (if POAP image uploaded) */}
           {poapImage.file && (
             <div className="border rounded-lg p-4 bg-blue-50">
               <h3 className="font-medium text-gray-900 mb-3">POAP Details</h3>
@@ -727,10 +840,9 @@ export default function CreateEventPage() {
             </div>
           )}
 
-          {/* Create Event Button */}
           <Button
             type="submit"
-            disabled={isCreating || !bannerImage.file}
+            disabled={isCreating || !bannerImage.file || uploadingImages.banner || uploadingImages.nft || uploadingImages.poap}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium disabled:opacity-50"
           >
             {isCreating ? (
@@ -745,5 +857,5 @@ export default function CreateEventPage() {
         </form>
       </div>
     </div>
-  )
+  );
 }

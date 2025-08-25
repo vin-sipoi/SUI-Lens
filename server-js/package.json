@@ -1,0 +1,29 @@
+{
+  "name": "sui-lens-email-server-js",
+  "version": "1.0.0",
+  "description": "Backend server for email registration and blast email functionality (JavaScript version)",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "build": "echo 'No build step needed for plain JS'"
+  },
+  "dependencies": {
+    "@mysten/sui": "^1.37.4",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.7",
+    "pg": "^8.11.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.35.2",
+    "uuid": "^11.1.0",
+    "validator": "^13.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
