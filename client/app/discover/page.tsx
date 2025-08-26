@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
   Search,
@@ -174,8 +173,7 @@ const EventDashboard: React.FC = () => {
                 <p className="text-sm text-gray-600 mt-2 line-clamp-2">
                   {event.description || "No description available."}
                 </p>
-                <div className="mt-4 py-2 gap-2 flex flex-col sm:flex-row lg:flex-col">
-                  
+                <div className="mt-4 py-2 gap-2 flex flex-col sm:flex-row lg:flex-col">                  
 
                   <Link href={`/event/${event.id}`} className="block">
                     <Button

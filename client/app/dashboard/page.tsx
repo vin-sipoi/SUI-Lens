@@ -216,7 +216,7 @@ export default function DashboardPage() {
               <TabsContent value="my-events" className="space-y-6 w-full">
                 <div className="flex flex-row justify-between items-center">
                       <h2 className="text-lg sm:text-xl font-semibold text-gray-900">My Events</h2>
-                      
+
                       <div className="flex items-center gap-4">
                         <span className={showUpcoming ? "font-normal text-[#667185]" : "text-[#667185]"}>Upcoming</span>
                         <Switch 
@@ -245,10 +245,7 @@ export default function DashboardPage() {
                         onClick={() => {
                           setSelectedEventId(event.id);
                           setSelectedEventTitle(event.title);
-                          // Auto-switch to guests section when event is selected
-                          if (sidebarSection === 'overview') {
-                            setSidebarSection('guests');
-                          }
+                          
                         }}
                       >
                         <Card

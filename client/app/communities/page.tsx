@@ -42,7 +42,7 @@ export default function CommunityEventsPage(){
     : events;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F0F2F5]">
       {/* Header */}
       <Header />
 
@@ -63,29 +63,29 @@ export default function CommunityEventsPage(){
         </div>
 
         {/* Events Grid */}
-        <div className="container mx-auto px-0 sm:px-6 lg:px-8 bg-gray-100 rounded-2xl py-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-stretch">
-              {filteredEvents.map((event) => (
+            <div className="">
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-stretch'>
+                {filteredEvents.map((event) => (
                 <div
                   key={event.id}
-                  className="bg-white rounded-2xl overflow-hidden border border-gray-100 transition-shadow group cursor-pointer flex flex-col h-full"
+                  className="p-8 bg-white border-2 rounded-3xl overflow-hidden border-gray-100 transition-shadow group cursor-pointer flex flex-col h-full"
                 >
                   {/* Inner wrapper: adds padding and border so image and text align */}
-                  <div className="p-4 sm:p-6 border border-gray-200 rounded-xl bg-white flex flex-col h-full">
+                  <div className="border border-[#E6E7E8] rounded-3xl flex flex-col h-full">
+                    
                     {/* Image Section: fixed height so all cards line up */}
-                    <div className="relative w-full h-40 sm:h-48 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl overflow-hidden">
+                    <div className="relative w-full h-40 sm:h-48 overflow-hidden">
                       <img
                         src={event.image}
                         alt={event.title}
                         width={400}
                         height={200}
-                        className="w-full h-full object-cover"
+                        className="w-full rounded-t-3xl rounded-b-none h-full object-cover"
                       />
                     </div>
 
                     {/* Content Section */}
-                    <div className="mt-4 flex-1 flex flex-col">
+                    <div className="p-6 mt-4 flex-1 flex flex-col">
                       {/* Header with title and flag */}
                       <div className="flex items-start justify-between mb-3">
                         <h3 className="text-lg sm:text-xl font-semibold text-[#101928] flex-1 mr-3">
@@ -124,6 +124,8 @@ export default function CommunityEventsPage(){
                   </div>
                 </div>
               ))}
+              </div>
+              
             </div>
             
             {/* Show message if no results found */}
@@ -137,8 +139,8 @@ export default function CommunityEventsPage(){
                 </div>
               </div>
             )}
-          </div>
-        </div>
+          
+        
       </main>
     </div>
   )

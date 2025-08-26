@@ -15,6 +15,7 @@ interface RewardPool {
 }
 
 interface Event {
+  rsvpTimes: any
   id: string
   title: string
   description: string

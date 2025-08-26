@@ -6,7 +6,7 @@ export const events = [
       image: "https://i.ibb.co/LDDGGYdF/Screenshot-2025-06-24-141355.png",
       category: "Community",
       link: '/communities/ghana',
-      flagIcon: "/Ghana (GH).svg",
+      flagIcon: "/Ghana.svg",
       slug: "ghana"
     },
     {
@@ -16,7 +16,7 @@ export const events = [
       image: "https://i.ibb.co/5hdNKtFT/Screenshot-2025-07-28-235207.png",
       category: "Community",
       link: '/communities/india',
-      flagIcon: "/Portugal (PT) (3).svg",
+      flagIcon: "/India.svg",
       slug: "india"
     },
     {
@@ -33,10 +33,10 @@ export const events = [
       id: 4,
       title: "Sui Community Kenya",
       description: "Karibu to East Africa's blockchain innovation hub! Kenya's SUI community is at the forefront of financial inclusion and mobile-first blockchain solutions. From Nairobi's Silicon Savannah to rural innovation centers, we're empowering developers and entrepreneurs to create solutions that serve Africa's unique needs while connecting to the global economy.",
-      image: "https://i.ibb.co/YBvqHqsp/Screenshot-2025-06-24-030451.png",
+      image: "/Kenya.png",
       category: "Community",
       link: '/communities/kenya',
-      flagIcon: "/Portugal (PT) (1).svg",
+      flagIcon: "/Kenya.svg",
       slug: "kenya"
     },
     {
@@ -46,7 +46,7 @@ export const events = [
       image: "https://i.ibb.co/0jzvvMmY/Screenshot-2025-07-28-234111.png",
       category: "Community",
       link: '/communities/nigeria',
-      flagIcon: "/Nigeria (NG).svg",
+      flagIcon: "/nigeria.svg",
       slug: "nigeria"
     },
     {
@@ -56,7 +56,7 @@ export const events = [
       image: "https://i.ibb.co/QjjYs0rH/Screenshot-2025-07-28-232824.png",
       category: "Development",
       link: '/communities/pakistan',
-      flagIcon: "/Pakistan (PK).svg",
+      flagIcon: "/Pakistan.svg",
       slug: "pakistan"
     },
     {
@@ -66,7 +66,7 @@ export const events = [
       image: "https://i.ibb.co/NgpSDJMW/Screenshot-2025-07-28-233205.png",
       category: "Development",
       link: '/communities/vietnam',
-      flagIcon: "/Vietnam (VN).svg",
+      flagIcon: "/vietam.svg",
       slug: "vietnam"
     },
     {
@@ -136,17 +136,17 @@ export const events = [
       image: "https://i.ibb.co/zHGXK8DM/Screenshot-2025-07-28-233403.png",
       category: "Development",
       link: '/communities/indonesia',
-      flagIcon: "/Uganda (UG).svg",
+      flagIcon: "/indonesia.svg",
       slug: "indonesia"
     },
     {
       id: 16,
       title: "SUI Community France",
       description: "Bienvenue! France's SUI community combines Parisian innovation with regional excellence, from Lyon's fintech corridor to Nice's blockchain research centers. We're at the forefront of European blockchain regulation and development, creating elegant solutions that embody French innovation while serving the broader European Union market and Francophone communities worldwide.",
-      image: "https://i.ibb.co/pjRM3qg1/Screenshot-2025-07-28-235342.png",
+      image: "/France.png",
       category: "Development",
       link: '/communities/france',
-      flagIcon: "/Uganda (UG) (1).svg",
+      flagIcon: "/france.svg",
       slug: "france"
     },
   ]
