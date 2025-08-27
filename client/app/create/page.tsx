@@ -38,7 +38,7 @@ import { mintPOAP, suilensService } from "@/lib/sui-client"
 import Header from '@/app/components/Header'
 import { uploadImageToImgBB, validateImageFile } from '@/utils/imageUtils'
 import { toast } from 'sonner'
-import { useEnokiTransaction } from '@/hooks/useEnokiTransaction'
+import { useSponsoredTransaction } from '@/hooks/useSponsoredTransaction'
 import { Transaction } from '@mysten/sui/transactions'
 
 export default function CreateEventPage() {
@@ -46,7 +46,7 @@ export default function CreateEventPage() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { addEvent } = useEventContext()
-  const { signAndExecuteTransaction } = useEnokiTransaction()
+  const { sponsorAndExecute, isConnected } = useSponsoredTransaction()
 
   // Redirect to signin if not logged in
   useEffect(() => {
@@ -245,6 +245,13 @@ export default function CreateEventPage() {
         return
       }
 
+      // Check if user has wallet connection or is authenticated via Enoki
+      if (!isConnected && !user?.isEnoki) {
+        toast.error('Please connect your wallet or ensure you are properly logged in with Enoki before creating an event')
+        setIsCreating(false)
+        return
+      }
+
       // Upload images to imgBB and get the URLs
       const imageUrls = await uploadImagesToCloud()
 
@@ -266,7 +273,7 @@ export default function CreateEventPage() {
         poapEnabled: poapData.name ? true : false,
         qrCode: qrData.qrCodeImage,
         eventUrl: qrData.eventUrl,
-        rsvpTimes: undefined
+        // rsvpTimes: undefined // Removed as it does not exist in the Event type
       })
 
       // First, ensure user has a profile (create if not exists)
@@ -286,7 +293,7 @@ export default function CreateEventPage() {
         
         // Try to execute profile creation (ignore if fails - profile might already exist)
         try {
-          await signAndExecuteTransaction(profileTx)
+          await sponsorAndExecute({ tx: profileTx })
           toast.info('Profile created successfully!')
         } catch (profileError: any) {
           // Profile might already exist, that's okay
@@ -314,7 +321,7 @@ export default function CreateEventPage() {
       })
       
       // Execute the transaction with Enoki zkLogin
-      const result = await signAndExecuteTransaction(tx)
+      const result = await sponsorAndExecute({ tx })
       console.log('Create event transaction result:', result)
 
       toast.success('Event created successfully!')
@@ -323,7 +330,11 @@ export default function CreateEventPage() {
       router.push(`/discover`)
     } catch (error) {
       console.error('Error creating event:', error)
-      toast.error('Failed to create event. Please try again.')
+      if (error instanceof Error && error.message.includes('Wallet connection required')) {
+        toast.error('Please connect your wallet or ensure you are properly logged in with Enoki before creating an event.')
+      } else {
+        toast.error('Failed to create event. Please try again.')
+      }
     } finally {
       setIsCreating(false)
     }

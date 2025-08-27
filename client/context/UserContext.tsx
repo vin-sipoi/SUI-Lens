@@ -83,6 +83,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (userData: User) => { // Make login async
         console.log("Login function called with:", userData); // Log input
+        // Set isEnoki based on the presence of a JWT
+        userData.isEnoki = !!userData.jwt;
         setUser(userData);
         // Save to localStorage immediately after login
         if (typeof window !== 'undefined') {

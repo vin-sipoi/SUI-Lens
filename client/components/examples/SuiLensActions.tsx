@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { useSuiLensTransaction } from '@/hooks/useSuiLensTransaction';
+import { useUser } from '@/context/UserContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 
 export default function SuiLensActions() {
+  const { user } = useUser();
   const {
     isConnected,
     address,
@@ -133,11 +135,11 @@ export default function SuiLensActions() {
     }
   };
 
-  if (!isConnected) {
+  if (!isConnected && !user?.isEnoki) {
     return (
       <Card>
         <CardContent className="p-8 text-center">
-          <p className="text-gray-600">Please connect your wallet with Enoki zkLogin to use SUI-Lens features</p>
+          <p className="text-gray-600">Please connect your wallet or ensure you are properly logged in with Enoki to use SUI-Lens features</p>
         </CardContent>
       </Card>
     );

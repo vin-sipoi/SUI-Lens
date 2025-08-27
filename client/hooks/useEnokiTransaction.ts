@@ -4,6 +4,7 @@ import { useEnokiFlow, useZkLogin } from '@mysten/enoki/react';
 import { useSuiClient } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { toast } from 'sonner';
+import { getEnokiNetwork, NETWORK_CONFIG } from '@/lib/network-config';
 
 export function useEnokiTransaction() {
   const enokiFlow = useEnokiFlow();
@@ -22,12 +23,12 @@ export function useEnokiTransaction() {
       // Set the sender
       transaction.setSender(address);
       
-      // Set gas budget (0.1 SUI = 100000000 MIST)
-      transaction.setGasBudget(100000000);
+      // Set gas budget using centralized configuration
+      transaction.setGasBudget(NETWORK_CONFIG.gasConfig.defaultGasBudget);
 
-      // Get the keypair from Enoki
+      // Get the keypair from Enoki using centralized network config
       const keypair = await enokiFlow.getKeypair({
-        network: 'mainnet' as any,
+        network: getEnokiNetwork(),
       });
 
       // Build the transaction

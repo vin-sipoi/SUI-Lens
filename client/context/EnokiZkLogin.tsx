@@ -33,11 +33,16 @@ export function ZkLoginProvider({ children }: { children: React.ReactNode }) {
     // Check for existing session
     const checkSession = async () => {
       setIsLoading(true);
+      console.log('🔍 ZkLoginProvider: Checking zkLogin session:', zkLoginSession);
+      
+      // Check localStorage for any stored session data
+      const storedSession = typeof window !== 'undefined' ? localStorage.getItem('enoki-session') : null;
+      console.log('   • Stored session in localStorage:', storedSession ? 'Found' : 'Not found');
       
       if (zkLoginSession?.jwt) {
         try {
           const decodedJwt: any = jwtDecode(zkLoginSession.jwt);
-          console.log('Decoded JWT from zkLogin session:', decodedJwt);
+          console.log('   • Decoded JWT from zkLogin session:', decodedJwt);
           
           // Check if JWT is still valid
           const currentTime = Date.now() / 1000;
@@ -49,12 +54,26 @@ export function ZkLoginProvider({ children }: { children: React.ReactNode }) {
               picture: decodedJwt.picture,
               name: decodedJwt.name,
             });
-            console.log('zkLogin session is valid and restored');
+            console.log('✅ zkLogin session is valid and restored');
           } else {
-            console.log('zkLogin JWT has expired');
+            console.log('❌ zkLogin JWT has expired');
+            // Clear expired session from localStorage
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('enoki-session');
+            }
           }
         } catch (error) {
-          console.error('Failed to decode JWT:', error);
+          console.error('❌ Failed to decode JWT:', error);
+          // Clear invalid session data
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('enoki-session');
+          }
+        }
+      } else {
+        console.log('❌ No active zkLogin session found');
+        // If we have stored session but no active session, it might indicate a sync issue
+        if (storedSession) {
+          console.log('⚠️ Stored session exists but no active session - possible sync issue');
         }
       }
       

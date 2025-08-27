@@ -37,7 +37,7 @@ export function WalletConnect() {
     setMounted(true);
   }, []);
 
-  // Update user context when traditional wallet connects
+  // Update user context when traditional wallet connects or when zkLogin user data is available
   useEffect(() => {
     if (currentAccount?.address && !enokiAddress) {
       console.log('Traditional wallet connected:', currentAccount);
@@ -50,6 +50,11 @@ export function WalletConnect() {
         isEnoki: false,
         avatarUrl: user?.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens',
       });
+    } else if (!currentAccount && enokiAddress) {
+      console.log('Attempting to connect Enoki wallet...');
+      // For Enoki wallets, we need to use the Enoki flow to connect
+      // The autoConnect should handle this, but we'll log the attempt
+      console.log('Enoki address detected but wallet not connected. AutoConnect should handle this.');
     }
   }, [currentAccount, enokiAddress, setUser]);
 

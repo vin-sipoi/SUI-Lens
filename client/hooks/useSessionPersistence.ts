@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useZkLogin, useZkLoginSession } from '@mysten/enoki/react';
+import { useZkLogin, useZkLoginSession, useEnokiFlow } from '@mysten/enoki/react';
 import { jwtDecode } from 'jwt-decode';
 
 const SESSION_STORAGE_KEY = 'enoki_session';
@@ -15,6 +15,7 @@ interface StoredSession {
 export function useSessionPersistence() {
   const zkLoginSession = useZkLoginSession();
   const { address } = useZkLogin();
+  const enokiFlow = useEnokiFlow();
 
   // Save session to localStorage when it changes
   useEffect(() => {
@@ -51,7 +52,7 @@ export function useSessionPersistence() {
           
           // Check if session is still valid
           if (session.expiresAt > Date.now()) {
-            console.log('Found valid stored Enoki session');
+            console.log('Found valid stored Enoki session:', session);
             return session;
           } else {
             console.log('Stored Enoki session has expired');
@@ -70,8 +71,15 @@ export function useSessionPersistence() {
     if (storedSession && !zkLoginSession?.jwt) {
       // Session exists in storage but not in context
       console.log('Attempting to restore Enoki session from storage');
+      console.log('Current zkLoginSession:', zkLoginSession);
+      console.log('Stored session JWT exists:', !!storedSession.jwt);
+      console.log('Stored session address:', storedSession.address);
+      
+      // The autoConnect feature should handle session restoration automatically
+      // If it's not working, there might be an issue with the Enoki configuration
+      console.log('Session restoration should be handled by autoConnect');
     }
-  }, []);
+  }, [enokiFlow]);
 
   // Clear session on logout
   const clearSession = () => {

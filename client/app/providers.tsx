@@ -26,7 +26,15 @@ function RegisterEnokiWallets() {
 	const { client, network } = useSuiClientContext();
 
 	useEffect(() => {
-		if (!isEnokiNetwork(network)) return;
+		console.log('RegisterEnokiWallets: Network:', network);
+		console.log('RegisterEnokiWallets: Is Enoki network:', isEnokiNetwork(network));
+		console.log('RegisterEnokiWallets: Enoki API Key set:', !!process.env.NEXT_PUBLIC_ENOKI_API_KEY);
+		console.log('RegisterEnokiWallets: Google Client ID set:', !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
+		
+		if (!isEnokiNetwork(network)) {
+			console.warn(`Network ${network} does not support Enoki wallets`);
+			return;
+		}
 
 		const { unregister } = registerEnokiWallets({
 			apiKey: process.env.NEXT_PUBLIC_ENOKI_API_KEY!,
@@ -39,6 +47,7 @@ function RegisterEnokiWallets() {
 			network,
 		});
 
+		console.log('Enoki wallets registered successfully');
 		return unregister;
 	}, [client, network]);
 

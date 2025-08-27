@@ -1,8 +1,9 @@
-import { SuiClient, getFullnodeUrl } from '@mysten/sui/client';
+import { SuiClient } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
+import { NETWORK_CONFIG } from './network-config';
 
 const suiClient = new SuiClient({
-  url: getFullnodeUrl('mainnet'),
+  url: NETWORK_CONFIG.fullnodeUrl,
 });
 
 export { suiClient };

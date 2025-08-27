@@ -10,8 +10,20 @@ if (!process.env.ENOKI_PRIVATE_KEY) {
 // Function to get Enoki client instance
 async function getEnokiClient() {
     const { EnokiClient } = await import('@mysten/enoki');
+    
+    // Use global fetch if available (Node.js 18+), otherwise fall back to node-fetch
+    let fetchImplementation;
+    if (typeof globalThis.fetch === 'function') {
+        fetchImplementation = globalThis.fetch;
+    } else {
+        // Fallback for older Node.js versions
+        const { default: nodeFetch } = await import('node-fetch');
+        fetchImplementation = nodeFetch;
+    }
+    
     return new EnokiClient({
         apiKey: process.env.ENOKI_PRIVATE_KEY,
+        fetch: fetchImplementation,
     });
 }
 
@@ -93,10 +105,72 @@ router.post('/sponsor-transaction', async (req, res) => {
 
     } catch (error) {
         console.error('Error sponsoring transaction:', error);
+        console.error('Full error object:', JSON.stringify(error, null, 2));
+        
+        // Enhanced error logging for Enoki API
+        if (error.response) {
+            console.error('Enoki API response status:', error.response.status);
+            console.error('Enoki API response status text:', error.response.statusText);
+            
+            try {
+                const responseText = await error.response.text();
+                console.error('Enoki API response body:', responseText);
+                
+                // Try to parse as JSON for more detailed error information
+                try {
+                    const responseJson = JSON.parse(responseText);
+                    console.error('Enoki API response JSON:', JSON.stringify(responseJson, null, 2));
+                    
+                    // Extract detailed error information for dry_run_failed
+                    if (responseJson.code === 'dry_run_failed' && responseJson.details) {
+                        console.error('DRY_RUN_FAILED_DETAILS:', responseJson.details);
+                        
+                        // Check for MoveAbort errors
+                        if (responseJson.details.includes('MoveAbort')) {
+                            console.error('MOVE_ABORT_ERROR: This indicates a contract validation failure');
+                            console.error('Check the transaction parameters and contract requirements');
+                        }
+                    }
+                } catch (parseError) {
+                    console.error('Could not parse response as JSON:', parseError);
+                }
+            } catch (e) {
+                console.error('Could not read response body:', e);
+            }
+        }
+        
+        // Check if error has additional properties
+        if (error.cause) {
+            console.error('Error cause:', error.cause);
+        }
+        
+        // Check if it's an Enoki API error with specific details
+        if (error.message.includes('invalid_type')) {
+            console.error('ENOKI_KEY_DEBUG: Checking Enoki key format and permissions...');
+            console.error('ENOKI_KEY_DEBUG: Key starts with:', process.env.ENOKI_PRIVATE_KEY?.substring(0, 20) + '...');
+            console.error('ENOKI_KEY_DEBUG: Network being used:', network);
+        }
+        
+        // Extract more detailed error information
+        let errorDetails = error.message;
+        let errorCode = error.code;
+        
+        if (error.response) {
+            try {
+                const responseText = await error.response.text();
+                const responseJson = JSON.parse(responseText);
+                errorDetails = responseJson.details || responseJson.message || error.message;
+                errorCode = responseJson.code || error.code;
+            } catch (e) {
+                // If we can't parse the response, use the original error
+            }
+        }
+        
         res.status(500).json({ 
             error: 'Failed to sponsor transaction',
-            details: error.message,
-            code: error.code
+            details: errorDetails,
+            code: errorCode,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 });
