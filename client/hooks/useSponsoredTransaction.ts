@@ -154,7 +154,33 @@ export function useSponsoredTransaction() {
         throw new Error(`Sponsorship failed: ${error.error || error.message}`);
       }
 
-      const { bytes, digest } = await sponsorResponse.json();
+      const sponsorData = await sponsorResponse.json();
+      const { bytes: sponsorBytes, digest } = sponsorData;
+
+      console.log('🔍 Sponsor response bytes type:', typeof sponsorBytes);
+      console.log('🔍 Sponsor response bytes value:', sponsorBytes);
+      
+      // Convert bytes to Uint8Array if it's a string (base64 encoded)
+      let transactionBytes: Uint8Array;
+      
+      if (typeof sponsorBytes === 'string') {
+        console.log('Converting base64 string to Uint8Array for signing');
+        // If bytes is a base64 string, decode it to Uint8Array
+        const { fromBase64 } = await import('@mysten/sui/utils');
+        transactionBytes = fromBase64(sponsorBytes);
+      } else if (sponsorBytes instanceof Uint8Array) {
+        console.log('Bytes is already Uint8Array, using directly');
+        transactionBytes = sponsorBytes;
+      } else if (Array.isArray(sponsorBytes)) {
+        console.log('Converting array to Uint8Array');
+        transactionBytes = new Uint8Array(sponsorBytes);
+      } else {
+        console.error('Unknown bytes format:', typeof sponsorBytes, sponsorBytes);
+        throw new Error(`Invalid bytes format received from sponsor: ${typeof sponsorBytes}`);
+      }
+
+      console.log('Final transaction bytes type:', typeof transactionBytes);
+      console.log('Final transaction bytes length:', transactionBytes.length);
 
       // 3. Sign with user's key - handle both traditional and zkLogin wallets
       let signature;
@@ -183,8 +209,10 @@ export function useSponsoredTransaction() {
               network: getEnokiNetwork(),
             });
             
-            const signatureResult = await keypair.signTransaction(bytes);
+            console.log('About to sign transaction with keypair...');
+            const signatureResult = await keypair.signTransaction(transactionBytes);
             signature = signatureResult.signature;
+            console.log('Transaction signed successfully with zkLogin');
           }
         } catch (error: any) {
           console.error('zkLogin signing failed:', error);
@@ -193,8 +221,12 @@ export function useSponsoredTransaction() {
       } else {
         // For traditional wallets, use dapp-kit signTransaction
         console.log('Signing with traditional wallet');
-        const signResult = await signTransaction({ transaction: bytes });
+        // Convert Uint8Array back to base64 string for dapp-kit compatibility
+        const { toBase64 } = await import('@mysten/sui/utils');
+        const transactionString = toBase64(transactionBytes);
+        const signResult = await signTransaction({ transaction: transactionString });
         signature = signResult.signature;
+        console.log('Transaction signed successfully with traditional wallet');
       }
       
       if (!signature) {
@@ -220,11 +252,7 @@ export function useSponsoredTransaction() {
       return result;
     } catch (error) {
       console.error('Sponsored transaction failed:', error);
-      if (error instanceof Error) {
-        toast.error(`Transaction failed: ${error.message}`);
-      } else {
-        toast.error('Transaction failed. Please try again.');
-      }
+      toast.error('Transaction failed. Please try again.');
       throw error;
     } finally {
       setIsLoading(false);
