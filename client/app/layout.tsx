@@ -1,5 +1,6 @@
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { EventProvider } from '@/context/EventContext';
+import { WalletConnectionManager } from '@/components/WalletConnectionManager';
 import type { Metadata } from 'next';
 import './globals.css';
 import Providers from './providers';
@@ -23,6 +24,7 @@ export default function RootLayout({
 					<Providers>
 						<ErrorBoundary>
 							<EventProvider>
+								<WalletConnectionManager />
 								{children}
 								<Toaster 
 									position="bottom-right"

@@ -55,7 +55,7 @@ export default function HomePage() {
 	
 	// When wallet connects, log in with wallet address
 	useEffect(() => {
-		if (account && !user) {
+		if (account && !user && account.address) {
 			login({
 				name: 'Sui User',
 				email: '',

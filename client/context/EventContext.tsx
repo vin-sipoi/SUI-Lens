@@ -1,7 +1,8 @@
-'use client'
+'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { suiClient } from '@/lib/sui-client'
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { suiClient } from '@/lib/sui-client';
+import { getSessionStorage, setSessionStorage, isCacheValid, STORAGE_KEYS, EventsCacheData } from '@/utils/storage';
 
 interface RewardPool {
   amount: number
@@ -61,7 +62,7 @@ interface EventContextType {
   updateEvent: (id: string, updates: Partial<Event>) => void
   deleteEvent: (id: string) => void
   markAttendance: (eventId: string, attendee: string) => void
-  fetchEvents: () => Promise<void>
+  fetchEvents: (forceRefresh?: boolean) => Promise<void>
   isLoading: boolean
 }
 
@@ -72,8 +73,20 @@ export function EventProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false)
 
   // Fetch events from the blockchain
-  const fetchEvents = async () => {
-    setIsLoading(true)
+  const fetchEvents = async (forceRefresh: boolean = false) => {
+    setIsLoading(true);
+    
+    // Check for cached events unless force refresh is requested
+    if (!forceRefresh) {
+      const cachedEvents = getSessionStorage<EventsCacheData>(STORAGE_KEYS.EVENTS_CACHE);
+      if (cachedEvents && isCacheValid(cachedEvents.timestamp)) {
+        setEvents(cachedEvents.events);
+        console.log('Loaded events from cache');
+        setIsLoading(false);
+        return;
+      }
+    }
+
     try {
       const eventRegistryId = process.env.NEXT_PUBLIC_EVENT_REGISTRY_ID
       if (!eventRegistryId) {
@@ -302,8 +315,14 @@ export function EventProvider({ children }: { children: ReactNode }) {
       const fetchedEvents = await Promise.all(eventPromises)
       const validEvents = fetchedEvents.filter(e => e !== null) as Event[]
       
-      // Only log summary to reduce noise
-      console.log(`Fetched ${validEvents.length} events from blockchain`)
+      // Cache the fetched events
+      const eventsCacheData: EventsCacheData = {
+        events: validEvents,
+        timestamp: Date.now(),
+      };
+      setSessionStorage(STORAGE_KEYS.EVENTS_CACHE, eventsCacheData);
+      
+      console.log(`Fetched ${validEvents.length} events from blockchain and cached them`);
       setEvents(validEvents)
     } catch (error) {
       console.error('Error fetching events:', error)
@@ -323,8 +342,13 @@ export function EventProvider({ children }: { children: ReactNode }) {
   const addEvent = (event: Event) => {
     // Add event locally for immediate UI update
     setEvents(prev => [...prev, event])
+    // Clear cache since we added a new event
+    setSessionStorage(STORAGE_KEYS.EVENTS_CACHE, {
+      events: [...events, event],
+      timestamp: Date.now(),
+    });
     // Trigger a refresh to get the latest from blockchain
-    setTimeout(fetchEvents, 2000)
+    setTimeout(() => fetchEvents(true), 2000)
   }
 
   const getEvent = (id: string) => {
@@ -337,10 +361,30 @@ export function EventProvider({ children }: { children: ReactNode }) {
         event.id === id ? { ...event, ...updates } : event
       )
     )
+    // Update cache as well
+    const cachedEvents = getSessionStorage<EventsCacheData>(STORAGE_KEYS.EVENTS_CACHE);
+    if (cachedEvents) {
+      const updatedEvents = cachedEvents.events.map(event => 
+        event.id === id ? { ...event, ...updates } : event
+      );
+      setSessionStorage(STORAGE_KEYS.EVENTS_CACHE, {
+        events: updatedEvents,
+        timestamp: Date.now(),
+      });
+    }
   }
 
   const deleteEvent = (id: string) => {
     setEvents(prev => prev.filter(event => event.id !== id))
+    // Update cache as well
+    const cachedEvents = getSessionStorage<EventsCacheData>(STORAGE_KEYS.EVENTS_CACHE);
+    if (cachedEvents) {
+      const updatedEvents = cachedEvents.events.filter(event => event.id !== id);
+      setSessionStorage(STORAGE_KEYS.EVENTS_CACHE, {
+        events: updatedEvents,
+        timestamp: Date.now(),
+      });
+    }
   }
 
   const markAttendance = (eventId: string, attendee: string) => {
@@ -355,6 +399,23 @@ export function EventProvider({ children }: { children: ReactNode }) {
         return event
       })
     )
+    // Update cache as well
+    const cachedEvents = getSessionStorage<EventsCacheData>(STORAGE_KEYS.EVENTS_CACHE);
+    if (cachedEvents) {
+      const updatedEvents = cachedEvents.events.map(event => {
+        if (event.id === eventId) {
+          const attendance = event.attendance || []
+          if (!attendance.includes(attendee)) {
+            return { ...event, attendance: [...attendance, attendee] }
+          }
+        }
+        return event
+      });
+      setSessionStorage(STORAGE_KEYS.EVENTS_CACHE, {
+        events: updatedEvents,
+        timestamp: Date.now(),
+      });
+    }
   }
 
   return (

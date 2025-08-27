@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { getSessionStorage, setSessionStorage, STORAGE_KEYS, DashboardPreferences } from "@/utils/storage"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
@@ -78,10 +79,26 @@ export default function DashboardPage() {
     }
   });
 
-  // Set mounted state
+  // Set mounted state and load preferences
   useEffect(() => {
     setMounted(true);
+    
+    // Load dashboard preferences from sessionStorage
+    const savedPrefs = getSessionStorage<DashboardPreferences>(STORAGE_KEYS.DASHBOARD_PREFS);
+    if (savedPrefs) {
+      setShowUpcoming(savedPrefs.showUpcoming);
+      setRegShowUpcoming(savedPrefs.regShowUpcoming);
+    }
   }, []);
+
+  // Save preferences to sessionStorage when they change
+  useEffect(() => {
+    const prefs: DashboardPreferences = {
+      showUpcoming,
+      regShowUpcoming,
+    };
+    setSessionStorage(STORAGE_KEYS.DASHBOARD_PREFS, prefs);
+  }, [showUpcoming, regShowUpcoming]);
 
   // Simulate loading when toggle changes
   useEffect(() => {

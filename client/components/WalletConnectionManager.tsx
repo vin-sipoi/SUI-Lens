@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useCurrentAccount, useWallets } from '@mysten/dapp-kit';
-import { useUser } from '@/app/landing/UserContext';
+import { useUser } from '@/context/UserContext';
 
 export function WalletConnectionManager() {
   const currentAccount = useCurrentAccount();
   const wallets = useWallets();
   const { user, login, logout } = useUser();
+  const logoutCalledRef = useRef(false);
 
   useEffect(() => {
     // When wallet connects, auto-login if no user
@@ -21,9 +22,14 @@ export function WalletConnectionManager() {
       });
     }
     
-    // When wallet disconnects, logout user
-    if (!currentAccount && user && user.walletAddress) {
+    // When wallet disconnects, logout user (but only if not already logged out)
+    if (!currentAccount && user && user.walletAddress && !logoutCalledRef.current) {
+      logoutCalledRef.current = true;
       logout();
+      // Reset the ref after a short delay to allow the state update to complete
+      setTimeout(() => {
+        logoutCalledRef.current = false;
+      }, 100);
     }
   }, [currentAccount, user, login, logout]);
 
