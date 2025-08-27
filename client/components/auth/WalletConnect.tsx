@@ -39,7 +39,7 @@ export function WalletConnect() {
 
   // Update user context when traditional wallet connects or when zkLogin user data is available
   useEffect(() => {
-    if (currentAccount?.address && !enokiAddress) {
+    if (currentAccount?.address && !enokiAddress && (!user || user.walletAddress !== currentAccount.address)) {
       console.log('Traditional wallet connected:', currentAccount);
       
       setUser({
@@ -56,27 +56,24 @@ export function WalletConnect() {
       // The autoConnect should handle this, but we'll log the attempt
       console.log('Enoki address detected but wallet not connected. AutoConnect should handle this.');
     }
-  }, [currentAccount, enokiAddress, setUser]);
+  }, [currentAccount, enokiAddress, setUser, user]);
 
   // Update user context when zkLogin user data is available
   useEffect(() => {
     // Don't update if zkLogin is still loading or if user already exists with same address
-    if (!zkLoginLoading && enokiAddress && zkLoginUser) {
+    if (!zkLoginLoading && enokiAddress && zkLoginUser && (!user || user.walletAddress !== enokiAddress)) {
       console.log('Enoki session restored - address:', enokiAddress);
       console.log('zkLogin user data:', zkLoginUser);
       
-      // Only update if the user context doesn't already have this data
-      if (!user?.walletAddress || user.walletAddress !== enokiAddress) {
-        setUser({
-          walletAddress: enokiAddress,
-          name: zkLoginUser.name || zkLoginUser.given_name || zkLoginUser.email?.split('@')[0] || 'Google User',
-          email: zkLoginUser.email || '',
-          emails: zkLoginUser.email ? [{ address: zkLoginUser.email, primary: true, verified: true }] : [],
-          isEnoki: true,
-          avatarUrl: zkLoginUser.picture || 'https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens',
-          picture: zkLoginUser.picture,
-        });
-      }
+      setUser({
+        walletAddress: enokiAddress,
+        name: zkLoginUser.name || zkLoginUser.given_name || zkLoginUser.email?.split('@')[0] || 'Google User',
+        email: zkLoginUser.email || '',
+        emails: zkLoginUser.email ? [{ address: zkLoginUser.email, primary: true, verified: true }] : [],
+        isEnoki: true,
+        avatarUrl: zkLoginUser.picture || 'https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens',
+        picture: zkLoginUser.picture,
+      });
     }
   }, [enokiAddress, zkLoginUser, zkLoginLoading, user?.walletAddress, setUser]);
 

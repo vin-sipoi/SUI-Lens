@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useZkLoginSession } from '@mysten/enoki/react';
 import { jwtDecode } from 'jwt-decode';
+import { getSessionStorage, setSessionStorage, removeSessionStorage, STORAGE_KEYS, AuthSessionData } from '@/utils/storage';
 
 interface ZkLoginUser {
   email?: string;
@@ -29,59 +30,79 @@ export function ZkLoginProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<ZkLoginUser>();
   const [isLoading, setIsLoading] = useState(true);
 
+  // Save session to storage when it changes
   useEffect(() => {
-    // Check for existing session
-    const checkSession = async () => {
-      setIsLoading(true);
-      console.log('🔍 ZkLoginProvider: Checking zkLogin session:', zkLoginSession);
-      
-      // Check localStorage for any stored session data
-      const storedSession = typeof window !== 'undefined' ? localStorage.getItem('enoki-session') : null;
-      console.log('   • Stored session in localStorage:', storedSession ? 'Found' : 'Not found');
-      
-      if (zkLoginSession?.jwt) {
-        try {
-          const decodedJwt: any = jwtDecode(zkLoginSession.jwt);
-          console.log('   • Decoded JWT from zkLogin session:', decodedJwt);
+    if (zkLoginSession?.jwt) {
+      try {
+        const decodedJwt: any = jwtDecode(zkLoginSession.jwt);
+        
+        // Check if JWT is still valid
+        const currentTime = Date.now() / 1000;
+        if (decodedJwt.exp && decodedJwt.exp > currentTime) {
+          const userData = {
+            email: decodedJwt.email,
+            given_name: decodedJwt.given_name,
+            family_name: decodedJwt.family_name,
+            picture: decodedJwt.picture,
+            name: decodedJwt.name,
+          };
           
-          // Check if JWT is still valid
+          setUser(userData);
+          
+          // Save to sessionStorage
+          const sessionData: AuthSessionData = {
+            jwt: zkLoginSession.jwt,
+            user: userData,
+            timestamp: Date.now(),
+          };
+          
+          setSessionStorage(STORAGE_KEYS.AUTH_SESSION, sessionData);
+          console.log('zkLogin session saved to storage');
+        } else {
+          console.log('zkLogin JWT has expired, clearing storage');
+          removeSessionStorage(STORAGE_KEYS.AUTH_SESSION);
+        }
+      } catch (error) {
+        console.error('Failed to decode JWT:', error);
+        removeSessionStorage(STORAGE_KEYS.AUTH_SESSION);
+      }
+    } else {
+      // No session, clear storage
+      removeSessionStorage(STORAGE_KEYS.AUTH_SESSION);
+    }
+  }, [zkLoginSession]);
+
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkStoredSession = async () => {
+      setIsLoading(true);
+      
+      const storedSession = getSessionStorage<AuthSessionData>(STORAGE_KEYS.AUTH_SESSION);
+      
+      if (storedSession) {
+        try {
+          // Validate stored JWT
+          const decodedJwt: any = jwtDecode(storedSession.jwt);
           const currentTime = Date.now() / 1000;
+          
           if (decodedJwt.exp && decodedJwt.exp > currentTime) {
-            setUser({
-              email: decodedJwt.email,
-              given_name: decodedJwt.given_name,
-              family_name: decodedJwt.family_name,
-              picture: decodedJwt.picture,
-              name: decodedJwt.name,
-            });
-            console.log('✅ zkLogin session is valid and restored');
+            setUser(storedSession.user);
+            console.log('Session restored from storage');
           } else {
-            console.log('❌ zkLogin JWT has expired');
-            // Clear expired session from localStorage
-            if (typeof window !== 'undefined') {
-              localStorage.removeItem('enoki-session');
-            }
+            console.log('Stored JWT has expired');
+            removeSessionStorage(STORAGE_KEYS.AUTH_SESSION);
           }
         } catch (error) {
-          console.error('❌ Failed to decode JWT:', error);
-          // Clear invalid session data
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('enoki-session');
-          }
-        }
-      } else {
-        console.log('❌ No active zkLogin session found');
-        // If we have stored session but no active session, it might indicate a sync issue
-        if (storedSession) {
-          console.log('⚠️ Stored session exists but no active session - possible sync issue');
+          console.error('Failed to validate stored JWT:', error);
+          removeSessionStorage(STORAGE_KEYS.AUTH_SESSION);
         }
       }
       
       setIsLoading(false);
     };
     
-    checkSession();
-  }, [zkLoginSession]);
+    checkStoredSession();
+  }, []);
 
   return (
     <ZkLoginContext.Provider value={{ jwt: zkLoginSession?.jwt, user, isLoading }}>
