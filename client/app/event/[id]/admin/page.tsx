@@ -404,19 +404,17 @@ export default function EventAdminPage() {
           <TabsContent value="overview" className="container space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
+              <Card className='border-[#E4E7EC]'>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <ChartColumnBig className='text-[#101928] mb-10'/>
+                      <ChartColumnBig className='text-[#101928] mb-10 w-5 h-5'/>
                       <p className="text-sm font-medium text-[#667185]">Total Registered</p>
-                      <p className="text-3xl font-bold text-[#101928]">{stats.totalRegistered}</p>
+                      <p className="pt-2 text-lg font-semibold text-[#101928]">{stats.totalRegistered}</p>
                     </div>
                     
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {stats.totalRegistered > 0 ? `${stats.attendanceRate}%` : 'No registrations yet'}
-                  </p>
+                  
                 </CardContent>
               </Card>
 
@@ -424,15 +422,13 @@ export default function EventAdminPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <CheckCircle className='text-[#101928] mb-10'/>
+                      <CheckCircle className='text-[#101928] mb-10 w-5 h-5'/>
                       <p className="text-sm font-medium text-[#667185]">Checked In</p>
-                      <p className="text-3xl font-bold text-[#101928]">{stats.totalAttended}</p>
+                      <p className="pt-2 text-lg font-semibold text-[#101928]">{stats.totalAttended}</p>
                     </div>
                     
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {stats.totalRegistered > 0 ? `${stats.attendanceRate}% of registered` : 'No check-ins yet'}
-                  </p>
+                  
                 </CardContent>
               </Card>
 
@@ -440,35 +436,31 @@ export default function EventAdminPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <DollarSign className='text-[#101928] mb-10'/>
+                      <DollarSign className='text-[#101928] mb-10 w-5 h-5'/>
                       <p className="text-sm font-medium text-[#667185]">Revenue</p>
-                      <p className="text-3xl font-bold text-[#101928]">
+                      <p className="pt-2 text-lg font-semibold text-[#101928]">
                         {event.isFree ? 'Free' : `$${stats.totalRevenue}`}
                       </p>
                     </div>
                     
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {event.isFree ? 'Free event' : `$${event.ticketPrice} per ticket`}
-                  </p>
+                  
                 </CardContent>
               </Card>
 
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <CalendarDays className='text-[#101928] mb-10'/>
+                    <div className=''>
+                      <img src="/spots-left.png" alt="" width={22} height={14} className='mb-10'/>
                       <p className="text-sm font-medium text-[#667185]">Spots Left</p>
-                      <p className="text-3xl font-bold text-[#101928]">
+                      <p className="pt-2 text-lg font-semibold text-[#101928]">
                         {typeof stats.spotsRemaining === 'number' ? stats.spotsRemaining : '∞'}
                       </p>
                     </div>
                     
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {typeof stats.spotsRemaining === 'number' ? 'Limited capacity' : 'Unlimited capacity'}
-                  </p>
+                  
                 </CardContent>
               </Card>
             </div>
@@ -516,10 +508,10 @@ export default function EventAdminPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className='flex flex-row gap-2'>
                     <CardTitle>Registered Attendees</CardTitle>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {attendeeList.length} registered • {attendeeList.filter(a => a.checkedIn).length} checked in
+                    <p className="bg-blue-400 px-2 border rounded-full text-sm text-gray-500 mt-1">
+                      {attendeeList.filter(a => a.checkedIn).length} 
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -940,9 +932,9 @@ export default function EventAdminPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <ChartColumnBig className='text-[#101928] mb-10'/>
+                      <ChartColumnBig className='text-[#101928] mb-10 w-5 h-5'/>
                       <p className="text-sm font-medium text-[#667185]">Total Balance</p>
-                      <p className="text-3xl font-bold text-[#101928]">
+                      <p className="text-lg font-semibold text-[#101928]">
                         ${event.isFree ? '0' : (stats.totalRevenue * 0.95).toFixed(0)}
                       </p>
                     </div>
@@ -954,9 +946,9 @@ export default function EventAdminPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Ticket className='text-[#101928] mb-10'/>
+                      <Ticket className='text-[#101928] mb-10 w-5 h-5'/>
                       <p className="text-sm font-medium text-[#667185]">Ticket Price</p>
-                      <p className="text-3xl font-bold text-[#101928]">
+                      <p className="text-lg font-semibold text-[#101928]">
                         {event.isFree ? 'Free' : `$${event.ticketPrice}`}
                       </p>
                     </div>
@@ -968,9 +960,9 @@ export default function EventAdminPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Users className='text-[#101928] mb-10'/>
+                      <Users className='text-[#101928] mb-10 w-5 h-5'/>
                       <p className="text-sm font-medium text-[#667185]">Spots Left</p>
-                      <p className="text-3xl font-bold text-[#101928]">
+                      <p className="text-lg font-semibold text-[#101928]">
                         {typeof stats.spotsRemaining === 'number' ? stats.spotsRemaining : '390'}
                       </p>
                     </div>

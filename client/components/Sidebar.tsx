@@ -22,7 +22,7 @@ const mainItems: SidebarItem[] = [
   {
     id: "overview",
     label: "Overview",
-    icon: "/material-symbols_dashboard-rounded.svg",
+    icon: "/overviewgray.png",
     alt: "overviewicon"
   },
   {
@@ -32,14 +32,8 @@ const mainItems: SidebarItem[] = [
     alt: "guesticon"
   },
   {
-    id: "registrations",
-    label: "Registration",
-    icon: "/Vector (3).png",
-    alt: "reg"
-  },
-  {
     id: "blast",
-    label: "Blast",
+    label: "Broadcast",
     icon: "/Vector (1).svg",
     alt: "reg"
   },
@@ -68,7 +62,7 @@ export default function Sidebar({ activeSection, onSectionChange, className = ""
   // Handle responsive behavior
   useEffect(() => {
     const checkMobile = () => {
-      const mobile = window.innerWidth < 1024;
+      const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       if (mobile) {
         setSidebarOpen(false);
@@ -110,7 +104,7 @@ export default function Sidebar({ activeSection, onSectionChange, className = ""
       {/* Mobile Sidebar Toggle */}
       <button 
         onClick={() => setSidebarOpen(!sidebarOpen)} 
-        className="lg:hidden fixed bottom-6 right-6 z-30 w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg"
+        className="md:hidden fixed bottom-6 right-6 z-30 w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg"
         aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
       >
         {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
@@ -120,63 +114,62 @@ export default function Sidebar({ activeSection, onSectionChange, className = ""
       <aside 
         id="sidebar"
         className={`${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        } fixed lg:static top-0 left-0 z-20 w-64 lg:w-64 min-h-screen bg-[#F6FBFF] text-[#0B1620] py-6 flex flex-col transition-transform duration-300 ease-in-out ${className}`}
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        } fixed md:static top-0 left-0 z-20 w-64 md:w-52 lg:w-60 xl:w-64 min-h-screen bg-white text-[#0B1620] py-4 md:py-6 flex flex-col transition-transform duration-300 ease-in-out shadow-lg md:shadow-none ${className}`}
       >
-        <nav className="flex-1 flex flex-col px-4 gap-2">
+        <nav className="flex-1 flex flex-col px-3 md:px-4 gap-2">
           {/* Main Navigation Items */}
           {mainItems.map((item) => (
             <button 
               key={item.id}
               onClick={() => handleSectionClick(item.id)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-colors ${
+              className={`flex items-center gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg font-medium text-sm md:text-base transition-colors ${
                 activeSection === item.id 
-                  ? "text-white bg-[#1A2332]" 
-                  : "text-gray-400 hover:text-white hover:bg-[#1A2332]"
+                  ? "text-[#101928] bg-[#EDF6FF]" 
+                  : "text-[#667185] bg-white"
               }`}
             >
-              <Image src={item.icon} alt={item.alt} width={20} height={20} className="flex-shrink-0"/>
-              {item.label}
+              <Image src={item.icon} alt={item.alt} width={20} height={20} className={`flex-shrink-0 ${
+                activeSection === item.id ? "text-[#101928]" : "text-[#667185]"
+              } `}/>
+              <span className="truncate">{item.label}</span>
             </button>
           ))}
             
           {/* Insights Section */}
-          <div className="mt-6">
-            <span className="text-gray-500 font-medium text-base uppercase tracking-wider px-4 mb-3 block">INSIGHTS</span>
+          <div className="mt-4 md:mt-6">
+            <span className="text-[#667185] font-medium text-sm md:text-base uppercase tracking-wider px-3 md:px-4 mb-3 block">INSIGHTS</span>
 
             {insightItems.map((item) => (
               <div key={item.id}>
                 {item.href ? (
-                  <button 
+                  <Link 
+                    href={item.href}
                     onClick={() => {
                       if (isMobile) setSidebarOpen(false);
                     }}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm text-gray-400 hover:text-white hover:bg-[#1A2332] transition-colors w-full"
+                    className={`flex items-center gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg font-medium text-sm md:text-base transition-colors w-full ${
+                      activeSection === item.id 
+                        ? "text-[#101928] bg-[#EDF6FF]" 
+                        : "text-[#667185] bg-white hover:text-[#101928] hover:bg-[#EDF6FF]"
+                    }`}
                   >
-                    <Link 
-                      href={item.href} 
-                      className="flex items-center gap-3 w-full"
-                      onClick={() => {
-                        if (isMobile) setSidebarOpen(false);
-                      }}
-                    >
-                      <Image src={item.icon} alt={item.alt} width={20} height={20} className="flex-shrink-0"/>
-                      {item.label}
-                    </Link>
-                  </button>  
+                    <Image src={item.icon} alt={item.alt} width={20} height={20} className="flex-shrink-0"/>
+                    <span className="truncate">{item.label}</span>
+                  </Link>
                 ) : (
                   <button 
                     onClick={() => {
                       handleSectionClick(item.id);
                     }}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors w-full ${
+                    className={`flex items-center gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg font-medium text-sm md:text-base transition-colors w-full ${
                       activeSection === item.id 
-                        ? "text-white bg-[#1A2332]" 
-                        : "text-gray-400 hover:text-white hover:bg-[#1A2332]"
+                        ? "text-[#101928] bg-[#EDF6FF]" 
+                        : "text-[#667185] bg-white hover:text-[#101928] hover:bg-[#EDF6FF]"
                     }`}
                   >
                     <Image src={item.icon} alt={item.alt} width={20} height={20} className="flex-shrink-0"/>
-                    {item.label}
+                    <span className="truncate">{item.label}</span>
                   </button>
                 )}
               </div>

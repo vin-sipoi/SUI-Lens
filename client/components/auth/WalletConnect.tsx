@@ -114,17 +114,15 @@ export function WalletConnect() {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="flex items-center gap-2 bg-white text-black hover:bg-gray-100">
-            <Avatar className="h-6 w-6">
+          <button className="flex items-center gap-2 w-8 h-8 text-black border rounded-full">
+            <Avatar className="h-full w-full">
               <AvatarImage src={user.picture || user.avatarUrl} />
               <AvatarFallback className="bg-gray-200 text-black">
                 {user.name?.charAt(0)?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
-            <span className="hidden md:inline">
-              {user.name || 'Google User'}
-            </span>
-          </Button>
+            
+          </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64 bg-white">
           <DropdownMenuLabel className="text-black">My Account</DropdownMenuLabel>

@@ -151,7 +151,7 @@ export default function DashboardPage() {
                 <h1 className="text-[#000000] font-semibold text-4xl">My Overall Stats</h1>
                 {/* Analytics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <Card className="overflow-hidden border-2 border-[#667185] bg-white text-[#667185] rounded-2xl">
+                  <Card className="overflow-hidden border border-[#D0D5DD] bg-white text-[#667185] rounded-2xl">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -169,7 +169,7 @@ export default function DashboardPage() {
                       </div>
                     </CardContent>
                   </Card>
-                  <Card className="overflow-hidden border-2 border-[#667185] bg-white text-[#667185] rounded-2xl">
+                  <Card className="overflow-hidden border border-[#D0D5DD] bg-white text-[#667185] rounded-2xl">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -189,7 +189,7 @@ export default function DashboardPage() {
                       </div>
                     </CardContent>
                   </Card>
-                  <Card className="overflow-hidden border-2 border-[#667185] bg-white text-[#667185] rounded-2xl">
+                  <Card className="overflow-hidden border border-[#D0D5DD] bg-white text-[#667185] rounded-2xl">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -209,7 +209,7 @@ export default function DashboardPage() {
                       </div>
                     </CardContent>
                   </Card>
-                  <Card className="overflow-hidden border-2 border-[#667185] bg-white text-[#667185] rounded-2xl">
+                  <Card className="overflow-hidden border border-[#D0D5DD] bg-white text-[#667185] rounded-2xl">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -256,9 +256,7 @@ export default function DashboardPage() {
                     {filteredEventsForDisplay.map((event) => (
                       <div 
                         key={event.id} 
-                        className={`cursor-pointer transition-all duration-200 ${
-                          selectedEventId === event.id ? 'ring-2 ring-blue-500 ring-offset-2' : ''
-                        }`}
+                        className="cursor-pointer"
                         onClick={() => {
                           setSelectedEventId(event.id);
                           setSelectedEventTitle(event.title);
@@ -266,7 +264,7 @@ export default function DashboardPage() {
                         }}
                       >
                         <Card
-                          className="base-card-light group overflow-hidden border border-gray-400 transition-all duration-200 rounded-2xl"
+                          className="base-card-light overflow-hidden border border-gray-400 rounded-2xl shadow-none"
                         >
                           <Link href={`/event/${event.id}/admin`}>
                             <div className="h-32 bg-gray-100 relative overflow-hidden">
@@ -274,7 +272,7 @@ export default function DashboardPage() {
                                 <img 
                                   src={event.bannerUrl} 
                                   alt={event.title}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                  className="w-full h-full object-cover"
                                 />
                               ) : (
                                 <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600" />
@@ -311,7 +309,7 @@ export default function DashboardPage() {
                                     {event.category || 'General'}
                                   </button>
                                 </div>
-                                <Button variant="outline" size="sm" className="text-[#101928] hover:bg-[#E4F1FF] text-xs h-7 border border-black">
+                                <Button variant="outline" size="sm" className="text-[#101928] text-xs h-7 border border-black shadow-none">
                                   Manage Event
                                 </Button>
                               </div>
@@ -353,7 +351,7 @@ export default function DashboardPage() {
                 {registeredEvents.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
                     {registeredEvents.map((event) => (
-                      <Card key={event.id} className="base-card-light overflow-hidden rounded-2xl">
+                      <Card key={event.id} className="base-card-light overflow-hidden rounded-2xl shadow-none">
                         <Link href={`/event/${event.id}`}>
                           <div className="h-32 bg-gray-100 relative overflow-hidden">
                             {event.bannerUrl ? (

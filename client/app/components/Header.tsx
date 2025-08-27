@@ -140,30 +140,32 @@ export default function Header() {
 
 	return (
 		<>
-			<header className="bg-white border-b sticky top-0 z-50 w-full">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+			<header className="bg-white sticky top-0 z-50 w-full border-b border-gray-100">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 z-20">
+          <Link href="/" className="flex items-center space-x-2 z-20 flex-shrink-0">
             <Image
               src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png"
               alt="Suilens Logo"
-              width={28}
-              height={28}
-              className="object-contain"
+              width={24}
+              height={24}
+              className="sm:w-7 sm:h-7 object-contain"
             />
-            <span className="text-lg font-semibold text-[#020B15]">
+            <span className="text-base sm:text-lg font-semibold text-[#020B15]">
               Suilens
             </span>
           </Link>
 
           {/* Center Nav - Desktop Only */}
-          <nav className="hidden md:flex flex-1 justify-center">
-            <ul className="flex gap-4 lg:gap-8 text-sm font-medium text-gray-500">
+          <nav className="hidden lg:flex flex-1 justify-center">
+            <ul className="flex gap-6 xl:gap-8 text-sm font-medium">
               {filteredNavItems.map((item) => (
                 <li key={item.name}>
                   <Link
                     href={item.href}
-                    className={isLinkActive(item.href) ? 'text-black font-bold' : 'text-gray-500 hover:text-gray-700'}
+                    className={`transition-colors ${isLinkActive(item.href) 
+                      ? 'text-black font-semibold' 
+                      : 'text-gray-600 '}`}
                   >
                     {item.name === 'Explore' ? 'Discover Events' : item.name}
                   </Link>
@@ -173,7 +175,9 @@ export default function Header() {
                 <li>
                   <Link
                     href="/dashboard"
-                    className={isLinkActive('/dashboard') ? 'text-black font-bold' : 'text-gray-500 hover:text-gray-700'}
+                    className={`transition-colors ${isLinkActive('/dashboard') 
+                      ? 'text-[#4DA2FF] font-semibold' 
+                      : 'text-gray-600 hover:text-[#4DA2FF]'}`}
                   >
                     Dashboard
                   </Link>
@@ -182,28 +186,43 @@ export default function Header() {
             </ul>
           </nav>
 
-          {/* Mobile menu button */}
-          <button
-            className="md:hidden p-2 text-gray-600 hover:text-gray-900 focus:outline-none z-20"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? (
-              <X className="h-6 w-6" aria-hidden="true" />
-            ) : (
-              <Menu className="h-6 w-6" aria-hidden="true" />
+          {/* Mobile Right Side - Create Event + Menu */}
+          <div className="flex lg:hidden items-center gap-2 flex-shrink-0">
+            {/* Create Event Button - Mobile */}
+            {isAuthenticated && (
+              <Link href="/create">
+                <Button className="bg-[#4DA2FF] text-white px-3 py-2 rounded-lg hover:bg-[#3B82F6] transition-colors text-xs sm:text-sm">
+                  Create Event
+                </Button>
+              </Link>
             )}
-          </button>
+            
+            {/* Mobile menu button */}
+            <button
+              className="p-2 text-gray-600 hover:text-gray-900 focus:outline-none transition-colors"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? (
+                <X className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
+              ) : (
+                <Menu className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
+              )}
+            </button>
+          </div>
 
           {/* Right Side - Desktop */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-3 xl:gap-4 flex-shrink-0">
             {!isAuthenticated ? (
               <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="text-white bg-[#4DA2FF] border px-4 py-2 rounded-xl hover:text-white hover:bg-[#4DA2FF]">Sign in</Button>
+                <DialogTrigger asChild> 
+                  <Button className="text-white bg-[#4DA2FF] border px-4 py-2 rounded-xl hover:bg-[#3B82F6] transition-colors text-sm">
+                    Sign in
+                  </Button>
                 </DialogTrigger>
-                <DialogContent className="flex flex-col items-center  w-[95%] max-w-sm mx-auto bg-white text-black">
+                <DialogContent className="flex flex-col items-center w-[95%] max-w-sm mx-auto bg-white text-black">
                   <DialogHeader>
-                    <DialogTitle className="text-[#1C1C1C] font-semibold text-2xl">Get Started On SuiLens</DialogTitle>
+                    <DialogTitle className="text-[#1C1C1C] font-semibold text-xl sm:text-2xl">Get Started On SuiLens</DialogTitle>
                   </DialogHeader>
                   <div className="py-4">
                     <p className="text-sm text-[#888888] mb-6">A wallet will be assigned to you when you create an account.</p>
@@ -215,97 +234,77 @@ export default function Header() {
             ) : (
               <>
                 <Link href="/create">
-                  <Button className="bg-[#4DA2FF] text-white px-4 py-2 rounded-xl">Create Event</Button>
+                  <Button className="bg-[#4DA2FF] text-white px-4 py-2 rounded-xl hover:bg-[#3B82F6] transition-colors text-sm">
+                    Create Event
+                  </Button>
                 </Link>
                 <WalletConnect />
               </>
             )}
           </div>
         </div>
-
-        {/* Mobile Navigation Menu */}
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-10 bg-white pt-16 pb-6 px-4">
-            <nav className="flex flex-col space-y-6">
-              {filteredNavItems.map(item => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`text-lg py-2 border-b border-gray-100 ${
-                    isLinkActive(item.href)
-                      ? 'font-bold text-black'
-                      : 'font-medium text-gray-900'
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {item.name === 'Explore' ? 'Discover Events' : item.name}
-                </Link>
-              ))}
-
-              {/* Mobile Auth Buttons */}
-              <div className="flex flex-col space-y-4 pt-4">
-                {!isAuthenticated ? (
-                  <div className="w-full">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button className="w-full bg-white text-black border py-2 rounded-xl">Sign in</Button>
-                      </DialogTrigger>
-                      <DialogContent className="w-[95%] max-w-sm mx-auto bg-white text-black">
-                        <DialogHeader>
-                          <DialogTitle className="text-black">Sign in</DialogTitle>
-                        </DialogHeader>
-                        <div className="py-4">
-                          <p className="text-sm text-gray-700 mb-4">Sign in to continue.</p>
-                          <GoogleLogin className="w-full bg-blue-600 text-white hover:bg-blue-500 flex items-center justify-center gap-2" />
-                        </div>
-                        <DialogFooter />
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                ) : (
-                  <>
-                    <Link 
-                      href="/create"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Button className="w-full bg-[#4DA2FF] hover:bg-blue-500 transition-colors text-white py-2 rounded-xl">
-                        Create Event
-                      </Button>
-                    </Link>
-                    <WalletConnect />
-                  </>
-                )}
-              </div>
-            </nav>
-          </div>
-        )}
       	</header>
 
-			{/* Mobile Navigation Menu - Outside of header */}
+			{/* Mobile Navigation Menu */}
 			{mobileMenuOpen && (
-				<div className="fixed left-0 right-0 top-[72px] z-[9999] bg-white shadow-lg border-b border-gray-200 lg:hidden">
-					<div className="px-4 py-4 max-h-[70vh] overflow-y-auto">
-						<nav className="flex flex-col space-y-3">
+				<div className="fixed left-0 right-0 top-[64px] sm:top-[72px] z-[9999] bg-white shadow-lg border-b border-gray-200 lg:hidden">
+					<div className="px-3 sm:px-4 py-4 max-h-[calc(100vh-64px)] sm:max-h-[calc(100vh-72px)] overflow-y-auto">
+						<nav className="flex flex-col space-y-1">
               {filteredNavItems.map((item) => (
 								<button
 									key={item.name}
 									onClick={() => handleNavigation(item.href)}
-									className={`text-base px-3 py-2 rounded-lg text-left transition-colors ${
+									className={`text-base px-3 py-3 rounded-lg text-left transition-colors ${
 										isLinkActive(item.href)
-											? 'font-bold text-black bg-gray-100'
-											: 'font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+											? 'font-semibold text-[#4DA2FF] bg-blue-50'
+											: 'font-medium text-gray-700 hover:text-[#4DA2FF] hover:bg-gray-50'
 									}`}
 								>
-									{item.name}
+									{item.name === 'Explore' ? 'Discover Events' : item.name}
 								</button>
 							))}
 
-                            {/* Show WalletConnect for authentication (only when authenticated) */}
-                            {isAuthenticated && (
-                              <div className="pt-3 mt-3 border-t border-gray-200">
-                                <WalletConnect />
-                              </div>
-                            )}
+              {/* Dashboard link for authenticated users */}
+              {isAuthenticated && (
+                <button
+                  onClick={() => handleNavigation('/dashboard')}
+                  className={`text-base px-3 py-3 rounded-lg text-left transition-colors ${
+                    isLinkActive('/dashboard')
+                      ? 'font-semibold text-[#4DA2FF] bg-blue-50'
+                      : 'font-medium text-gray-700 hover:text-[#4DA2FF] hover:bg-gray-50'
+                  }`}
+                >
+                  Dashboard
+                </button>
+              )}
+
+              {/* Authentication Section */}
+              <div className="pt-4 mt-4 border-t border-gray-200 space-y-3">
+                {!isAuthenticated ? (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="w-full bg-[#4DA2FF] text-white py-3 rounded-lg hover:bg-[#3B82F6] transition-colors text-sm font-medium">
+                        Sign in
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="w-[95%] max-w-sm mx-auto bg-white text-black">
+                      <DialogHeader>
+                        <DialogTitle className="text-[#1C1C1C] font-semibold text-xl">Get Started On SuiLens</DialogTitle>
+                      </DialogHeader>
+                      <div className="py-4">
+                        <p className="text-sm text-[#888888] mb-6">A wallet will be assigned to you when you create an account.</p>
+                        <GoogleLogin className="w-full text-[#101928] bg-[#D0D5DD] flex items-center justify-center gap-2" />
+                      </div>
+                      <DialogFooter />
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <div className="space-y-3">
+                    {/* Show WalletConnect for authentication */}
+                    <WalletConnect />
+                  </div>
+                )}
+              </div>
 						</nav>
 					</div>
 				</div>
