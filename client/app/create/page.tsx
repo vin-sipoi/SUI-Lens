@@ -276,32 +276,8 @@ export default function CreateEventPage() {
         rsvpTimes: [] // Add the required rsvpTimes property
       })
 
-      // First, ensure user has a profile (create if not exists)
-      try {
-        // Try to create a profile first (will fail if already exists, but that's okay)
-        const profileTx = new Transaction()
-        profileTx.moveCall({
-          target: `${process.env.NEXT_PUBLIC_PACKAGE_ID}::suilens_core::create_profile`,
-          arguments: [
-            profileTx.object(process.env.NEXT_PUBLIC_EVENT_REGISTRY_ID!),
-            profileTx.pure.string(user?.name || 'Event Creator'),
-            profileTx.pure.string('Event creator on SUI-Lens'),
-            profileTx.pure.string(user?.avatarUrl || user?.picture || 'https://api.dicebear.com/7.x/avataaars/svg?seed=SuiLens'),
-            profileTx.object('0x6'), // Clock object
-          ],
-        })
-        
-        // Try to execute profile creation (ignore if fails - profile might already exist)
-        try {
-          await sponsorAndExecute({ tx: profileTx })
-          toast.info('Profile created successfully!')
-        } catch (profileError: any) {
-          // Profile might already exist, that's okay
-          console.log('Profile creation skipped (may already exist):', profileError.message)
-        }
-      } catch (error) {
-        console.log('Profile check:', error)
-      }
+      // Skip profile creation as requested - focus only on event creation
+      console.log('Skipping profile creation, focusing on event creation only')
 
       // Now create the event with the uploaded image URLs
       const tx = await suilensService.createEvent({
