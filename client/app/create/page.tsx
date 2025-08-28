@@ -159,45 +159,62 @@ export default function CreateEventPage() {
       poapImageUrl: poapImage.url || ''
     }
     
-    const uploads: Promise<void>[] = []
+    // Create an array to hold upload promises
+    const uploadPromises: Promise<void>[] = []
     
     // Upload banner image
     if (bannerImage.file && !bannerImage.url) {
-      uploads.push(
+      uploadPromises.push(
         uploadImageToImgBB(bannerImage.file, `${eventData.title}_banner_${Date.now()}`)
           .then(url => {
             setBannerImage(prev => ({ ...prev, url }))
             imageUrls.bannerUrl = url
+          })
+          .catch(error => {
+            console.error('Error uploading banner image:', error)
+            toast.error(`Failed to upload banner image: ${error.message}`)
+            // Don't re-throw to prevent canceling other uploads
           })
       )
     }
     
     // Upload NFT image
     if (nftImage.file && !nftImage.url) {
-      uploads.push(
+      uploadPromises.push(
         uploadImageToImgBB(nftImage.file, `${eventData.title}_nft_${Date.now()}`)
           .then(url => {
             setNftImage(prev => ({ ...prev, url }))
             imageUrls.nftImageUrl = url
+          })
+          .catch(error => {
+            console.error('Error uploading NFT image:', error)
+            toast.error(`Failed to upload NFT image: ${error.message}`)
+            // Don't re-throw to prevent canceling other uploads
           })
       )
     }
     
     // Upload POAP image
     if (poapImage.file && !poapImage.url) {
-      uploads.push(
+      uploadPromises.push(
         uploadImageToImgBB(poapImage.file, `${eventData.title}_poap_${Date.now()}`)
           .then(url => {
             setPoapImage(prev => ({ ...prev, url }))
             imageUrls.poapImageUrl = url
           })
+          .catch(error => {
+            console.error('Error uploading POAP image:', error)
+            toast.error(`Failed to upload POAP image: ${error.message}`)
+            // Don't re-throw to prevent canceling other uploads
+          })
       )
     }
     
-    if (uploads.length > 0) {
+    if (uploadPromises.length > 0) {
       toast.info('Uploading images...')
-      await Promise.all(uploads)
-      toast.success('Images uploaded successfully!')
+      // Wait for all uploads to complete, but don't fail if one fails
+      await Promise.allSettled(uploadPromises)
+      toast.success('Image upload process completed!')
     }
     
     return imageUrls
@@ -255,27 +272,6 @@ export default function CreateEventPage() {
       // Upload images to imgBB and get the URLs
       const imageUrls = await uploadImagesToCloud()
 
-      // Create event ID locally
-      const eventId = `event_${Date.now()}`
-
-      // Generate QR code for the event
-      const qrData = await generateQRCode(eventId)
-
-      // Add event to context with image URLs (temporarily add even if sponsorship fails)
-      addEvent({
-        id: eventId,
-        type: "",
-        ...eventData,
-        bannerUrl: imageUrls.bannerUrl,
-        nftImageUrl: imageUrls.nftImageUrl,
-        poapImageUrl: imageUrls.poapImageUrl,
-        requiresApproval: eventData.requiresApproval,
-        poapEnabled: poapData.name ? true : false,
-        qrCode: qrData.qrCodeImage,
-        eventUrl: qrData.eventUrl,
-        rsvpTimes: [] // Add the required rsvpTimes property
-      })
-
       // Skip profile creation as requested - focus only on event creation
       console.log('Skipping profile creation, focusing on event creation only')
 
@@ -288,8 +284,8 @@ export default function CreateEventPage() {
         poapImageUrl: imageUrls.poapImageUrl,
         location: eventData.location,
         category: eventData.category,
-        startTime: new Date(`${eventData.date} ${eventData.time}`).getTime(),
-        endTime: new Date(`${eventData.endDate || eventData.date} ${eventData.endTime || eventData.time}`).getTime(),
+        startTime: Math.floor(new Date(`${eventData.date} ${eventData.time}`).getTime() / 1000),
+        endTime: Math.floor(new Date(`${eventData.endDate || eventData.date} ${eventData.endTime || eventData.time}`).getTime() / 1000),
         maxAttendees: parseInt(eventData.capacity) || 100,
         ticketPrice: eventData.isFree ? 0 : parseInt(eventData.ticketPrice) || 0,
         requiresApproval: eventData.requiresApproval,
@@ -299,6 +295,108 @@ export default function CreateEventPage() {
       // Execute the transaction with Enoki zkLogin
       const result = await sponsorAndExecute({ tx })
       console.log('Create event transaction result:', result)
+
+      // Extract the event ID from the transaction result
+      // Based on EventContext pattern, look for the event ID in the transaction effects
+      let suiEventId = `event_${Date.now()}` // fallback
+      
+      try {
+        // Check if the transaction was successful and has effects
+        if (result && result.effects) {
+          // Look through created objects to find the event
+          const createdObjects = result.effects.created || []
+          
+          for (const created of createdObjects) {
+            // The event object should be one of the created objects
+            // We need to check the object type or use the object ID
+            if (created.reference?.objectId) {
+              // This could be the event ID - we'll use the first created object as the event ID
+              // In a production system, you'd want to filter by object type
+              suiEventId = created.reference.objectId
+              console.log('Extracted event ID from transaction:', suiEventId)
+              break
+            }
+          }
+          
+          // Alternative: if the transaction result has a specific structure for events
+          // Look for patterns similar to the EventContext parsing
+          if (result.objectChanges) {
+            for (const change of result.objectChanges) {
+              if (change.type === 'created' && change.objectType?.includes('Event')) {
+                suiEventId = change.objectId
+                console.log('Found event ID from object changes:', suiEventId)
+                break
+              }
+            }
+          }
+        }
+      } catch (parseError) {
+        console.warn('Could not extract event ID from transaction result, using fallback:', parseError)
+      }
+
+      // Generate QR code for the event
+      const qrData = await generateQRCode(suiEventId)
+
+      // Add event to context with image URLs (temporarily add even if backend fails)
+      addEvent({
+        id: suiEventId,
+        type: "",
+        ...eventData,
+        bannerUrl: imageUrls.bannerUrl,
+        nftImageUrl: imageUrls.nftImageUrl,
+        poapImageUrl: imageUrls.poapImageUrl,
+        requiresApproval: eventData.requiresApproval,
+        poapEnabled: poapData.name ? true : false,
+        qrCode: qrData.qrCodeImage,
+        eventUrl: qrData.eventUrl,
+        rsvpTimes: [] // Add the required rsvpTimes property
+      })
+
+      // Prepare event data for backend
+      const backendEventData = {
+        id: suiEventId, // Use the extracted Sui event ID
+        title: eventData.title,
+        description: eventData.description,
+        bannerUrl: imageUrls.bannerUrl,
+        nftImageUrl: imageUrls.nftImageUrl,
+        poapImageUrl: imageUrls.poapImageUrl,
+        location: eventData.location,
+        latitude: null, // Add actual latitude if available
+        longitude: null, // Add actual longitude if available
+        category: eventData.category,
+        startDate: new Date(`${eventData.date} ${eventData.time}`).toISOString(),
+        endDate: new Date(`${eventData.endDate || eventData.date} ${eventData.endTime || eventData.time}`).toISOString(),
+        capacity: parseInt(eventData.capacity) || 100,
+        ticketPrice: eventData.isFree ? 0 : parseInt(eventData.ticketPrice) || 0,
+        isFree: eventData.isFree,
+        requiresApproval: eventData.requiresApproval,
+        isPrivate: false, // Add actual value if needed
+        timezone: eventData.timezone,
+        qrCode: qrData.qrCodeImage,
+        eventUrl: qrData.eventUrl,
+        poapEnabled: poapData.name ? true : false,
+        poapName: poapData.name,
+        poapDescription: poapData.description,
+        createdBy: user?.walletAddress, // Add actual user ID if available
+        suiEventId: suiEventId
+      };
+
+      // Call backend API to create event
+      const backendResponse = await fetch('/api/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(backendEventData),
+      });
+
+      if (!backendResponse.ok) {
+        const errorData = await backendResponse.json();
+        throw new Error(errorData.message || 'Failed to create event in backend');
+      }
+
+      const backendResult = await backendResponse.json();
+      console.log('Backend event creation result:', backendResult);
 
       toast.success('Event created successfully!')
       

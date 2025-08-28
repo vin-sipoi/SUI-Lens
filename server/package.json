@@ -2,7 +2,8 @@
   "name": "Sui-lens-api",
   "version": "1.0.0",
   "description": "sui lens api using Node.js and Express",
-  "main": "index.js",
+  "main": "app.js",
+  "type": "module",
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",

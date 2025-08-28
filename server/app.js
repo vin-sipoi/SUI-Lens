@@ -1,16 +1,19 @@
-const express = require('express');
-const cors = require('cors');
-const cookieParser = require('cookie-parser');
-const authRoutes = require('./routes/authRoutes');
-const userRoutes = require('./routes/userRoutes');
-const sponsorRoutes = require('./routes/sponsorRoutes');
-const verifyToken = require('./middleware/authenticateToken');
-const { csrfProtection, csrfTokenHandler } = require('./middleware/csrfMiddleware');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import sponsorRoutes from './routes/sponsorRoutes.js';
+import registrationsRouter from './routes/registrations.js';
+import sendBlastEmailRouter from './routes/send-blast-email.js';
+import eventsRouter from './routes/events.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Polyfill for crypto in Node.js environment
 if (typeof globalThis.crypto === 'undefined') {
-  globalThis.crypto = require('crypto');
+  import('crypto').then((crypto) => {
+    globalThis.crypto = crypto;
+  });
 }
 
 const app = express();
@@ -25,18 +28,12 @@ app.use(cors({
   credentials: true,   // Allow cookies to be sent in cross-origin requests
 }));
 
-// CSRF token endpoint (apply csrfProtection to make req.csrfToken available)
-app.get('/csrf-token', csrfProtection, csrfTokenHandler);
-
-// Apply CSRF protection and authentication only to protected routes
-app.use('/account', csrfProtection, verifyToken, userRoutes);
-
-// Public user routes (no authentication required)
-app.use('/api/user', userRoutes);
 
 // Authentication routes (e.g., login, registration)
-app.use('/auth', authRoutes);
 app.use('/api/sponsor', sponsorRoutes);
+app.use('/api/registrations', registrationsRouter);
+app.use('/api/send-blast-email', sendBlastEmailRouter);
+app.use('/api/events', eventsRouter);
 
 // Root route
 app.get('/', (req, res) => {

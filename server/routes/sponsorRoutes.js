@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import Joi from 'joi';
+
 const router = express.Router();
-const Joi = require('joi');
 
 // Initialize Enoki client
 if (!process.env.ENOKI_PRIVATE_KEY) {
@@ -278,4 +279,4 @@ router.post('/execute-transaction', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

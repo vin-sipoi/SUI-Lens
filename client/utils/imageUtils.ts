@@ -109,24 +109,36 @@ export const uploadImageToImgBB = async (
     
     formData.append('name', imageName);
 
-    // Make API request with timeout
+    // Make API request with extended timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    // Increased timeout to 5 minutes (300000 ms) for large images
+    const timeoutId = setTimeout(() => controller.abort(), 300000);
 
-    const response = await axios.post('https://api.imgbb.com/1/upload', formData, {
-      signal: controller.signal,
-      headers: {
-        'Content-Type': 'multipart/form-data',
+    try {
+      const response = await axios.post('https://api.imgbb.com/1/upload', formData, {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        // Add timeout to axios as well for redundancy
+        timeout: 300000
+      });
+
+      clearTimeout(timeoutId);
+
+      // Check if upload was successful
+      if (response.data?.success) {
+        return response.data.data.url;
+      } else {
+        throw new Error(response.data?.error?.message || 'Image upload failed');
       }
-    });
-
-    clearTimeout(timeoutId);
-
-    // Check if upload was successful
-    if (response.data?.success) {
-      return response.data.data.url;
-    } else {
-      throw new Error('Image upload failed');
+    } catch (error) {
+      clearTimeout(timeoutId);
+      // Re-throw the error with more context
+      if (axios.isCancel(error)) {
+        throw new Error('Image upload was canceled. Please try again.');
+      }
+      throw error;
     }
   } catch (error) {
     console.error('Error uploading image to ImgBB:', error);
