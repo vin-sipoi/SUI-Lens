@@ -82,25 +82,33 @@ export default function EventDetailsPage() {
   const hasEventEnded = eventEndTime && now > eventEndTime
 
   // ✅ Save registration to DB
-  const saveRegistrationToDatabase = async (data: any) => {
+  const saveRegistrationToDatabase = async (data: { email: string; name: string; eventId: string; userId: string }) => {
     try {
       const res = await fetch('http://localhost:3009/api/registrations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       })
-      if (!res.ok) return null
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to save registration: ${res.status} ${res.statusText}`);
+      }
+      
       return await res.json()
-    } catch {
-      return null
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to save registration to database');
     }
   }
 
   // ✅ Handle registration
-  const handleRegister = async (formData = null) => {
+  const handleRegister = async (formData: { name: string; email: string } | null = null) => {
     if (!user?.walletAddress) {
       toast.error('Please connect your wallet first')
-      router.push('/auth/signin')
+      router.push('/landing')
       return
     }
 
@@ -111,7 +119,7 @@ export default function EventDetailsPage() {
 
     // Validate form if provided
     if (formData) {
-      const errors: any = {}
+      const errors: { name?: string; email?: string } = {}
       if (!formData.name.trim()) errors.name = 'Name is required'
       if (!formData.email.trim()) {
         errors.email = 'Email is required'
@@ -119,7 +127,7 @@ export default function EventDetailsPage() {
         errors.email = 'Invalid email'
       }
       if (Object.keys(errors).length > 0) {
-        setFormErrors(errors)
+        setFormErrors(errors as { name: string; email: string })
         return
       }
       setFormErrors({ name: '', email: '' })
@@ -127,30 +135,35 @@ export default function EventDetailsPage() {
 
     setRegistering(true)
     try {
+      // Save registration to database first
+      const registrationData = {
+        email: formData?.email || user?.email || '',
+        name: formData?.name || user?.name || 'Anonymous',
+        eventId,
+        userId: user.walletAddress
+      }
+      
+      if (registrationData.email) {
+        await saveRegistrationToDatabase(registrationData);
+      }
+
+      // Then execute blockchain transaction
       const ticketPriceInMist = event.isFree ? 0 : parseInt(event.ticketPrice || '0') * 1e9
       const tx = await suilensService.registerForEvent(eventId, ticketPriceInMist)
       const result = await signAndExecuteTransaction(tx)
 
-      if (result.success && result.data?.effects?.status?.status === 'success') {
-        const registrationData = {
-          email: formData?.email || user?.email,
-          name: formData?.name || user?.name || 'Anonymous',
-          eventId,
-          userId: user.walletAddress
-        }
-        if (registrationData.email) await saveRegistrationToDatabase(registrationData)
-
-        const updatedRsvps = [...(event.rsvps || []), user.walletAddress]
-        updateEvent(eventId, { rsvps: updatedRsvps })
-        setEvent({ ...event, rsvps: updatedRsvps })
-
-        if (formData) setRegistrationForm({ name: '', email: '' })
-        toast.success('Successfully registered!')
-        setTimeout(refreshEventData, 3000)
+      // Check transaction result
+      if (result?.effects?.status?.status === "success") {
+        toast.success('Successfully registered for the event!')
+        // Refresh event data to show updated RSVPs
+        await fetchEvents()
+        const updatedEvent = getEvent(eventId)
+        setEvent(updatedEvent)
       } else {
-        throw new Error(result.error || 'Transaction failed')
+        throw new Error('Blockchain transaction failed')
       }
     } catch (err: any) {
+      console.error('Registration error:', err)
       toast.error(err.message || 'Failed to register')
     } finally {
       setRegistering(false)
@@ -162,9 +175,9 @@ export default function EventDetailsPage() {
     handleRegister(registrationForm)
   }
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof typeof registrationForm, value: string) => {
     setRegistrationForm(prev => ({ ...prev, [field]: value }))
-    if (formErrors[field]) setFormErrors(prev => ({ ...prev, [field]: '' }))
+    if (formErrors[field as keyof typeof formErrors]) setFormErrors(prev => ({ ...prev, [field]: '' }))
   }
 
   const handleShare = () => {

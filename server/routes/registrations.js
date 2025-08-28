@@ -1,13 +1,15 @@
 import express from 'express';
 import { Event, Registration } from '../models/index.js';
 import EventSyncService from '../services/eventSyncService.js';
+import emailService from '../lib/emailService.js';
+import { generateEventQRCode } from '../utils/qrCodeUtils.js';
 
 const router = express.Router();
 
 // Create registration with blockchain sync
 router.post('/', async (req, res) => {
   try {
-    const { eventId, userAddress, userEmail, userName } = req.body;
+    const { eventId, email, name, userId } = req.body;
 
     if (!eventId) {
       return res.status(400).json({ 
@@ -16,24 +18,41 @@ router.post('/', async (req, res) => {
       });
     }
 
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'User email is required' 
+      });
+    }
+
+    if (!name) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'User name is required' 
+      });
+    }
+
+    // Normalize eventId to remove "0x" prefix if present
+    const normalizedEventId = eventId;
+
     // Try to find event in database by UUID (direct ID)
-    let event = await Event.findByPk(eventId);
+    let event = await Event.findByPk(normalizedEventId);
     
     // If not found by UUID, try to find by blockchain event ID
     if (!event) {
-      console.log(`Event ${eventId} not found by UUID, trying blockchain ID...`);
-      event = await Event.findOne({ where: { suiEventId: eventId } });
+      console.log(`Event ${normalizedEventId} not found by UUID, trying blockchain ID...`);
+      event = await Event.findOne({ where: { suiEventId: normalizedEventId } });
     }
     
     // If event still not found, sync from blockchain
     if (!event) {
-      console.log(`Event ${eventId} not found in DB, syncing from blockchain...`);
+      console.log(`Event ${normalizedEventId} not found in DB, syncing from blockchain...`);
       
       const syncService = new EventSyncService();
-      await syncService.syncSingleEvent({ id: eventId });
+      await syncService.syncSingleEvent({ id: normalizedEventId });
       
       // Try to find again after sync
-      event = await Event.findOne({ where: { suiEventId: eventId } });
+      event = await Event.findOne({ where: { suiEventId: normalizedEventId } });
       
       if (!event) {
         return res.status(404).json({ 
@@ -46,7 +65,7 @@ router.post('/', async (req, res) => {
 
     // Check if already registered
     const existingRegistration = await Registration.findOne({
-      where: { eventId: event.id, userAddress }
+      where: { eventId: event.id, email: email }
     });
 
     if (existingRegistration) {
@@ -59,11 +78,41 @@ router.post('/', async (req, res) => {
     // Create registration
     const registration = await Registration.create({
       eventId: event.id,
-      userAddress,
-      userEmail,
-      userName,
+      email: email,
+      name: name,
       registeredAt: new Date()
     });
+
+    // Send email with event information and QR code
+    try {
+      // Generate QR code for the event
+      const qrCodeDataUrl = await generateEventQRCode(event.id);
+      
+      // Send email with event details and QR code
+      await emailService.sendEventRegistrationEmailWithQR(
+        email,
+        {
+          title: event.title,
+          description: event.description,
+          date: event.date,
+          location: event.location,
+          isVirtual: event.isVirtual,
+          capacity: event.capacity,
+          ticketPrice: event.ticketPrice,
+          isFree: event.isFree,
+          startTimestamp: event.startTimestamp,
+          endTimestamp: event.endTimestamp
+        },
+        {
+          name: name,
+          email: email
+        },
+        qrCodeDataUrl
+      );
+    } catch (emailError) {
+      console.error('Failed to send registration email:', emailError);
+      // Don't fail the registration if email sending fails
+    }
 
     res.json({ 
       success: true, 
@@ -84,7 +133,10 @@ router.get('/event/:eventId', async (req, res) => {
   try {
     const { eventId } = req.params;
     
-    const event = await Event.findOne({ where: { suiEventId: eventId } });
+    // Normalize eventId to remove "0x" prefix if present
+    const normalizedEventId = eventId.startsWith('0x') ? eventId.slice(2) : eventId;
+    
+    const event = await Event.findOne({ where: { suiEventId: normalizedEventId } });
     if (!event) {
       return res.status(404).json({ 
         success: false, 
@@ -137,8 +189,11 @@ router.post('/sync-event', async (req, res) => {
       return res.status(400).json({ success: false, message: 'eventId is required' });
     }
 
+    // Normalize eventId to remove "0x" prefix if present
+    const normalizedEventId = eventId.startsWith('0x') ? eventId.slice(2) : eventId;
+
     const syncService = new EventSyncService();
-    const ok = await syncService.syncEventById(eventId);
+    const ok = await syncService.syncEventById(normalizedEventId);
     
     if (!ok) return res.status(404).json({ success: false, message: 'Event not found on chain' });
 
