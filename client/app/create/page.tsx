@@ -261,7 +261,7 @@ export default function CreateEventPage() {
       // Generate QR code for the event
       const qrData = await generateQRCode(eventId)
 
-      // Add event to context with image URLs
+      // Add event to context with image URLs (temporarily add even if sponsorship fails)
       addEvent({
         id: eventId,
         type: "",
@@ -273,7 +273,7 @@ export default function CreateEventPage() {
         poapEnabled: poapData.name ? true : false,
         qrCode: qrData.qrCodeImage,
         eventUrl: qrData.eventUrl,
-        // rsvpTimes: undefined // Removed as it does not exist in the Event type
+        rsvpTimes: [] // Add the required rsvpTimes property
       })
 
       // First, ensure user has a profile (create if not exists)

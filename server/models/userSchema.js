@@ -50,6 +50,11 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(100),
     allowNull: true,
   },
+  address: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    unique: true,
+  },
 }, {
   tableName: 'users', 
   schema: 'app_data', 

@@ -124,14 +124,58 @@ export function useSponsoredTransaction() {
     setIsLoading(true);
 
     try {
-      // 1. Build transaction bytes with Sui client
-      const txBytes = await tx.build({
-        onlyTransactionKind: true,
-        client: suiClient,
-      });
+      // Check if the transaction is for creating a profile and if the user already has one
+      // This is a simple check - in a real implementation, you'd need to analyze the transaction
+      // to determine if it's a profile creation transaction
+      console.log('Checking if user already has a profile...');
       
-      console.log('Transaction bytes built successfully:', txBytes);
-      console.log('Transaction bytes length:', txBytes.length);
+      // For now, we'll add a basic check that can be enhanced later
+      // This is a placeholder for more sophisticated transaction analysis
+      const isProfileCreationTx = true; // Assume it's a profile creation for now
+      
+      if (isProfileCreationTx) {
+        try {
+          const profileCheckResponse = await fetch(`${BACKEND_URL}/api/user/profile-exists`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: senderAddress }),
+          });
+          
+          if (profileCheckResponse.ok) {
+            const profileExists = await profileCheckResponse.json();
+            if (profileExists.exists) {
+              throw new Error('Profile already exists. Please update your profile instead of creating a new one.');
+            }
+          }
+        } catch (checkError) {
+          console.warn('Profile check failed, proceeding with transaction:', checkError);
+          // Continue with transaction if check fails
+        }
+      }
+
+      // 1. Build transaction bytes with Sui client
+      console.log('Building transaction with network:', network);
+      console.log('Sui client network:', suiClient.network);
+      
+      let txBytes: Uint8Array;
+      try {
+        txBytes = await tx.build({
+          onlyTransactionKind: true,
+          client: suiClient,
+        });
+        
+        console.log('Transaction bytes built successfully:', txBytes);
+        console.log('Transaction bytes length:', txBytes.length);
+        console.log('Transaction bytes type:', typeof txBytes);
+        
+        // Convert to base64 for inspection
+        const { toBase64 } = await import('@mysten/sui/utils');
+        const txBytesBase64 = toBase64(txBytes);
+        console.log('Transaction bytes (base64):', txBytesBase64.substring(0, 100) + '...');
+      } catch (buildError: any) {
+        console.error('Transaction build failed:', buildError);
+        throw new Error(`Failed to build transaction: ${buildError.message}`);
+      }
 
       // 2. Request sponsorship from backend
       const sponsorResponse = await fetch(
@@ -150,8 +194,20 @@ export function useSponsoredTransaction() {
       );
 
       if (!sponsorResponse.ok) {
-        const error = await sponsorResponse.json();
-        throw new Error(`Sponsorship failed: ${error.error || error.message}`);
+        let errorResponse;
+        try {
+          const responseText = await sponsorResponse.text();
+          if (responseText) {
+            errorResponse = JSON.parse(responseText);
+          } else {
+            errorResponse = {};
+          }
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          errorResponse = { error: 'Unknown error occurred' };
+        }
+        console.error('Sponsorship error response:', errorResponse);
+        throw new Error(`Sponsorship failed: ${errorResponse.error || errorResponse.message || 'Unknown error'}`);
       }
 
       const sponsorData = await sponsorResponse.json();
@@ -244,15 +300,30 @@ export function useSponsoredTransaction() {
       );
 
       if (!executeResponse.ok) {
-        const error = await executeResponse.json();
-        throw new Error(`Execution failed: ${error.error || error.message}`);
+        let error;
+        try {
+          const responseText = await executeResponse.text();
+          if (responseText) {
+            error = JSON.parse(responseText);
+          } else {
+            error = { error: 'Unknown error occurred' };
+          }
+        } catch (parseError) {
+          console.error('Failed to parse execution error response:', parseError);
+          error = { error: 'Unknown error occurred during execution' };
+        }
+        throw new Error(`Execution failed: ${error.error || error.message || 'Unknown error'}`);
       }
 
       const result = await executeResponse.json();
       return result;
     } catch (error) {
       console.error('Sponsored transaction failed:', error);
-      toast.error('Transaction failed. Please try again.');
+      if (error instanceof Error) {
+        toast.error(`Transaction failed: ${error.message}`);
+      } else {
+        toast.error('Transaction failed. Please try again.');
+      }
       throw error;
     } finally {
       setIsLoading(false);

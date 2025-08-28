@@ -86,22 +86,78 @@ router.post('/sponsor-transaction', async (req, res) => {
 
         console.log(`Sponsoring transaction for ${sender} on ${network}`);
 
-        // Create sponsored transaction
-        const enokiClient = await getEnokiClient();
-        const sponsored = await enokiClient.createSponsoredTransaction({
-            network: network,
-            transactionKindBytes: transactionKindBytes,
-            sender: sender,
-            allowedMoveCallTargets: allowedMoveCallTargets,
-            allowedAddresses: allowedAddresses || [sender],
-        });
+        console.log('Creating sponsored transaction with parameters:');
+        console.log('- Network:', network);
+        console.log('- Sender:', sender);
+        console.log('- Transaction kind bytes length:', transactionKindBytes.length);
+        console.log('- Allowed move call targets:', allowedMoveCallTargets || 'none');
+        console.log('- Allowed addresses:', allowedAddresses || [sender]);
 
-        res.json({
-            success: true,
-            bytes: sponsored.bytes,
-            digest: sponsored.digest,
-            network: network
-        });
+        // Create sponsored transaction with manual gas budget
+        const enokiClient = await getEnokiClient();
+        try {
+            const sponsored = await enokiClient.createSponsoredTransaction({
+                network: network,
+                transactionKindBytes: transactionKindBytes,
+                sender: sender,
+                allowedMoveCallTargets: allowedMoveCallTargets,
+                allowedAddresses: allowedAddresses || [sender],
+                // Add manual gas budget to help with dry run issues
+                gasBudget: 100000000, // 0.1 SUI in MIST
+            });
+
+            console.log('Sponsorship successful!');
+            console.log('- Transaction digest:', sponsored.digest);
+            console.log('- Bytes length:', sponsored.bytes.length);
+
+            res.json({
+                success: true,
+                bytes: sponsored.bytes,
+                digest: sponsored.digest,
+                network: network
+            });
+        } catch (enokiError) {
+            console.error('Enoki API error details:', {
+                message: enokiError.message,
+                code: enokiError.code,
+                status: enokiError.status
+            });
+            
+            // Check if it's a dry run failure and provide more specific error
+            if (enokiError.code === 'dry_run_failed') {
+                console.error('DRY_RUN_FAILED: This usually indicates issues with:');
+                console.error('1. Transaction parameters');
+                console.error('2. Contract validation');
+                console.error('3. Insufficient gas budget');
+                console.error('4. Invalid sender address or permissions');
+                
+                // Try with a different approach - use automatic gas estimation
+                try {
+                    console.log('Retrying with automatic gas estimation...');
+                    const sponsored = await enokiClient.createSponsoredTransaction({
+                        network: network,
+                        transactionKindBytes: transactionKindBytes,
+                        sender: sender,
+                        allowedMoveCallTargets: allowedMoveCallTargets,
+                        allowedAddresses: allowedAddresses || [sender],
+                        // Let Enoki handle gas estimation
+                    });
+                    
+                    console.log('Retry successful with automatic gas estimation!');
+                    res.json({
+                        success: true,
+                        bytes: sponsored.bytes,
+                        digest: sponsored.digest,
+                        network: network
+                    });
+                } catch (retryError) {
+                    console.error('Retry also failed:', retryError.message);
+                    throw retryError;
+                }
+            } else {
+                throw enokiError;
+            }
+        }
 
     } catch (error) {
         console.error('Error sponsoring transaction:', error);
@@ -145,22 +201,22 @@ router.post('/sponsor-transaction', async (req, res) => {
         }
         
         // Check if it's an Enoki API error with specific details
-        if (error.message.includes('invalid_type')) {
+        if (error.message && error.message.includes('invalid_type')) {
             console.error('ENOKI_KEY_DEBUG: Checking Enoki key format and permissions...');
             console.error('ENOKI_KEY_DEBUG: Key starts with:', process.env.ENOKI_PRIVATE_KEY?.substring(0, 20) + '...');
             console.error('ENOKI_KEY_DEBUG: Network being used:', network);
         }
         
         // Extract more detailed error information
-        let errorDetails = error.message;
-        let errorCode = error.code;
+        let errorDetails = error.message || 'Unknown error';
+        let errorCode = error.code || 'UNKNOWN_ERROR';
         
         if (error.response) {
             try {
                 const responseText = await error.response.text();
                 const responseJson = JSON.parse(responseText);
-                errorDetails = responseJson.details || responseJson.message || error.message;
-                errorCode = responseJson.code || error.code;
+                errorDetails = responseJson.details || responseJson.message || error.message || 'Unknown error';
+                errorCode = responseJson.code || error.code || 'UNKNOWN_ERROR';
             } catch (e) {
                 // If we can't parse the response, use the original error
             }

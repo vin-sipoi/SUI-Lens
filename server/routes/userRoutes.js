@@ -4,6 +4,7 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const verifyToken = require('../middleware/authenticateToken');
 const { protectedRoute } = require('../controllers/userController');
+const User = require('../models/userSchema');
 
 // Joi schema for validating the 'domain' parameter
 const domainValidationSchema = Joi.object({
@@ -28,5 +29,23 @@ router.post('/get-credentials', verifyToken, async (req, res, next) => {
 
 // Protected route - Only accessible if logged in
 router.get('/dashboard', verifyToken, protectedRoute);
+
+router.post('/profile-exists', async (req, res) => {
+    const { address } = req.body;
+
+    if (!address) {
+        return res.status(400).json({ error: 'Address is required' });
+    }
+
+    try {
+        const user = await User.findOne({ where: { address } });
+        const exists = user !== null;
+
+        return res.json({ exists });
+    } catch (err) {
+        console.error('Error checking profile existence:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
 module.exports = router;
