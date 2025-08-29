@@ -8,12 +8,13 @@ const POAPsSection = () => {
           {/* Grid Container */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-0 min-h-[1000px] md:min-h-[900px]">
             {/* Top Left - POAP Feature */}
-            <div className="bg-gradient-to-br from-[#0055B3] to-[#030F1C]  p-8 lg:p-12 flex flex-col justify-center min-h-[400px] md:min-h-[450px]">
+            <div className="p-8 lg:p-12 flex flex-col justify-center min-h-[400px] md:min-h-[450px]">
               <div className="text-[#E4F1FF]">
                 <h3 className="text-2xl sm:text-3xl lg:text-6xl font-semibold mb-6 leading-tight">
                   Add POAPs to Your <br /> Events
                 </h3>
-                <p className="text-[#E4F1FF] font-normal mb-8 text-base sm:text-lg lg:text-2xl opacity-90 leading-relaxed">
+                
+                <p className="text-[#E4F1FF] font-normal mb-8 text-base sm:text-lg lg:text-xl opacity-90 leading-relaxed">
                   Reward attendees with Proof of Attendance Protocol (POAP) NFTs for joining your event.
                 </p>
                 <button className="text-[#E4F1FF] font-normal border border-[#E4F1FF] px-6 py-2 rounded-lg text-sm sm:text-base" onClick={() => window.location.href = '/create'}>
@@ -25,7 +26,7 @@ const POAPsSection = () => {
             {/* Top Right - POAP Image */}
             <div className="bg-gradient-to-br from-blue-200 to-blue-100 flex items-center justify-center min-h-[400px] md:min-h-[450px] flex-1">
               <img
-                src="suicoin.png"
+                src="suicoinn.png"
                 alt="POAP feature"
                 className="w-full object-contain drop-shadow-lg rounded-lg"
               />
@@ -41,7 +42,7 @@ const POAPsSection = () => {
             </div>
 
             {/* Bottom Right - Grant Tracking Feature */}
-            <div className="bg-[#030F1C] p-8 lg:p-12 flex flex-col justify-center min-h-[400px] md:min-h-[450px]">
+            <div className="p-8 lg:p-12 flex flex-col justify-center min-h-[400px] md:min-h-[450px]">
               <div className="text-white">
                 <h3 className="text-2xl sm:text-3xl lg:text-6xl font-semibold mb-6 leading-tight">
                   Bounty & Grant  <br /> Tracking for Leads

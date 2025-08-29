@@ -141,9 +141,9 @@ export default function Header() {
 	return (
 		<>
 			<header className="bg-white sticky top-0 z-50 w-full border-b border-gray-100">
-        <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 z-20 flex-shrink-0">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4 flex items-center">
+          {/* Logo - Far Left */}
+          <Link href="/" className="flex items-center space-x-2 z-20 flex-shrink-0 mr-auto">
             <Image
               src="https://i.ibb.co/PZHSkCVG/Suilens-Logo-Mark-Suilens-Black.png"
               alt="Suilens Logo"
@@ -157,7 +157,7 @@ export default function Header() {
           </Link>
 
           {/* Center Nav - Desktop Only */}
-          <nav className="hidden lg:flex flex-1 justify-center">
+          <nav className="hidden lg:flex absolute left-1/2 transform -translate-x-1/2">
             <ul className="flex gap-6 xl:gap-8 text-sm font-medium">
               {filteredNavItems.map((item) => (
                 <li key={item.name}>
@@ -187,7 +187,7 @@ export default function Header() {
           </nav>
 
           {/* Mobile Right Side - Create Event + Menu */}
-          <div className="flex lg:hidden items-center gap-2 flex-shrink-0">
+          <div className="flex lg:hidden items-center gap-2 flex-shrink-0 ml-auto">
             {/* Create Event Button - Mobile */}
             {isAuthenticated && (
               <Link href="/create">
@@ -211,8 +211,8 @@ export default function Header() {
             </button>
           </div>
 
-          {/* Right Side - Desktop */}
-          <div className="hidden lg:flex items-center gap-3 xl:gap-4 flex-shrink-0">
+          {/* Right Side - Desktop - Far Right */}
+          <div className="hidden lg:flex items-center gap-3 xl:gap-4 flex-shrink-0 ml-auto">
             {!isAuthenticated ? (
               <Dialog>
                 <DialogTrigger asChild> 

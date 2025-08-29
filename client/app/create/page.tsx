@@ -52,7 +52,7 @@ export default function CreateEventPage() {
   useEffect(() => {
     if (!user) {
       const timeoutId = setTimeout(() => {
-        router.push('/auth/signin')
+        router.push('/landing')
       }, 100)
       return () => clearTimeout(timeoutId)
     }

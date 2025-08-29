@@ -70,39 +70,43 @@ const EventDashboard: React.FC = () => {
       <Header />
 
       {/* Search and Filter Section */}
-      <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
-        <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-          {/* Search Bar */}
-          <div className="relative w-full sm:max-w-2xl">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              type="text"
-              placeholder="Search for community or event..."
-              className="w-full pl-10 py-2.5 sm:py-3 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Search Bar and Refresh Button on same line */}
+        <div className="mb-6 flex items-center gap-4">
+          <div className="flex-1 sm:w-9/12 md:w-2/3 mx-auto">
+            <div className="relative flex items-center">
+              <Search className="absolute left-3 text-gray-400 h-5 w-5" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search for community or event..."
+                className="block w-full pl-10 pr-3 py-2 sm:py-3 border border-gray-300 rounded-3xl bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
           </div>
-
-          {/* Filter Button - Only on mobile */}
-          <Button className="sm:hidden w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 py-2.5">
-            <Filter className="h-4 w-4" />
-            Filter
-          </Button>
-
+          
           {/* Refresh Button */}
           <Button 
             onClick={() => fetchEvents()}
             disabled={isLoading}
-            className="flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 sm:px-4 py-2.5 flex-shrink-0"
+            className="flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 sm:px-4 py-2 sm:py-3 flex-shrink-0"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Refresh</span>
           </Button>
         </div>
 
+        {/* Filter Button - Only on mobile */}
+        <div className="sm:hidden mb-4">
+          <Button className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 py-2.5">
+            <Filter className="h-4 w-4" />
+            Filter
+          </Button>
+        </div>
+
         {/* Category Pills */}
-        <div className="flex flex-nowrap overflow-x-auto pb-2 gap-2 sm:gap-3 hide-scrollbar -mx-1 px-1">
+        <div className="flex flex-nowrap overflow-x-auto pb-2 gap-2 sm:gap-3 hide-scrollbar -mx-1 px-1 mb-4">
           {categories.map((category) => (
             <button
               key={category.id}
@@ -147,17 +151,16 @@ const EventDashboard: React.FC = () => {
             </div>
           </div>
         ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6 xl:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
           {filteredEvents.map((event) => (
             <div
               key={event.id}
-              className="w-full max-w-full p-3 sm:p-4 md:p-6 lg:p-8 bg-white border-2 rounded-2xl sm:rounded-3xl overflow-hidden border-gray-100 transition-colors group cursor-pointer flex flex-col h-full"
+              className="w-full max-w-full p-2 sm:p-3 md:p-4 bg-white border-2 rounded-2xl sm:rounded-3xl overflow-hidden border-gray-100 transition-colors group cursor-pointer flex flex-col h-full"
             >
-              {/* Inner wrapper: adds padding and border so image and text align */}
               <div className="border border-[#E6E7E8] rounded-2xl sm:rounded-3xl flex flex-col h-full overflow-hidden">
                 
-                {/* Image Section: responsive height */}
-                <div className="relative w-full h-32 sm:h-40 md:h-48 lg:h-52 overflow-hidden">
+                {/* Image Section: reduced height */}
+                <div className="relative w-full h-24 sm:h-28 md:h-32 lg:h-36 overflow-hidden">               
                   <img 
                     src={event.bannerUrl || event.image || 'https://via.placeholder.com/400x300?text=Event'} 
                     alt={event.title} 
@@ -166,18 +169,18 @@ const EventDashboard: React.FC = () => {
                 </div>
 
                 {/* Content Section */}
-                <div className="p-3 sm:p-4 md:p-6 mt-2 sm:mt-4 flex-1 flex flex-col min-w-0">
+                <div className="p-2 sm:p-3 md:p-4 mt-1 sm:mt-2 flex-1 flex flex-col min-w-0">
                   {/* Header with title */}
-                  <div className="flex items-start justify-between mb-2 sm:mb-3 min-w-0">
+                  <div className="flex items-start justify-between mb-1 sm:mb-2 min-w-0">
                     <Link href={`/event/${event.id}`} className="min-w-0 flex-1">
-                      <h3 className="text-base sm:text-lg md:text-xl font-semibold text-[#101928] cursor-pointer hover:underline line-clamp-2 break-words">
+                      <h3 className="text-sm sm:text-base md:text-lg font-semibold text-[#101928] cursor-pointer hover:underline line-clamp-2 break-words">
                         {event.title}
                       </h3>
                     </Link>
                   </div>
 
                   {/* Date and Location */}
-                  <div className="flex flex-col sm:flex-row sm:items-center font-medium text-xs sm:text-sm text-[#667185] mb-2 sm:mb-3 gap-1 sm:gap-0 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center font-medium text-xs sm:text-sm text-[#667185] mb-1 sm:mb-2 gap-1 sm:gap-0 min-w-0">
                     <div className="flex items-center min-w-0">
                       <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
                       <span className="truncate">{new Date(event.date).toLocaleDateString()}</span>
@@ -190,7 +193,7 @@ const EventDashboard: React.FC = () => {
                   </div>
 
                   {/* Description */}
-                  <p className="text-[#8A94A5] text-xs sm:text-sm md:text-base mb-3 sm:mb-4 md:mb-6 leading-relaxed flex-1 line-clamp-3 break-words">
+                  <p className="text-[#8A94A5] text-xs sm:text-sm md:text-base mb-2 sm:mb-3 leading-relaxed flex-1 line-clamp-2 break-words">
                     {event.description || "No description available."}
                   </p>
 
