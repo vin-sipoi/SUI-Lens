@@ -54,7 +54,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/events
 router.post('/', async (req, res) => {
   try {
-    const { 
+    const {
       id,
       title,
       description,
@@ -65,6 +65,7 @@ router.post('/', async (req, res) => {
       latitude,
       longitude,
       category,
+      communityId,
       startDate,
       endDate,
       capacity,
@@ -83,18 +84,26 @@ router.post('/', async (req, res) => {
     } = req.body;
 
     if (!id || !title || !startDate || !endDate) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Missing required fields: id, title, startDate, endDate' 
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: id, title, startDate, endDate'
       });
     }
 
     // Validate blockchain transaction ID format (Sui transaction format)
     const suiTxPattern = /^0x[a-fA-F0-9]{64}$/; // 0x + 64 hex characters
     if (!suiTxPattern.test(id)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid blockchain transaction ID format' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid blockchain transaction ID format'
+      });
+    }
+
+    // Validate category if provided
+    if (category && !['developer', 'community', 'other'].includes(category)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid category. Must be one of: developer, community, other'
       });
     }
 
@@ -109,6 +118,7 @@ router.post('/', async (req, res) => {
       latitude,
       longitude,
       category,
+      communityId,
       startDate,
       endDate,
       capacity: capacity || 100,
@@ -144,7 +154,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { 
+    const {
       title,
       description,
       bannerUrl,
@@ -154,6 +164,7 @@ router.put('/:id', async (req, res) => {
       latitude,
       longitude,
       category,
+      communityId,
       startDate,
       endDate,
       capacity,
@@ -172,11 +183,19 @@ router.put('/:id', async (req, res) => {
     } = req.body;
 
     const event = await Event.findByPk(id);
-    
+
     if (!event) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Event not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found'
+      });
+    }
+
+    // Validate category if provided
+    if (category && !['developer', 'community', 'other'].includes(category)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid category. Must be one of: developer, community, other'
       });
     }
 
@@ -190,6 +209,7 @@ router.put('/:id', async (req, res) => {
       latitude,
       longitude,
       category,
+      communityId,
       startDate,
       endDate,
       capacity,
