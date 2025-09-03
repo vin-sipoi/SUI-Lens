@@ -1,19 +1,32 @@
-import express from 'express';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
-import sponsorRoutes from './routes/sponsorRoutes.js';
-import registrationsRouter from './routes/registrations.js';
-import sendBlastEmailRouter from './routes/send-blast-email.js';
-import eventsRouter from './routes/events.js';
-import dotenv from 'dotenv';
+const express = require('express');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+const sponsorRoutes = require('./routes/sponsorRoutes');
+const eventRoutes = require('./routes/eventRoutes');
+const verifyToken = require('./middleware/authenticateToken');
+const { csrfProtection, csrfTokenHandler } = require('./middleware/csrfMiddleware');
+// Load environment variables from client/.env first, then server/.env as fallback
+require('dotenv').config({ path: '../client/.env' });
+require('dotenv').config(); // Load server/.env if it exists
 
-dotenv.config();
+// Debug logging for environment variables
+console.log('Environment variables loaded:');
+console.log('- NEXT_PUBLIC_PACKAGE_ID:', process.env.NEXT_PUBLIC_PACKAGE_ID ? '✅ Set' : '❌ Not set');
+console.log('- NEXT_PUBLIC_EVENT_REGISTRY_ID:', process.env.NEXT_PUBLIC_EVENT_REGISTRY_ID ? '✅ Set' : '❌ Not set');
+console.log('- ENOKI_PRIVATE_KEY:', process.env.ENOKI_PRIVATE_KEY ? '✅ Set' : '❌ Not set');
+
+// Show which values will actually be used (with fallbacks)
+const effectivePackageId = process.env.PACKAGE_ID || process.env.NEXT_PUBLIC_PACKAGE_ID;
+const effectiveRegistryId = process.env.EVENT_REGISTRY_ID || process.env.NEXT_PUBLIC_EVENT_REGISTRY_ID;
+console.log('\nEffective configuration:');
+console.log('- Package ID (effective):', effectivePackageId ? `✅ ${effectivePackageId.substring(0, 10)}...` : '❌ Not configured');
+console.log('- Registry ID (effective):', effectiveRegistryId ? `✅ ${effectiveRegistryId.substring(0, 10)}...` : '❌ Not configured');
 
 // Polyfill for crypto in Node.js environment
 if (typeof globalThis.crypto === 'undefined') {
-  import('crypto').then((crypto) => {
-    globalThis.crypto = crypto;
-  });
+  globalThis.crypto = require('crypto');
 }
 
 const app = express();
@@ -28,12 +41,21 @@ app.use(cors({
   credentials: true,   // Allow cookies to be sent in cross-origin requests
 }));
 
+// CSRF token endpoint (apply csrfProtection to make req.csrfToken available)
+app.get('/csrf-token', csrfProtection, csrfTokenHandler);
+
+// Apply CSRF protection and authentication only to protected routes
+app.use('/account', csrfProtection, verifyToken, userRoutes);
+
+// Public user routes (no authentication required)
+app.use('/api/user', userRoutes);
 
 // Authentication routes (e.g., login, registration)
+app.use('/auth', authRoutes);
 app.use('/api/sponsor', sponsorRoutes);
-app.use('/api/registrations', registrationsRouter);
-app.use('/api/send-blast-email', sendBlastEmailRouter);
-app.use('/api/events', eventsRouter);
+
+// Events routes
+app.use('/api/events', eventRoutes);
 
 // Root route
 app.get('/', (req, res) => {

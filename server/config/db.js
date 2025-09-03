@@ -1,7 +1,5 @@
-import { Sequelize } from 'sequelize';
-import dotenv from 'dotenv';
-
-dotenv.config();
+const { Sequelize } = require('sequelize');
+require('dotenv').config();
 
 // Validate environment variables
 const requiredEnvVars = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD', 'DB_PORT'];
@@ -49,4 +47,4 @@ async function connectToDatabase() {
 connectToDatabase();
 
 // Export the Sequelize instance for use in other parts of the app
-export default sequelize;
+module.exports = sequelize;

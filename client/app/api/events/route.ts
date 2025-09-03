@@ -1,44 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { suilensService } from '@/lib/sui-client'
-import formidable from 'formidable'
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
 
 export async function POST(request: NextRequest) {
   try {
-    const form = new formidable.IncomingForm()
-    const data = await new Promise((resolve, reject) => {
-      form.parse(request as any, (err: any, fields: any, files: any) => {
-        if (err) reject(err)
-        else resolve({ fields, files })
-      })
-    })
+    // Parse JSON data from the request body
+    const eventData = await request.json()
 
-    const { fields, files } = data as any
+    // Extract form fields from JSON
+    const {
+      title,
+      description,
+      bannerUrl = '',
+      nftImageUrl = '',
+      poapImageUrl = '',
+      location = '',
+      category = 'General',
+      startDate,
+      endDate,
+      capacity = '100',
+      ticketPrice = '0',
+      requiresApproval = false,
+      poapTemplate = ''
+    } = eventData
 
     // Generate a temporary event ID (you'll replace this with DB logic)
     const eventId = `event_${Date.now()}`
 
-    // Handle file upload if any
-    let poapImageUrl = ''
-    if (files.poapImage) {
-      const file = files.poapImage
-      // Save file to disk or cloud storage here, for now just use file path
-      poapImageUrl = file.filepath || ''
-    }
-
     // Create transaction block for event creation
     const txb = await suilensService.createEvent({
-      name: fields.title as string,
-      description: fields.description as string,
-      startTime: new Date(`${fields.date} ${fields.time}`).getTime(),
-      endTime: new Date(`${fields.date} ${fields.endTime}`).getTime(),
-      maxAttendees: parseInt(fields.capacity as string) || 100,
-      poapTemplate: poapImageUrl,
+      name: title,
+      description: description,
+      bannerUrl: bannerUrl,
+      nftImageUrl: nftImageUrl,
+      poapImageUrl: poapImageUrl,
+      location: location,
+      category: category,
+      startTime: new Date(startDate).getTime(),
+      endTime: new Date(endDate).getTime(),
+      maxAttendees: parseInt(capacity) || 100,
+      ticketPrice: parseFloat(ticketPrice) || 0,
+      requiresApproval: requiresApproval,
+      poapTemplate: poapTemplate || poapImageUrl,
     })
 
     return NextResponse.json({

@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
+require('dotenv').config({ path: './client/.env' });
+
 const { Transaction } = require('@mysten/sui/transactions');
 const { toB64 } = require('@mysten/sui/utils');
 const { SuiClient, getFullnodeUrl } = require('@mysten/sui/client');
 
 // Configuration - replace with your actual values
-const PACKAGE_ID = process.env.NEXT_PUBLIC_PACKAGE_ID || '0x80a710472adc37cc6deced075780f2ac44a0e8cad534f4edc1c1e2f994878c7b';
-const EVENT_REGISTRY_ID = process.env.NEXT_PUBLIC_EVENT_REGISTRY_ID || 'YOUR_EVENT_REGISTRY_ID';
+const PACKAGE_ID = process.env.NEXT_PUBLIC_PACKAGE_ID || '0xfcfdddeed4ac04a41fcc73d25ef60921e162f5695dde54f8aa75a00cb00fd785';
+const EVENT_REGISTRY_ID = process.env.NEXT_PUBLIC_EVENT_REGISTRY_ID || '0x1105bf30871e34e7a2ad640c75d55f37774f81cf6d06ad79a50528008b8bf6f1';
 const SENDER_ADDRESS = '0x00000000000000000000000000000000000000000000';
 
 // Initialize Sui client
@@ -33,8 +35,8 @@ async function debugTransaction() {
         tx.pure.string('https://example.com/banner.jpg'),
         tx.pure.string('https://example.com/nft.jpg'),
         tx.pure.string('https://example.com/poap.jpg'),
-        tx.pure.u64(Math.floor(Date.now() / 1000) + 3600), // 1 hour from now
-        tx.pure.u64(Math.floor(Date.now() / 1000) + 7200), // 2 hours from now
+        tx.pure.u64(Date.now() + 86400000), // 24 hours from now (milliseconds)
+        tx.pure.u64(Date.now() + 172800000), // 48 hours from now (milliseconds)
         tx.pure.string('Virtual Event'),
         tx.pure.string('Community'),
         tx.pure.option('u64', 100), // maxAttendees

@@ -1,5 +1,6 @@
 const sequelize = require('./config/db');
 const User = require('./models/userSchema');
+const Event = require('./models/eventSchema');
 
 async function syncDatabase() {
   try {

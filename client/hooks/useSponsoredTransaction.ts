@@ -31,12 +31,14 @@ export function useSponsoredTransaction() {
     tx,
     allowedMoveCallTargets,
     allowedAddresses,
-    network = 'mainnet'
+    network = 'mainnet',
+    skipOnlyTransactionKind = false
   }: {
     tx: Transaction;
     allowedMoveCallTargets?: string[];
     allowedAddresses?: string[];
     network?: string;
+    skipOnlyTransactionKind?: boolean;
   }) {
     console.log('🚀 Starting sponsored transaction...');
     console.log('📋 Connection Status:');
@@ -66,42 +68,20 @@ export function useSponsoredTransaction() {
     
     // Check if we have any form of wallet connection
     const hasWalletConnection = zkLoginSession || currentAccount || user?.walletAddress;
-    
-    if (!hasWalletConnection) {
-      console.log('❌ No wallet connection detected - cannot proceed with transaction');
-      
-      let errorMessage = 'Wallet connection required. ';
-      
-      // Check if we might have a session issue
-      const hasLocalStorageSession = typeof window !== 'undefined' && 
-        localStorage.getItem('enoki-session');
-      
-      if (hasLocalStorageSession) {
-        errorMessage += 'It appears you have a stored session but it may have expired. ';
-        errorMessage += 'Please try logging out and back in with Enoki, or connect your wallet manually.';
-      } else {
-        errorMessage += 'Please connect your wallet to continue. ';
-        errorMessage += 'If you signed up with Enoki, ensure you are properly logged in. ';
-        errorMessage += 'Make sure your wallet is connected and you are logged in with Enoki.';
-      }
-      
-      console.error('Connection state details:', JSON.stringify({
-        zkLoginSession: zkLoginSession,
-        currentAccount: currentAccount,
-        enokiAddress: enokiAddress,
-        userWalletAddress: user?.walletAddress,
-        hasLocalStorageSession: hasLocalStorageSession
-      }, null, 2));
-      
-      const error = new Error(errorMessage);
-      toast.error(error.message);
-      throw error;
-    }
+
+    // Check if currentAccount has gas coins
+    const hasGasCoins = currentAccount && currentAccount.address ? true : false;
+
+    // For sponsored transactions with Enoki, we don't need to check for gas coins
+    // The sponsor will pay for the transaction
+    console.log('Gas coins check:', hasGasCoins);
+    console.log('This is a sponsored transaction with Enoki, so gas coins are not required from the user');
 
     // Additional check for wallet connection before proceeding with the transaction
-    if (!currentAccount && !user?.walletAddress) {
-      console.error('❌ No current account or stored wallet address found. Please connect your wallet.');
-      throw new Error('No wallet connection found. Please connect your wallet to proceed with transactions.');
+    if (!hasWalletConnection) {
+      console.error('❌ No wallet connection detected - cannot proceed with transaction');
+      toast.error('Wallet connection required. Please connect your wallet to continue.');
+      throw new Error('Wallet connection required.');
     }
     
     if (!senderAddress) {
@@ -156,26 +136,42 @@ export function useSponsoredTransaction() {
       // 1. Build transaction bytes with Sui client
       console.log('Building transaction with network:', network);
       console.log('Sui client network:', suiClient.network);
-      
+
       let txBytes: Uint8Array;
       try {
+        // For sponsored transactions, build as transaction kind first (no gas requirements)
+        console.log('Building transaction as transaction kind (sponsored transaction)');
         txBytes = await tx.build({
           onlyTransactionKind: true,
           client: suiClient,
         });
-        
-        console.log('Transaction bytes built successfully:', txBytes);
-        console.log('Transaction bytes length:', txBytes.length);
-        console.log('Transaction bytes type:', typeof txBytes);
-        
-        // Convert to base64 for inspection
-        const { toBase64 } = await import('@mysten/sui/utils');
-        const txBytesBase64 = toBase64(txBytes);
-        console.log('Transaction bytes (base64):', txBytesBase64.substring(0, 100) + '...');
+        console.log('Transaction built successfully as transaction kind');
       } catch (buildError: any) {
-        console.error('Transaction build failed:', buildError);
-        throw new Error(`Failed to build transaction: ${buildError.message}`);
+        console.log('Building with onlyTransactionKind failed:', buildError.message);
+
+        // If onlyTransactionKind fails, try building with sender set (for complex transactions)
+        if (buildError.message.includes('borrow_child_object_mut') ||
+            buildError.message.includes('dynamic_field') ||
+            buildError.message.includes('Object not found')) {
+          console.log('Dynamic field error detected, trying with sender set...');
+          tx.setSender(senderAddress);
+          txBytes = await tx.build({
+            client: suiClient,
+          });
+          console.log('Transaction built successfully with sender');
+        } else {
+          throw new Error(`Failed to build transaction: ${buildError.message}`);
+        }
       }
+
+      console.log('Transaction bytes built successfully:', txBytes);
+      console.log('Transaction bytes length:', txBytes.length);
+      console.log('Transaction bytes type:', typeof txBytes);
+
+      // Convert to base64 for inspection
+      const { toBase64 } = await import('@mysten/sui/utils');
+      const txBytesBase64 = toBase64(txBytes);
+      console.log('Transaction bytes (base64):', txBytesBase64.substring(0, 100) + '...');
 
       // 2. Request sponsorship from backend
       const sponsorResponse = await fetch(
@@ -187,7 +183,6 @@ export function useSponsoredTransaction() {
             transactionKindBytes: toBase64(txBytes),
             sender: senderAddress,
             network,
-            ...(allowedMoveCallTargets && { allowedMoveCallTargets }),
             allowedAddresses: allowedAddresses || [senderAddress],
           }),
         }
@@ -207,19 +202,52 @@ export function useSponsoredTransaction() {
           errorResponse = { error: 'Unknown error occurred' };
         }
         console.error('Sponsorship error response:', errorResponse);
+        
+        // Handle specific error cases
+        if (errorResponse.error === 'Enoki not configured') {
+          throw new Error('Sponsored transactions are not properly configured. Please contact the site administrator.');
+        }
+        
         throw new Error(`Sponsorship failed: ${errorResponse.error || errorResponse.message || 'Unknown error'}`);
       }
 
       const sponsorData = await sponsorResponse.json();
-      const { bytes: sponsorBytes, digest } = sponsorData;
+      const { bytes: sponsorBytes, digest, requiresProfileCreation, profileTransaction } = sponsorData;
 
       console.log('🔍 Sponsor response bytes type:', typeof sponsorBytes);
       console.log('🔍 Sponsor response bytes value:', sponsorBytes);
-      
+      console.log('🔍 Requires profile creation:', requiresProfileCreation);
+
+      // Handle profile creation case
+      if (requiresProfileCreation && profileTransaction) {
+        console.log('🔄 Profile creation required - returning profile transaction data');
+        return {
+          success: true,
+          requiresProfileCreation: true,
+          profileTransaction: {
+            bytes: profileTransaction.bytes,
+            digest: profileTransaction.digest,
+          },
+          mainTransaction: {
+            bytes: null,
+            digest: null,
+          },
+          network: sponsorData.network,
+          message: sponsorData.message,
+        };
+      }
+
+      // Handle normal transaction case
+      // Defensive check: if bytes is undefined or null, throw error
+      if (!sponsorBytes) {
+        console.error('No bytes received in sponsor response');
+        throw new Error('No transaction bytes received from sponsor. This may indicate a backend configuration issue.');
+      }
+
       // Convert bytes to Uint8Array if it's a string (base64 encoded)
       let transactionBytes: Uint8Array;
-      
-      if (typeof sponsorBytes === 'string') {
+
+      if (typeof sponsorBytes === 'string' && sponsorBytes.length > 0) {
         console.log('Converting base64 string to Uint8Array for signing');
         // If bytes is a base64 string, decode it to Uint8Array
         const { fromBase64 } = await import('@mysten/sui/utils');

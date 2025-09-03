@@ -9,7 +9,7 @@
 ## Contract Addresses
 
 ### Package
-- **Package ID**: `0x5d663fe35c25c54fe701cc9490e516722590e28722c34325dc6f1e20b2e8576c`
+- **Package ID**: `0xfcfdddeed4ac04a41fcc73d25ef60921e162f5695dde54f8aa75a00cb00fd785`
 - **Version**: 1
 
 ### Shared Objects (Registries)

@@ -1,5 +1,7 @@
 {
   "dependencies": {
-    "@mysten/sui": "^1.37.4"
+    "@mysten/enoki": "^0.11.10",
+    "@mysten/sui": "^1.37.4",
+    "dotenv": "^17.2.1"
   }
 }

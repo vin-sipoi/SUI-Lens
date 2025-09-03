@@ -3,8 +3,8 @@
 
 export const SUI_CONTRACTS = {
   network: 'mainnet',
-  packageId: '0x5d663fe35c25c54fe701cc9490e516722590e28722c34325dc6f1e20b2e8576c',
-  
+  packageId: '0xfb8bf946e9d5384f8e359de223da090ef54ff4cfab65c7f96221350dd47ab634',
+
   // Module names
   modules: {
     core: 'suilens_core',
@@ -12,13 +12,13 @@ export const SUI_CONTRACTS = {
     community: 'suilens_community',
     bounty: 'suilens_bounty'
   },
-  
-  // Shared objects
+
+  // Shared objects - Updated Mainnet addresses (Deployed 2025-08-16 with POAP during event)
   objects: {
-    globalRegistry: '0x31ff956c2a7983edb450237628a363780c2651fff956f6c9aec9969b66f97c92',
-    poapRegistry: '0xc8dd38a9b655f355e5de22514ede961b219722eaada1c36d980fc085dcb571a3',
-    communityRegistry: '0x9a5a7f1a40761a7e2487723251e043c11ce60432c6c19142717d6e20a3e4710b',
-    bountyRegistry: '0xe48bfa0fb21c9200de91b7d7662a38db91dbe837bd5498178e47175621366a3e'
+    globalRegistry: '0x7c54f29a275f5441cab9f59b8328ce5a76854c504149e149b39930f7e381c996',
+    poapRegistry: '0x33561211cc9752ba604e2f106a14228d4616dfb7243a511b9c9e60e0ca94bc49',
+    communityRegistry: '0x02dd14942cbb3ba0e8693b9c8517b96f0a4a712f443b1b866f3f6efd970dab76',
+    bountyRegistry: '0xa2533b178625d9f0b7ab09fad4ff7d7dd28ecb07e15fb2a02e967446177e565d'
   },
   
   // Admin capabilities (update when available)

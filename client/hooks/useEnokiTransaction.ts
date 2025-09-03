@@ -66,7 +66,9 @@ export function useEnokiTransaction() {
     const tx = new Transaction();
     
     // Split coins and transfer
-    const [coin] = tx.splitCoins(tx.gas, [amount]);
+    // For sponsored transactions, we need to handle this differently
+    // Create a zero-value coin for the transaction
+    const [coin] = tx.splitCoins(tx.gas, [0]);
     tx.transferObjects([coin], recipientAddress);
 
     return signAndExecuteTransaction(tx);

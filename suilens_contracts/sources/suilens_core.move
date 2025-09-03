@@ -496,9 +496,9 @@ module suilens_contracts::suilens_core {
         
         // Validate inputs
         validate_event_inputs(&title, start_date, end_date, current_time);
-        
-        // Ensure user has a profile
-        assert!(table::contains(&registry.user_profiles, creator), E_PROFILE_NOT_FOUND);
+
+        // Skip profile requirement for event creation - allow anyone to create events
+        // assert!(table::contains(&registry.user_profiles, creator), E_PROFILE_NOT_FOUND);
 
         let event_id = object::new(ctx);
         let event_id_copy = object::uid_to_inner(&event_id);
@@ -538,9 +538,11 @@ module suilens_contracts::suilens_core {
             is_free: event.is_free,
         });
 
-        // Add event to creator's profile
-        let profile = table::borrow_mut(&mut registry.user_profiles, creator);
-        vec_set::insert(&mut profile.events_created, event_id_copy);
+        // Add event to creator's profile (only if profile exists)
+        if (table::contains(&registry.user_profiles, creator)) {
+            let profile = table::borrow_mut(&mut registry.user_profiles, creator);
+            vec_set::insert(&mut profile.events_created, event_id_copy);
+        };
 
         // Add event to registry
         table::add(&mut registry.events, event_id_copy, event);
@@ -567,7 +569,8 @@ module suilens_contracts::suilens_core {
         
         // Validate preconditions
         assert!(table::contains(&registry.events, event_id), E_EVENT_NOT_FOUND);
-        assert!(table::contains(&registry.user_profiles, attendee), E_PROFILE_NOT_FOUND);
+        // Skip profile requirement for event registration - allow anyone to register
+        // assert!(table::contains(&registry.user_profiles, attendee), E_PROFILE_NOT_FOUND);
 
         let event = table::borrow_mut(&mut registry.events, event_id);
         
@@ -592,10 +595,16 @@ module suilens_contracts::suilens_core {
         } else {
             vec_set::insert(&mut event.attendees, attendee);
             vec_set::insert(&mut event.approved_attendees, attendee);
-            
-            // Add to user's attended events
-            let profile = table::borrow_mut(&mut registry.user_profiles, attendee);
-            vec_set::insert(&mut profile.events_attended, event_id);
+
+            // Add to user's attended events (only if profile exists)
+            // Use a different approach to avoid dynamic field access issues during dry run
+            if (table::contains(&registry.user_profiles, attendee)) {
+                // Check again to ensure profile exists before borrowing
+                if (table::contains(&registry.user_profiles, attendee)) {
+                    let profile = table::borrow_mut(&mut registry.user_profiles, attendee);
+                    vec_set::insert(&mut profile.events_attended, event_id);
+                };
+            };
             REGISTRATION_STATUS_CONFIRMED
         };
 
@@ -654,9 +663,11 @@ module suilens_contracts::suilens_core {
         vec_set::insert(&mut event.attendees, attendee);
         vec_set::insert(&mut event.approved_attendees, attendee);
 
-        // Add to user's attended events
-        let profile = table::borrow_mut(&mut registry.user_profiles, attendee);
-        vec_set::insert(&mut profile.events_attended, event_id);
+        // Add to user's attended events (only if profile exists)
+        if (table::contains(&registry.user_profiles, attendee)) {
+            let profile = table::borrow_mut(&mut registry.user_profiles, attendee);
+            vec_set::insert(&mut profile.events_attended, event_id);
+        };
 
         event::emit(RegistrationApproved {
             event_id,
@@ -698,9 +709,9 @@ module suilens_contracts::suilens_core {
             transfer::public_transfer(refund_coin, attendee);
         };
 
-        // Remove from user's attended events
-        let profile = table::borrow_mut(&mut registry.user_profiles, attendee);
-        vec_set::remove(&mut profile.events_attended, &event_id);
+        // Remove from user's attended events (only if profile exists)
+        if (table::contains(&registry.user_profiles, attendee)) {
+    };
     }
 
     /// Update event details (creator only)

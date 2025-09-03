@@ -9,9 +9,9 @@ async function verifyContractAddresses() {
     });
 
     const addresses = {
-        packageId: '0x80a710472adc37cc6deced075780f2ac44a0e8cad534f4edc1c1e2f994878c7b',
-        eventRegistryId: '0x12f90051dda087ff0767c890cfb1b226ca7f5b20ba9022c8e3523a4bec01eaf2',
-        poapRegistryId: '0x4c4d3e96fa1b76eedb71aaf0d91649fae0a5bba51d4b4e1dccd6b1793b5dd3ef'
+        packageId: '0xfcfdddeed4ac04a41fcc73d25ef60921e162f5695dde54f8aa75a00cb00fd785',
+        eventRegistryId: '0x1105bf30871e34e7a2ad640c75d55f37774f81cf6d06ad79a50528008b8bf6f1',
+        poapRegistryId: '0x923f241a8721bb3e35e171bbc6a81f194f80be33571bf00c77d1d18b87e21260'
     };
 
     for (const [name, address] of Object.entries(addresses)) {

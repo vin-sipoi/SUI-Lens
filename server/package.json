@@ -2,8 +2,7 @@
   "name": "Sui-lens-api",
   "version": "1.0.0",
   "description": "sui lens api using Node.js and Express",
-  "main": "app.js",
-  "type": "module",
+  "main": "index.js",
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
@@ -33,7 +32,6 @@
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.13.1",
     "pg-hstore": "^2.3.4",
-    "qrcode": "^1.5.4",
     "sequelize": "^6.37.5"
   },
   "devDependencies": {

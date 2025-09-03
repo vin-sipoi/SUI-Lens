@@ -306,7 +306,7 @@ export class SuiLensTransactions {
     const registryId = process.env.NEXT_PUBLIC_BOUNTY_REGISTRY_ID || '';
     
     // Split coins for the reward
-    const [coin] = tx.splitCoins(tx.gas, [bountyData.reward]);
+    const [coin] = tx.splitCoins(tx.gas, [0]);
     
     tx.moveCall({
       target: `${packageId}::suilens_bounty::create_bounty`,

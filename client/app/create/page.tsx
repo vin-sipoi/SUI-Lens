@@ -276,6 +276,23 @@ export default function CreateEventPage() {
       console.log('Skipping profile creation, focusing on event creation only')
 
       // Now create the event with the uploaded image URLs
+      // Convert timestamps to milliseconds for Move contract (matches clock::timestamp_ms())
+      const startTimestamp = new Date(`${eventData.date} ${eventData.time}`).getTime();
+      const endTimestamp = new Date(`${eventData.endDate || eventData.date} ${eventData.endTime || eventData.time}`).getTime();
+
+      // Validate timestamps
+      const currentTime = Date.now();
+      if (startTimestamp <= currentTime) {
+        toast.error('Event start time must be in the future')
+        setIsCreating(false)
+        return
+      }
+      if (endTimestamp <= startTimestamp) {
+        toast.error('Event end time must be after start time')
+        setIsCreating(false)
+        return
+      }
+
       const tx = await suilensService.createEvent({
         name: eventData.title,
         description: eventData.description,
@@ -284,8 +301,8 @@ export default function CreateEventPage() {
         poapImageUrl: imageUrls.poapImageUrl,
         location: eventData.location,
         category: eventData.category,
-        startTime: Math.floor(new Date(`${eventData.date} ${eventData.time}`).getTime() / 1000),
-        endTime: Math.floor(new Date(`${eventData.endDate || eventData.date} ${eventData.endTime || eventData.time}`).getTime() / 1000),
+        startTime: startTimestamp,
+        endTime: endTimestamp,
         maxAttendees: parseInt(eventData.capacity) || 100,
         ticketPrice: eventData.isFree ? 0 : parseInt(eventData.ticketPrice) || 0,
         requiresApproval: eventData.requiresApproval,
@@ -299,13 +316,13 @@ export default function CreateEventPage() {
       // Extract the event ID from the transaction result
       // Based on EventContext pattern, look for the event ID in the transaction effects
       let suiEventId = `event_${Date.now()}` // fallback
-      
+
       try {
         // Check if the transaction was successful and has effects
         if (result && result.effects) {
           // Look through created objects to find the event
           const createdObjects = result.effects.created || []
-          
+
           for (const created of createdObjects) {
             // The event object should be one of the created objects
             // We need to check the object type or use the object ID
@@ -317,7 +334,7 @@ export default function CreateEventPage() {
               break
             }
           }
-          
+
           // Alternative: if the transaction result has a specific structure for events
           // Look for patterns similar to the EventContext parsing
           if (result.objectChanges) {

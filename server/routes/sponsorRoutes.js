@@ -1,7 +1,12 @@
-import express from 'express';
-import Joi from 'joi';
-
+const express = require('express');
 const router = express.Router();
+const Joi = require('joi');
+const { SuiClient } = require('@mysten/sui/client');
+
+// Initialize Sui client for profile checks
+const suiClient = new SuiClient({
+    url: process.env.SUI_RPC_URL || 'https://fullnode.mainnet.sui.io:443',
+});
 
 // Initialize Enoki client
 if (!process.env.ENOKI_PRIVATE_KEY) {
@@ -11,7 +16,7 @@ if (!process.env.ENOKI_PRIVATE_KEY) {
 // Function to get Enoki client instance
 async function getEnokiClient() {
     const { EnokiClient } = await import('@mysten/enoki');
-    
+
     // Use global fetch if available (Node.js 18+), otherwise fall back to node-fetch
     let fetchImplementation;
     if (typeof globalThis.fetch === 'function') {
@@ -21,11 +26,145 @@ async function getEnokiClient() {
         const { default: nodeFetch } = await import('node-fetch');
         fetchImplementation = nodeFetch;
     }
-    
+
     return new EnokiClient({
         apiKey: process.env.ENOKI_PRIVATE_KEY,
         fetch: fetchImplementation,
     });
+}
+
+// Check if user has a profile
+async function checkUserProfile(senderAddress, network = 'mainnet') {
+    try {
+        const packageId = process.env.PACKAGE_ID || process.env.NEXT_PUBLIC_PACKAGE_ID || '';
+        const registryId = process.env.EVENT_REGISTRY_ID || process.env.NEXT_PUBLIC_EVENT_REGISTRY_ID || '';
+
+        if (!packageId || !registryId) {
+            console.warn('PACKAGE_ID or EVENT_REGISTRY_ID not configured, skipping profile check');
+            return false;
+        }
+
+        // Query the registry object to check if user has a profile
+        const registry = await suiClient.getObject({
+            id: registryId,
+            options: {
+                showContent: true,
+            },
+        });
+
+        if (!registry.data || !registry.data.content) {
+            console.log('Registry object not found or has no content');
+            return false;
+        }
+
+        // Check if user_profiles table contains the user
+        const content = registry.data.content;
+        if (content.fields && content.fields.user_profiles) {
+            // The user_profiles is a table with ID and size fields
+            // We need to check if the specific user address exists in the table
+            const userProfilesTable = content.fields.user_profiles;
+
+            // Check if the table has the user by trying to access the dynamic field
+            try {
+                // Query the specific user's profile using dynamic field access
+                const userProfileObject = await suiClient.getDynamicFieldObject({
+                    parentId: userProfilesTable.fields.id.id,
+                    name: {
+                        type: 'address',
+                        value: senderAddress,
+                    },
+                });
+
+                if (userProfileObject.data) {
+                    console.log(`User ${senderAddress} has a profile on blockchain`);
+                    return true;
+                } else {
+                    console.log(`User ${senderAddress} does not have a profile on blockchain`);
+                    return false;
+                }
+            } catch (dynamicFieldError) {
+                // If dynamic field doesn't exist, user doesn't have a profile
+                console.log(`User ${senderAddress} does not have a profile (dynamic field not found):`, dynamicFieldError.message);
+                return false;
+            }
+        }
+
+        console.log('User profiles table not found in registry');
+        return false;
+    } catch (error) {
+        console.log('User profile check failed (assuming no profile exists):', error.message);
+        return false;
+    }
+}
+
+// Create a profile creation transaction
+async function createProfileTransaction(senderAddress, packageId, registryId) {
+    // This is a simplified profile creation - in production you'd want to get user data
+    const profileData = {
+        username: `User_${senderAddress.slice(-8)}`,
+        bio: 'SUI-Lens user',
+        avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + senderAddress,
+    };
+
+    // Import Transaction class dynamically to avoid issues
+    const { Transaction } = await import('@mysten/sui/transactions');
+
+    // Create transaction using Sui SDK
+    const tx = new Transaction();
+
+    // Add the create_profile move call
+    tx.moveCall({
+        target: `${packageId}::suilens_core::create_profile`,
+        arguments: [
+            tx.object(registryId), // GlobalRegistry object
+            tx.pure.string(profileData.username),
+            tx.pure.string(profileData.bio),
+            tx.pure.string(profileData.avatarUrl),
+            tx.object('0x6'), // Clock object
+        ],
+    });
+
+    // Set sender to avoid dynamic field borrowing issues
+    tx.setSender(senderAddress);
+
+    // Build full transaction first, then extract transaction kind
+    try {
+        const fullTxBytes = await tx.build({
+            client: suiClient,
+        });
+
+        // Extract transaction kind from full transaction
+        const { TransactionKind } = await import('@mysten/sui/transactions');
+        const txData = Transaction.from(fullTxBytes);
+        const txKind = txData.getTransactionKind();
+
+        // Build transaction kind bytes
+        const txKindBytes = await txKind.build({
+            client: suiClient,
+            onlyTransactionKind: true
+        });
+
+        return {
+            transactionKindBytes: Buffer.from(txKindBytes).toString('base64'),
+            sender: senderAddress,
+            allowedAddresses: [senderAddress],
+            network: 'mainnet',
+        };
+    } catch (error) {
+        console.error('Error building profile transaction:', error);
+        // Fallback to onlyTransactionKind if full build fails
+        const txBytes = await tx.build({
+            client: suiClient,
+            onlyTransactionKind: true
+        });
+
+        return {
+            transactionKindBytes: Buffer.from(txBytes).toString('base64'),
+            sender: senderAddress,
+            allowedAddresses: [senderAddress],
+            network: 'mainnet',
+        };
+    }
 }
 
 // Validation schemas
@@ -91,17 +230,31 @@ router.post('/sponsor-transaction', async (req, res) => {
         console.log('- Network:', network);
         console.log('- Sender:', sender);
         console.log('- Transaction kind bytes length:', transactionKindBytes.length);
+        console.log('- Transaction kind bytes (first 100 chars):', transactionKindBytes.substring(0, 100));
         console.log('- Allowed move call targets:', allowedMoveCallTargets || 'none');
         console.log('- Allowed addresses:', allowedAddresses || [sender]);
+
+        // Log the full request body for debugging
+        console.log('Full request body received:');
+        console.log(JSON.stringify({
+            transactionKindBytes: transactionKindBytes.substring(0, 200) + '...', // Truncate for readability
+            sender,
+            allowedMoveCallTargets,
+            allowedAddresses,
+            network
+        }, null, 2));
+
+        // Skip profile creation check for event creation - just proceed with the main transaction
+        console.log('Skipping profile creation check for event creation - proceeding directly with main transaction...');
 
         // Create sponsored transaction with manual gas budget
         const enokiClient = await getEnokiClient();
         try {
+            // Remove allowedMoveCallTargets to avoid dynamic field borrow errors
             const sponsored = await enokiClient.createSponsoredTransaction({
                 network: network,
                 transactionKindBytes: transactionKindBytes,
                 sender: sender,
-                allowedMoveCallTargets: allowedMoveCallTargets,
                 allowedAddresses: allowedAddresses || [sender],
                 // Add manual gas budget to help with dry run issues
                 gasBudget: 100000000, // 0.1 SUI in MIST
@@ -113,6 +266,7 @@ router.post('/sponsor-transaction', async (req, res) => {
 
             res.json({
                 success: true,
+                requiresProfileCreation: false,
                 bytes: sponsored.bytes,
                 digest: sponsored.digest,
                 network: network
@@ -135,11 +289,11 @@ router.post('/sponsor-transaction', async (req, res) => {
                 // Try with a different approach - use automatic gas estimation
                 try {
                     console.log('Retrying with automatic gas estimation...');
+                    // Remove allowedMoveCallTargets here as well
                     const sponsored = await enokiClient.createSponsoredTransaction({
                         network: network,
                         transactionKindBytes: transactionKindBytes,
                         sender: sender,
-                        allowedMoveCallTargets: allowedMoveCallTargets,
                         allowedAddresses: allowedAddresses || [sender],
                         // Let Enoki handle gas estimation
                     });
@@ -173,23 +327,28 @@ router.post('/sponsor-transaction', async (req, res) => {
                 const responseText = await error.response.text();
                 console.error('Enoki API response body:', responseText);
                 
-                // Try to parse as JSON for more detailed error information
-                try {
-                    const responseJson = JSON.parse(responseText);
-                    console.error('Enoki API response JSON:', JSON.stringify(responseJson, null, 2));
-                    
-                    // Extract detailed error information for dry_run_failed
-                    if (responseJson.code === 'dry_run_failed' && responseJson.details) {
-                        console.error('DRY_RUN_FAILED_DETAILS:', responseJson.details);
+                // Check if response is empty
+                if (!responseText || responseText.trim() === '') {
+                    console.error('Enoki API response is empty');
+                } else {
+                    // Try to parse as JSON for more detailed error information
+                    try {
+                        const responseJson = JSON.parse(responseText);
+                        console.error('Enoki API response JSON:', JSON.stringify(responseJson, null, 2));
                         
-                        // Check for MoveAbort errors
-                        if (responseJson.details.includes('MoveAbort')) {
-                            console.error('MOVE_ABORT_ERROR: This indicates a contract validation failure');
-                            console.error('Check the transaction parameters and contract requirements');
+                        // Extract detailed error information for dry_run_failed
+                        if (responseJson.code === 'dry_run_failed' && responseJson.details) {
+                            console.error('DRY_RUN_FAILED_DETAILS:', responseJson.details);
+                            
+                            // Check for MoveAbort errors
+                            if (responseJson.details.includes('MoveAbort')) {
+                                console.error('MOVE_ABORT_ERROR: This indicates a contract validation failure');
+                                console.error('Check the transaction parameters and contract requirements');
+                            }
                         }
+                    } catch (parseError) {
+                        console.error('Could not parse response as JSON:', parseError);
                     }
-                } catch (parseError) {
-                    console.error('Could not parse response as JSON:', parseError);
                 }
             } catch (e) {
                 console.error('Could not read response body:', e);
@@ -215,11 +374,19 @@ router.post('/sponsor-transaction', async (req, res) => {
         if (error.response) {
             try {
                 const responseText = await error.response.text();
-                const responseJson = JSON.parse(responseText);
-                errorDetails = responseJson.details || responseJson.message || error.message || 'Unknown error';
-                errorCode = responseJson.code || error.code || 'UNKNOWN_ERROR';
+                // Check if response is not empty before parsing
+                if (responseText && responseText.trim() !== '') {
+                    const responseJson = JSON.parse(responseText);
+                    errorDetails = responseJson.details || responseJson.message || error.message || 'Unknown error';
+                    errorCode = responseJson.code || error.code || 'UNKNOWN_ERROR';
+                } else {
+                    errorDetails = 'Empty response from Enoki API';
+                    errorCode = 'EMPTY_RESPONSE';
+                }
             } catch (e) {
                 // If we can't parse the response, use the original error
+                errorDetails = 'Could not parse response from Enoki API: ' + error.message;
+                errorCode = 'PARSE_ERROR';
             }
         }
         
@@ -279,4 +446,4 @@ router.post('/execute-transaction', async (req, res) => {
     }
 });
 
-export default router;
+module.exports = router;

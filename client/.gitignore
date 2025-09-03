@@ -25,3 +25,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+# Ignore docs
+ENOKI_*.md
+TODO.md
+
+# Ignore tests
+test-*.js

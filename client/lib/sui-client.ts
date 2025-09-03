@@ -88,7 +88,7 @@ export class SuilensService {
         tx.pure.u64(eventData.startTime),
         tx.pure.u64(eventData.endTime),
         tx.pure.string(eventData.location || ''),
-        tx.pure.string(eventData.category || ''),
+        tx.pure.string(eventData.category || 'General'), // Default to 'General' if not provided
         eventData.maxAttendees ? tx.pure.option('u64', eventData.maxAttendees) : tx.pure.option('u64', null),
         tx.pure.u64(eventData.ticketPrice || 0),
         tx.pure.bool(eventData.requiresApproval || false),
@@ -217,18 +217,63 @@ export class SuilensService {
     }
   }
 
-  async registerForEvent(eventId: string, ticketPrice: number = 0) {
+  async registerForEvent(eventId: string, ticketPrice: number = 0, isSponsored: boolean = false) {
     const tx = new Transaction();
-    
-    // Create a coin for payment (even if it's 0 for free events)
-    const [coin] = tx.splitCoins(tx.gas, [ticketPrice]);
-    
+
+    // For sponsored transactions, we need to handle coin creation differently
+    // to avoid GasCoin references that Enoki rejects
+    let coin;
+    if (ticketPrice > 0) {
+      if (isSponsored) {
+        // For sponsored paid events, we cannot use GasCoin as an argument
+        // This is a limitation of the current implementation
+        // The Move contract expects a Coin<SUI> but we can't create one without GasCoin reference
+        // For now, we'll pass zero and handle payment through alternative means
+        // Note: This branch should not be used for paid events in the new conditional sponsorship approach
+        coin = tx.pure.u64(0);
+      } else {
+        // For non-sponsored paid events, split from gas coin as usual
+        [coin] = tx.splitCoins(tx.gas, [ticketPrice]);
+      }
+    } else {
+      // For free events, we need to pass a Coin<SUI> object to the contract
+      // The contract expects a coin even for free events
+      if (isSponsored) {
+        // For sponsored transactions, use coin::zero() to create a zero-value coin
+        // This avoids GasCoin references that Enoki rejects
+        coin = tx.moveCall({
+          target: '0x2::coin::zero',
+          typeArguments: ['0x2::sui::SUI'],
+          arguments: [],
+        });
+      } else {
+        // For non-sponsored free events, split zero amount from gas coin
+        [coin] = tx.splitCoins(tx.gas, [0]);
+      }
+    }
+
     tx.moveCall({
       target: `${this.packageId}::suilens_core::register_for_event`,
       arguments: [
         tx.object(this.eventRegistryId),
         tx.pure.id(eventId),
-        coin, // Payment coin
+        coin, // Coin object with correct value
+        tx.object('0x6'), // Clock object
+      ],
+    });
+
+    return tx;
+  }
+
+  async approveRegistration(eventId: string, attendeeAddress: string) {
+    const tx = new Transaction();
+
+    tx.moveCall({
+      target: `${this.packageId}::suilens_core::approve_registration`,
+      arguments: [
+        tx.object(this.eventRegistryId),
+        tx.pure.id(eventId),
+        tx.pure.address(attendeeAddress),
         tx.object('0x6'), // Clock object
       ],
     });

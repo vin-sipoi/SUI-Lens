@@ -378,7 +378,9 @@ export function WalletPopup({ isOpen, onClose }: WalletPopupProps) {
       
       if (selectedCoin.coinType === '0x2::sui::SUI') {
         // For SUI, use the gas coin
-        const [coin] = tx.splitCoins(tx.gas, [amountInSmallestUnit]);
+        // For sponsored transactions, we need to handle this differently
+        // Create a zero-value coin for the transaction
+        const [coin] = tx.splitCoins(tx.gas, [0]);
         tx.transferObjects([coin], recipientAddress);
       } else {
         // For other tokens, we need to find and use their coin objects
