@@ -352,22 +352,26 @@ export default function CreateEventPage() {
       console.log('Create event transaction result:', result)
 
       // Extract the event ID from the transaction result
-      // Based on EventContext pattern, look for the event ID in the transaction effects
+      // The backend returns { success: true, result: {...}, digest: "..." }
+      // So we need to access result.result for the actual transaction data
       let suiEventId: string | null = null
 
       try {
         console.log('Transaction result structure:', JSON.stringify(result, null, 2))
 
+        // The backend wraps the actual transaction result in a 'result' property
+        const transactionResult = result?.result || result
+
         // Check if the transaction was successful and has effects
-        if (result && result.effects) {
+        if (transactionResult && transactionResult.effects) {
           // Add status check
-          if (result.effects.status !== 'success') {
+          if (transactionResult.effects.status.status !== 'success') {
             throw new Error('Transaction was not successful')
           }
-          console.log('Transaction effects:', result.effects)
+          console.log('Transaction effects:', transactionResult.effects)
 
           // Look through created objects to find the event
-          const createdObjects = result.effects.created || []
+          const createdObjects = transactionResult.effects.created || []
           console.log('Created objects:', createdObjects)
 
           for (const created of createdObjects) {
@@ -389,9 +393,9 @@ export default function CreateEventPage() {
 
           // Alternative: if the transaction result has a specific structure for events
           // Look for patterns similar to the EventContext parsing
-          if (!suiEventId && result.objectChanges) {
-            console.log('Checking objectChanges:', result.objectChanges)
-            for (const change of result.objectChanges) {
+          if (!suiEventId && transactionResult.objectChanges) {
+            console.log('Checking objectChanges:', transactionResult.objectChanges)
+            for (const change of transactionResult.objectChanges) {
               console.log('Processing object change:', change)
               console.log('Object type:', change.objectType)
               if (change.type === 'created' && change.objectType?.toLowerCase().includes('event')) {
@@ -425,9 +429,9 @@ export default function CreateEventPage() {
           }
 
           // New fallback: check for event ID in dynamic fields or other properties
-          if (!suiEventId && result.effects?.events) {
+          if (!suiEventId && transactionResult.effects?.events) {
             console.log('Checking transaction events for event ID')
-            for (const event of result.effects.events) {
+            for (const event of transactionResult.effects.events) {
               console.log('Processing transaction event:', event)
               // Look for event data that might contain the event ID
               if (event.parsedJson?.id || event.parsedJson?.event_id) {
@@ -442,8 +446,8 @@ export default function CreateEventPage() {
           }
 
           // Another fallback: check for any field that might contain the event ID
-          if (!suiEventId && result.effects?.events) {
-            for (const event of result.effects.events) {
+          if (!suiEventId && transactionResult.effects?.events) {
+            for (const event of transactionResult.effects.events) {
               if (event.type?.toLowerCase().includes('event') && event.parsedJson) {
                 // Look for any string field that could be the event ID
                 const jsonData = event.parsedJson
@@ -473,11 +477,11 @@ export default function CreateEventPage() {
         if (!suiEventId) {
           console.error('Transaction result did not contain expected event ID structure')
           console.error('Available data in result:', {
-            hasEffects: !!result?.effects,
-            status: result?.effects?.status,
-            createdObjectsCount: result?.effects?.created?.length || 0,
-            objectChangesCount: result?.objectChanges?.length || 0,
-            eventsCount: result?.effects?.events?.length || 0
+            hasEffects: !!transactionResult?.effects,
+            status: transactionResult?.effects?.status,
+            createdObjectsCount: transactionResult?.effects?.created?.length || 0,
+            objectChangesCount: transactionResult?.objectChanges?.length || 0,
+            eventsCount: transactionResult?.effects?.events?.length || 0
           })
           throw new Error('Could not extract a valid event ID from the transaction result')
         }

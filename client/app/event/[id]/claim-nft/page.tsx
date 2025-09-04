@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, Loader2, Award, CheckCircle, XCircle, Ticket } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useEnokiTransaction } from '@/hooks/useEnokiTransaction'
+import { useSponsoredTransaction } from '@/hooks/useSponsoredTransaction'
 import { suilensService } from '@/lib/sui-client'
 import { toast } from 'sonner'
 import Header from '@/app/components/Header'
@@ -21,7 +21,7 @@ export default function ClaimNFTPage() {
   const eventId = params.id as string
   const { user } = useUser()
   const { getEvent } = useEventContext()
-  const { signAndExecuteTransaction } = useEnokiTransaction()
+  const { sponsorAndExecute } = useSponsoredTransaction()
   
   const [event, setEvent] = useState<any>(null)
   const [claiming, setClaiming] = useState(false)
@@ -101,9 +101,14 @@ export default function ClaimNFTPage() {
       // Create the mint NFT transaction (uses event's stored metadata including nftImageUrl)
       const tx = await suilensService.mintEventNFT(eventId)
       
-      // Execute the transaction
-      const result = await signAndExecuteTransaction(tx)
-      console.log('NFT minted:', result)
+      // Execute the transaction using sponsored transaction (gas-free)
+      console.log('Attempting sponsored NFT claim...')
+      const result = await sponsorAndExecute({
+        tx,
+        network: process.env.NEXT_PUBLIC_SUI_NETWORK || 'testnet',
+        skipOnlyTransactionKind: true
+      })
+      console.log('NFT claim result with sponsorship:', result)
       
       setClaimedNFT(true)
       toast.success('🎉 Event NFT claimed successfully!')
@@ -139,9 +144,14 @@ export default function ClaimNFTPage() {
       // Create the mint POAP transaction (uses event's stored metadata including poapImageUrl)
       const tx = await suilensService.mintPOAP(eventId)
       
-      // Execute the transaction
-      const result = await signAndExecuteTransaction(tx)
-      console.log('POAP minted:', result)
+      // Execute the transaction using sponsored transaction (gas-free)
+      console.log('Attempting sponsored POAP claim...')
+      const result = await sponsorAndExecute({
+        tx,
+        network: process.env.NEXT_PUBLIC_SUI_NETWORK || 'testnet',
+        skipOnlyTransactionKind: true
+      })
+      console.log('POAP claim result with sponsorship:', result)
       
       setClaimedPOAP(true)
       toast.success('🏅 POAP claimed successfully!')

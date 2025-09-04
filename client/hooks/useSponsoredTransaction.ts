@@ -318,6 +318,9 @@ export function useSponsoredTransaction() {
       }
 
       // 4. Execute the transaction via backend
+      console.log('About to make execute-transaction request to:', `${BACKEND_URL}/api/sponsor/execute-transaction`);
+      console.log('Execute request body:', { digest, signature });
+
       const executeResponse = await fetch(
         `${BACKEND_URL}/api/sponsor/execute-transaction`,
         {
@@ -327,10 +330,19 @@ export function useSponsoredTransaction() {
         }
       );
 
+      console.log('Execute response received:');
+      console.log('Execute response status:', executeResponse.status);
+      console.log('Execute response statusText:', executeResponse.statusText);
+      console.log('Execute response ok:', executeResponse.ok);
+      console.log('Execute response headers:', Object.fromEntries(executeResponse.headers.entries()));
+
       if (!executeResponse.ok) {
         let error;
         try {
           const responseText = await executeResponse.text();
+          console.error('Execute response status:', executeResponse.status);
+          console.error('Execute response status text:', executeResponse.statusText);
+          console.error('Execute response text:', responseText);
           if (responseText) {
             error = JSON.parse(responseText);
           } else {
@@ -343,7 +355,23 @@ export function useSponsoredTransaction() {
         throw new Error(`Execution failed: ${error.error || error.message || 'Unknown error'}`);
       }
 
-      const result = await executeResponse.json();
+      // Debug the response before parsing
+      const responseText = await executeResponse.text();
+      console.log('Execute response text:', responseText);
+      console.log('Execute response text length:', responseText.length);
+
+      let result;
+      try {
+        result = JSON.parse(responseText);
+        console.log('Parsed execute result:', result);
+        console.log('Result type:', typeof result);
+        console.log('Result keys:', Object.keys(result));
+      } catch (parseError) {
+        console.error('Failed to parse execute response as JSON:', parseError);
+        console.error('Response text that failed to parse:', responseText);
+        throw new Error('Failed to parse execution response as JSON');
+      }
+
       return result;
     } catch (error) {
       console.error('Sponsored transaction failed:', error);

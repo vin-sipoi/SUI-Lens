@@ -1,6 +1,6 @@
-import { SuiClient } from '@mysten/sui/client';
-import Event from '../models/Event.js';
-import Registration from '../models/Registrations.js';
+const { SuiClient } = require('@mysten/sui/client');
+const Event = require('../models/Event.js');
+const Registration = require('../models/Registrations.js');
 
 class EventSyncService {
   constructor() {
@@ -246,4 +246,4 @@ class EventSyncService {
   }
 }
 
-export default EventSyncService;
+module.exports = EventSyncService;

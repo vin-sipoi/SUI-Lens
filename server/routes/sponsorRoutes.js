@@ -450,14 +450,33 @@ router.post('/execute-transaction', async (req, res) => {
             fullResult = enokiResult;
         }
 
-        res.json({
+        const responseData = {
             success: true,
             result: fullResult,
             digest: digest
-        });
+        };
+
+        console.log('About to send execute response:');
+        console.log('Response data keys:', Object.keys(responseData));
+        console.log('Response data success:', responseData.success);
+        console.log('Response data has result:', !!responseData.result);
+        console.log('Response data result type:', typeof responseData.result);
+        console.log('Response data digest:', responseData.digest);
+
+        // Send the response
+        res.json(responseData);
+        console.log('Execute response sent successfully');
 
     } catch (error) {
         console.error('Error executing transaction:', error);
+        console.error('Error stack:', error.stack);
+
+        // Check if headers have already been sent
+        if (res.headersSent) {
+            console.error('Headers already sent, cannot send error response');
+            return;
+        }
+
         res.status(500).json({
             error: 'Failed to execute transaction',
             details: error.message,

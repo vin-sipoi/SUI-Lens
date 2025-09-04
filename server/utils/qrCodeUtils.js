@@ -1,10 +1,10 @@
-import QRCode from 'qrcode';
+const QRCode = require('qrcode');
 
 /**
  * Generate a QR code for event check-in
  * Format: suilens://checkin/{eventId}/{verificationCode}/{timestamp}
  */
-export async function generateEventQRCode(eventId) {
+async function generateEventQRCode(eventId) {
   // Generate a unique verification code
   const verificationCode = generateVerificationCode();
   const timestamp = Date.now();
@@ -42,3 +42,7 @@ function generateVerificationCode() {
   }
   return code;
 }
+
+module.exports = {
+  generateEventQRCode
+};
