@@ -30,6 +30,7 @@ import Image from 'next/image'
 import { useEnokiTransaction } from '@/hooks/useEnokiTransaction'
 import { useSponsoredTransaction } from '@/hooks/useSponsoredTransaction'
 import { suilensService, suiClient } from '@/lib/sui-client'
+import { geocodeLocation, getOpenStreetMapEmbedUrl } from '@/lib/openstreetmap'
 import { toast } from 'sonner'
 import Header from '@/app/components/Header'
 import QRScanner from '@/components/QRScanner'
@@ -55,6 +56,17 @@ export default function EventDetailsPage() {
   const [eventQRCode, setEventQRCode] = useState<string | null>(null)
   const [generatingQR, setGeneratingQR] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [claiming, setClaiming] = useState(false)
+  const [claimedNFT, setClaimedNFT] = useState(false)
+  const [claimingPOAP, setClaimingPOAP] = useState(false)
+  const [claimedPOAP, setClaimedPOAP] = useState(false)
+  const [error, setError] = useState('')
+  const [checkingClaims, setCheckingClaims] = useState(true)
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null)
+  const [registrationData, setRegistrationData] = useState({
+    name: '',
+    email: '',
+  })
 
   useEffect(() => {
     const loadEvent = async () => {
@@ -97,11 +109,64 @@ export default function EventDetailsPage() {
       }
       
       setEvent(eventData)
+
+      // Geocode the event location for precise map pinpointing
+      if (eventData?.location) {
+        geocodeLocation(eventData.location).then((coords) => {
+          if (coords) {
+            setCoordinates(coords)
+            console.log('Geocoded location:', eventData.location, 'to coordinates:', coords)
+          } else {
+            console.warn('Failed to geocode location:', eventData.location)
+          }
+        }).catch((error) => {
+          console.error('Error geocoding location:', error)
+        })
+      }
+
       setLoading(false)
     }
     
     loadEvent()
   }, [eventId, getEvent, fetchEvents])
+
+  // Check if user has already claimed NFTs
+  useEffect(() => {
+    const checkClaimStatus = async () => {
+      if (!user?.walletAddress) {
+        setCheckingClaims(false)
+        return
+      }
+
+      try {
+        // Check for Event NFTs
+        const eventNFTs = await suilensService.getUserEventNFTs(user.walletAddress)
+        const hasEventNFT = eventNFTs.data?.some((nft: any) => {
+          const content = nft.data?.content
+          return content?.fields?.event_id === eventId
+        })
+        setClaimedNFT(hasEventNFT || false)
+
+        // Check for POAPs
+        const userPOAPs = await suilensService.getUserPOAPs(user.walletAddress)
+        const hasEventPOAP = userPOAPs.data?.some((poap: any) => {
+          const content = poap.data?.content
+          return content?.fields?.event_id === eventId
+        })
+        setClaimedPOAP(hasEventPOAP || false)
+      } catch (error) {
+        console.error('Error checking claim status:', error)
+      } finally {
+        setCheckingClaims(false)
+      }
+    }
+
+    if (user?.walletAddress && eventId) {
+      checkClaimStatus()
+    } else {
+      setCheckingClaims(false)
+    }
+  }, [user?.walletAddress, eventId])
 
   // Remove constant debug logging to reduce noise
   
@@ -122,6 +187,108 @@ export default function EventDetailsPage() {
   const hasEventStarted = eventStartTime && now >= eventStartTime
   const hasEventEnded = eventEndTime && now > eventEndTime
   const canCheckIn = hasEventStarted && !hasEventEnded
+
+  const handleClaimNFT = async () => {
+    if (!user?.walletAddress) {
+      toast.error('Please connect your wallet first')
+      return
+    }
+
+    if (!isRegistered) {
+      toast.error('You must be registered for this event to claim the NFT')
+      return
+    }
+
+    setClaiming(true)
+    setError('')
+
+    try {
+      // Create the mint NFT transaction (uses event's stored metadata including nftImageUrl)
+      const tx = await suilensService.mintEventNFT(eventId)
+
+      // Execute the transaction using sponsored transaction (gas-free)
+      console.log('Attempting sponsored NFT claim...')
+      const result = await sponsorAndExecute({
+        tx,
+        network: process.env.NEXT_PUBLIC_SUI_NETWORK || 'testnet',
+        skipOnlyTransactionKind: true
+      })
+      console.log('NFT claim result with sponsorship:', result)
+
+      // Check if transaction was successful
+      const isSuccess = result?.effects?.status?.status === 'success' ||
+                       (result && !result.error);
+
+      if (isSuccess) {
+        setClaimedNFT(true)
+        toast.success('🎉 Event NFT claimed successfully!')
+
+        // Redirect to user's profile after a delay
+        setTimeout(() => {
+          router.push('/profile?refresh=true')
+        }, 3000)
+      } else {
+        throw new Error('Transaction failed')
+      }
+    } catch (error: any) {
+      console.error('Error claiming NFT:', error)
+      setError(error.message || 'Failed to claim NFT')
+      toast.error('Failed to claim NFT. Please try again.')
+    } finally {
+      setClaiming(false)
+    }
+  }
+
+  const handleClaimPOAP = async () => {
+    if (!user?.walletAddress) {
+      toast.error('Please connect your wallet first')
+      return
+    }
+
+    if (!hasAttended) {
+      toast.error('You must check in at the event to claim the POAP')
+      return
+    }
+
+    setClaimingPOAP(true)
+    setError('')
+
+    try {
+      // Create the mint POAP transaction
+      const tx = await suilensService.mintPOAP(eventId)
+
+      // Execute the transaction using sponsored transaction (gas-free)
+      console.log('Attempting sponsored POAP claim...')
+      const result = await sponsorAndExecute({
+        tx,
+        network: process.env.NEXT_PUBLIC_SUI_NETWORK || 'testnet',
+        skipOnlyTransactionKind: true
+      })
+      console.log('POAP claim result with sponsorship:', result)
+
+      // Check if transaction was successful
+      const isSuccess = result?.effects?.status?.status === 'success' ||
+                       (result && !result.error);
+
+      if (isSuccess) {
+        setClaimedPOAP(true)
+        toast.success('🎉 POAP Badge claimed successfully!')
+
+        // Redirect to user's profile after a delay
+        setTimeout(() => {
+          router.push('/profile?refresh=true')
+        }, 3000)
+      } else {
+        throw new Error('Transaction failed')
+      }
+    } catch (error: any) {
+      console.error('Error claiming POAP:', error)
+      setError(error.message || 'Failed to claim POAP')
+      toast.error('Failed to claim POAP. Please try again.')
+    } finally {
+      setClaimingPOAP(false)
+    }
+  }
 
   const handleRegister = async () => {
     if (!user?.walletAddress) {
@@ -178,6 +345,30 @@ export default function EventDetailsPage() {
           }
 
           toast.success('Successfully registered for the event!')
+
+          // Save registration to database
+          try {
+            const registrationResponse = await fetch('http://localhost:3009/api/registrations', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                eventId: eventId,
+                email: registrationData.email,
+                name: registrationData.name,
+                userId: user?.walletAddress,
+              }),
+            });
+
+            if (!registrationResponse.ok) {
+              console.error('Failed to save registration to database');
+            } else {
+              console.log('Registration saved to database successfully');
+            }
+          } catch (registrationError) {
+            console.error('Error saving registration to database:', registrationError);
+          }
 
           // Refresh event data from blockchain after transaction confirms
           setTimeout(async () => {
@@ -416,13 +607,20 @@ export default function EventDetailsPage() {
             <h2 className="text-xl font-semibold mb-4 text-gray-900">Location</h2>
             <div className="flex items-center text-gray-700 mb-4">
               <MapPin className="w-5 h-5 mr-3 text-blue-600" />
-              <p>{event.location}</p>
-            </div>
-            {/* Placeholder for map - you can integrate Google Maps or another map service */}
-            <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
-              <p className="text-gray-500">Map placeholder</p>
-            </div>
+            <p>{event.location}</p>
           </div>
+          {/* OpenStreetMap embed with pinpoint */}
+          <div className="w-full h-48 rounded-lg overflow-hidden">
+            <iframe
+              src={getOpenStreetMapEmbedUrl(event.location, coordinates?.lat, coordinates?.lng)}
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              loading="lazy"
+              title="Event Location Map"
+            ></iframe>
+          </div>
+        </div>
 
           {/* Registration Section */}
           <div className="mb-8">
@@ -449,18 +647,28 @@ export default function EventDetailsPage() {
                   <div className="flex flex-col gap-4">
                     <Label>
                       Full Name
-                      <Input placeholder="Your Name" className="my-4" />
+                      <Input
+                        placeholder="Your Name"
+                        className="my-4"
+                        value={registrationData.name}
+                        onChange={(e) => setRegistrationData({ ...registrationData, name: e.target.value })}
+                      />
                     </Label>
 
                     <Label>
                       Email Address
-                      <Input placeholder="Your Email" className="my-4" />
+                      <Input
+                        placeholder="Your Email"
+                        className="my-4"
+                        value={registrationData.email}
+                        onChange={(e) => setRegistrationData({ ...registrationData, email: e.target.value })}
+                      />
                     </Label>
                   </div>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-[#101928] rounded-3xl"
-                    disabled={registering || isFull}
+                    disabled={registering || isFull || isEventCreator}
                   >
                     {registering ? (
                       <>
@@ -469,6 +677,8 @@ export default function EventDetailsPage() {
                       </>
                     ) : isFull ? (
                       'Event Full'
+                    ) : isEventCreator ? (
+                      'Cannot Register (Event Creator)'
                     ) : (
                       'Register'
                     )}
@@ -520,15 +730,33 @@ export default function EventDetailsPage() {
                       <li>One NFT per attendee</li>
                     </ul>
                   </div>
-                  <Button 
-                    className='mt-5 w-full' 
-                    disabled={!isRegistered}
-                    variant={!isRegistered ? "outline" : "default"}
+                  <Button
+                    className='mt-5 w-full'
+                    disabled={!isRegistered || claiming || claimedNFT || checkingClaims}
+                    variant={!isRegistered || claimedNFT ? "outline" : "default"}
+                    onClick={handleClaimNFT}
                   >
-                    {!isRegistered ? (
+                    {!user?.walletAddress ? (
+                      'Connect Wallet to Claim'
+                    ) : !isRegistered ? (
                       <>
                         <XCircle className="w-4 h-4 mr-2" />
                         Register to Claim NFT
+                      </>
+                    ) : claimedNFT ? (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        NFT Claimed!
+                      </>
+                    ) : checkingClaims ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Checking Status...
+                      </>
+                    ) : claiming ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Claiming NFT...
                       </>
                     ) : (
                       <>
@@ -560,15 +788,28 @@ export default function EventDetailsPage() {
                       <li>Available after check in at Event</li>
                     </ul>
                   </div>
-                  <Button 
+                  <Button
                     className='mt-5 w-full'
-                    disabled={!hasAttended}
-                    variant={!hasAttended ? "outline" : "default"}
+                    disabled={!hasAttended || claimingPOAP || claimedPOAP}
+                    variant={!hasAttended || claimedPOAP ? "outline" : "default"}
+                    onClick={handleClaimPOAP}
                   >
-                    {!hasAttended ? (
+                    {!user?.walletAddress ? (
+                      'Connect Wallet to Claim'
+                    ) : !hasAttended ? (
                       <>
                         <XCircle className="w-4 h-4 mr-2" />
                         Check-in to Claim POAP
+                      </>
+                    ) : claimedPOAP ? (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        POAP Claimed!
+                      </>
+                    ) : claimingPOAP ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Claiming POAP...
                       </>
                     ) : (
                       <>

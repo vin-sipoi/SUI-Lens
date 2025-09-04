@@ -5,6 +5,8 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const sponsorRoutes = require('./routes/sponsorRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const communityRoutes = require('./routes/communityRoutes');
+const registrationsRoutes = require('./routes/registrations');
 const verifyToken = require('./middleware/authenticateToken');
 const { csrfProtection, csrfTokenHandler } = require('./middleware/csrfMiddleware');
 // Load environment variables from client/.env first, then server/.env as fallback
@@ -56,6 +58,12 @@ app.use('/api/sponsor', sponsorRoutes);
 
 // Events routes
 app.use('/api/events', eventRoutes);
+
+// Communities routes
+app.use('/api/communities', communityRoutes);
+
+// Registrations routes
+app.use('/api/registrations', registrationsRoutes);
 
 // Root route
 app.get('/', (req, res) => {

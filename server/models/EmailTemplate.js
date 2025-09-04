@@ -1,5 +1,5 @@
-import { DataTypes } from 'sequelize';
-import sequelize from '../config/db.js';
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/db.js');
 
 const EmailTemplate = sequelize.define('EmailTemplate', {
   id: {
@@ -42,4 +42,4 @@ const EmailTemplate = sequelize.define('EmailTemplate', {
   createdAt: 'createdAt',
 });
 
-export default EmailTemplate;
+module.exports = EmailTemplate;

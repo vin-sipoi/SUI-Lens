@@ -42,6 +42,8 @@ const EventDashboard: React.FC = () => {
        event.type.toLowerCase().includes(searchTerm.toLowerCase())) &&
       (selectedCategory === "all" || event.category === selectedCategory)
     )
+    .filter(event => event.startTimestamp && event.startTimestamp >= Date.now())
+    .sort((a, b) => (a.startTimestamp || 0) - (b.startTimestamp || 0))
 
   const handleRegister = (eventId: string) => {
     if (!user) {

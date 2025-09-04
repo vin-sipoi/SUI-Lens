@@ -1,38 +1,28 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db.js');
 
-const Registration = sequelize.define('Registration', {
+const Community = sequelize.define('Community', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.INTEGER,
     primaryKey: true,
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    validate: {
-      isEmail: true,
-    },
+    autoIncrement: true,
   },
   name: {
     type: DataTypes.STRING,
     allowNull: false,
+    unique: true,
   },
-  eventId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'Event',
-      key: 'id',
-    },
-  },
-  userId: {
-    type: DataTypes.UUID,
+  description: {
+    type: DataTypes.TEXT,
     allowNull: true,
-    references: {
-      model: 'users',
-      key: 'id',
-    },
+  },
+  imageUrl: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  country: {
+    type: DataTypes.STRING,
+    allowNull: true,
   },
   createdAt: {
     type: DataTypes.DATE,
@@ -45,11 +35,11 @@ const Registration = sequelize.define('Registration', {
     field: 'updated_at'
   },
 }, {
-  tableName: 'registrations',
+  tableName: 'communities',
   timestamps: true,
   underscored: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
 });
 
-module.exports = Registration;
+module.exports = Community;

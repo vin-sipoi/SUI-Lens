@@ -1,5 +1,5 @@
-import { DataTypes } from 'sequelize';
-import sequelize from '../config/db.js';
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/db.js');
 
 const EmailBlast = sequelize.define('EmailBlast', {
   id: {
@@ -65,4 +65,4 @@ const EmailBlast = sequelize.define('EmailBlast', {
   updatedAt: 'updated_at',
 });
 
-export default EmailBlast;
+module.exports = EmailBlast;

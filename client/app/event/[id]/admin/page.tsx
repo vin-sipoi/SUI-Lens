@@ -38,7 +38,8 @@ import {
   Plus,
   Image,
   ChartColumnBig,
-  AlertTriangle
+  AlertTriangle,
+  Mail
 } from 'lucide-react'
 import Link from 'next/link'
 import { useEnokiTransaction } from '@/hooks/useEnokiTransaction'
@@ -72,6 +73,8 @@ export default function EventAdminPage() {
   const [withdrawing, setWithdrawing] = useState(false)
   const [markingAttendance, setMarkingAttendance] = useState<string | null>(null)
   const [attendeeList, setAttendeeList] = useState<AttendeeData[]>([])
+  const [guestList, setGuestList] = useState<any[]>([])
+  const [fetchingGuests, setFetchingGuests] = useState(false)
   const [poapCollection, setPoapCollection] = useState<any>(null)
   const [checkingPoapStatus, setCheckingPoapStatus] = useState(false)
   const [creatingPoap, setCreatingPoap] = useState(false)
@@ -81,6 +84,11 @@ export default function EventAdminPage() {
     imageUrl: '',
     maxSupply: ''
   })
+  const [emailBlastData, setEmailBlastData] = useState({
+    subject: '',
+    content: ''
+  })
+  const [sendingBlast, setSendingBlast] = useState(false)
 
   useEffect(() => {
     const loadEvent = async () => {
@@ -343,6 +351,65 @@ export default function EventAdminPage() {
     toast.success('Copied to clipboard!')
   }
 
+  const handleFetchGuests = async () => {
+    setFetchingGuests(true)
+    try {
+      const response = await fetch(`http://localhost:3009/api/registrations/event/${eventId}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch guest list')
+      }
+      const data = await response.json()
+      if (data.success) {
+        setGuestList(data.data)
+        toast.success(`Fetched ${data.data.length} registrants`)
+      } else {
+        throw new Error(data.message || 'Failed to fetch guest list')
+      }
+    } catch (error: any) {
+      console.error('Error fetching guests:', error)
+      toast.error(error.message || 'Failed to fetch guest list')
+    } finally {
+      setFetchingGuests(false)
+    }
+  }
+
+  const handleSendEmailBlast = async () => {
+    if (!emailBlastData.subject || !emailBlastData.content) {
+      toast.error('Please fill in both subject and content')
+      return
+    }
+
+    setSendingBlast(true)
+    try {
+      const response = await fetch('http://localhost:3009/api/registrations/email-blast', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventId,
+          subject: emailBlastData.subject,
+          content: emailBlastData.content,
+          userId: user?.id || null
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success(data.message)
+        setEmailBlastData({ subject: '', content: '' })
+      } else {
+        throw new Error(data.message || 'Failed to send email blast')
+      }
+    } catch (error: any) {
+      console.error('Error sending email blast:', error)
+      toast.error(error.message || 'Failed to send email blast')
+    } finally {
+      setSendingBlast(false)
+    }
+  }
+
   // Calculate statistics
   const stats = {
     totalRegistered: event.rsvps?.length || 0,
@@ -396,6 +463,7 @@ export default function EventAdminPage() {
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="attendees">Attendees</TabsTrigger>
+            <TabsTrigger value="broadcast">Broadcast</TabsTrigger>
             <TabsTrigger value="poap">POAP</TabsTrigger>
             <TabsTrigger value="financials">Financials</TabsTrigger>
           </TabsList>
@@ -515,8 +583,21 @@ export default function EventAdminPage() {
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleFetchGuests}
+                      disabled={fetchingGuests}
+                    >
+                      {fetchingGuests ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Users className="w-4 h-4 mr-2" />
+                      )}
+                      Guest
+                    </Button>
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={async () => {
                         setLoading(true)
@@ -616,6 +697,127 @@ export default function EventAdminPage() {
                     </Table>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Guest List from Database */}
+            {guestList.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className='flex flex-row gap-2'>
+                      <CardTitle>Guest Registrants</CardTitle>
+                      <p className="bg-green-400 px-2 border rounded-full text-sm text-white mt-1">
+                        {guestList.length}
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Registration Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {guestList.map((guest: any) => (
+                          <TableRow key={guest.id}>
+                            <TableCell>
+                              <div className="font-medium text-gray-900">
+                                {guest.name}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-gray-600">
+                                {guest.email}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {new Date(guest.created_at || guest.registeredAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Broadcast Tab */}
+          <TabsContent value="broadcast" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Send Email Blast</CardTitle>
+                <CardDescription>
+                  Send an email to all registered attendees for this event
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="email-subject" className="text-sm font-medium text-gray-700">
+                    Subject *
+                  </Label>
+                  <Input
+                    id="email-subject"
+                    value={emailBlastData.subject}
+                    onChange={(e) => setEmailBlastData({ ...emailBlastData, subject: e.target.value })}
+                    placeholder="Enter email subject"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="email-content" className="text-sm font-medium text-gray-700">
+                    Content *
+                  </Label>
+                  <Textarea
+                    id="email-content"
+                    value={emailBlastData.content}
+                    onChange={(e) => setEmailBlastData({ ...emailBlastData, content: e.target.value })}
+                    placeholder="Enter email content (HTML supported)"
+                    className="mt-1"
+                    rows={8}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-4">
+                  <div className="text-sm text-gray-600">
+                    {guestList.length > 0 ? (
+                      <span>This will be sent to {guestList.length} registered attendees</span>
+                    ) : (
+                      <span>Recipients will be determined from registered attendees</span>
+                    )}
+                  </div>
+                  <Button
+                    onClick={handleSendEmailBlast}
+                    disabled={sendingBlast || !emailBlastData.subject || !emailBlastData.content}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {sendingBlast ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-4 h-4 mr-2" />
+                        Send Email Blast
+                      </>
+                    )}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

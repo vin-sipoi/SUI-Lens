@@ -40,6 +40,7 @@ import { uploadImageToImgBB, validateImageFile } from '@/utils/imageUtils'
 import { toast } from 'sonner'
 import { useSponsoredTransaction } from '@/hooks/useSponsoredTransaction'
 import { Transaction } from '@mysten/sui/transactions'
+import LocationInput from '@/components/LocationInput'
 
 export default function CreateEventPage() {
   const { user } = useUser()
@@ -66,7 +67,10 @@ export default function CreateEventPage() {
     time: "",
     endTime: "",
     location: "",
+    latitude: null as number | null,
+    longitude: null as number | null,
     category: "",
+    communityId: "",
     capacity: "",
     ticketPrice: "",
     isFree: true,
@@ -74,6 +78,40 @@ export default function CreateEventPage() {
     isPrivate: false,
     timezone: "GMT+03:00 Nairobi",
   })
+
+  const [communities, setCommunities] = useState([])
+  const [loadingCommunities, setLoadingCommunities] = useState(false)
+
+  // Fetch communities on component mount
+  useEffect(() => {
+    const fetchCommunities = async () => {
+      setLoadingCommunities(true)
+      try {
+        const response = await fetch('http://localhost:3009/api/communities')
+        if (response.ok) {
+          const data = await response.json()
+          setCommunities(data.communities || [])
+        } else {
+          console.error('Failed to fetch communities')
+        }
+      } catch (error) {
+        console.error('Error fetching communities:', error)
+      } finally {
+        setLoadingCommunities(false)
+      }
+    }
+
+    fetchCommunities()
+  }, [])
+
+  // Handle location coordinates change
+  const handleLocationCoordinatesChange = (lat: number, lng: number) => {
+    setEventData(prev => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng
+    }))
+  }
 
   const [isCreating, setIsCreating] = useState(false)
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false)
@@ -315,40 +353,140 @@ export default function CreateEventPage() {
 
       // Extract the event ID from the transaction result
       // Based on EventContext pattern, look for the event ID in the transaction effects
-      let suiEventId = `event_${Date.now()}` // fallback
+      let suiEventId: string | null = null
 
       try {
+        console.log('Transaction result structure:', JSON.stringify(result, null, 2))
+
         // Check if the transaction was successful and has effects
         if (result && result.effects) {
+          // Add status check
+          if (result.effects.status !== 'success') {
+            throw new Error('Transaction was not successful')
+          }
+          console.log('Transaction effects:', result.effects)
+
           // Look through created objects to find the event
           const createdObjects = result.effects.created || []
+          console.log('Created objects:', createdObjects)
 
           for (const created of createdObjects) {
+            console.log('Processing created object:', created)
             // The event object should be one of the created objects
             // We need to check the object type or use the object ID
             if (created.reference?.objectId) {
-              // This could be the event ID - we'll use the first created object as the event ID
-              // In a production system, you'd want to filter by object type
-              suiEventId = created.reference.objectId
-              console.log('Extracted event ID from transaction:', suiEventId)
-              break
+              // Validate that this is a valid Sui object ID (hex string starting with 0x)
+              const objectId = created.reference.objectId
+              console.log('Checking object ID:', objectId)
+              // More flexible validation: accept any hex string starting with 0x
+              if (objectId.startsWith('0x') && /^[0-9a-fA-Fx]+$/.test(objectId)) {
+                suiEventId = objectId
+                console.log('Extracted valid event ID from transaction:', suiEventId)
+                break
+              }
             }
           }
 
           // Alternative: if the transaction result has a specific structure for events
           // Look for patterns similar to the EventContext parsing
-          if (result.objectChanges) {
+          if (!suiEventId && result.objectChanges) {
+            console.log('Checking objectChanges:', result.objectChanges)
             for (const change of result.objectChanges) {
-              if (change.type === 'created' && change.objectType?.includes('Event')) {
-                suiEventId = change.objectId
-                console.log('Found event ID from object changes:', suiEventId)
-                break
+              console.log('Processing object change:', change)
+              console.log('Object type:', change.objectType)
+              if (change.type === 'created' && change.objectType?.toLowerCase().includes('event')) {
+                // Validate that this is a valid Sui object ID
+                const objectId = change.objectId
+                console.log('Checking object change ID:', objectId)
+                // More flexible validation
+                if (objectId.startsWith('0x') && /^[0-9a-fA-Fx]+$/.test(objectId)) {
+                  suiEventId = objectId
+                  console.log('Found valid event ID from object changes:', suiEventId)
+                  break
+                }
               }
             }
           }
+
+          // Additional fallback: check for any created object that might be the event
+          if (!suiEventId) {
+            console.log('Trying additional fallback for event ID extraction')
+            for (const created of createdObjects) {
+              if (created.reference?.objectId) {
+                const objectId = created.reference.objectId
+                // Even if it's not exactly 64 chars, it might still be valid
+                if (objectId.startsWith('0x') && objectId.length >= 40) {
+                  suiEventId = objectId
+                  console.log('Using fallback event ID:', suiEventId)
+                  break
+                }
+              }
+            }
+          }
+
+          // New fallback: check for event ID in dynamic fields or other properties
+          if (!suiEventId && result.effects?.events) {
+            console.log('Checking transaction events for event ID')
+            for (const event of result.effects.events) {
+              console.log('Processing transaction event:', event)
+              // Look for event data that might contain the event ID
+              if (event.parsedJson?.id || event.parsedJson?.event_id) {
+                const eventId = event.parsedJson.id || event.parsedJson.event_id
+                console.log('Found event ID in transaction event:', eventId)
+                if (typeof eventId === 'string' && eventId.length > 0) {
+                  suiEventId = eventId
+                  break
+                }
+              }
+            }
+          }
+
+          // Another fallback: check for any field that might contain the event ID
+          if (!suiEventId && result.effects?.events) {
+            for (const event of result.effects.events) {
+              if (event.type?.toLowerCase().includes('event') && event.parsedJson) {
+                // Look for any string field that could be the event ID
+                const jsonData = event.parsedJson
+                for (const [key, value] of Object.entries(jsonData)) {
+                  if (typeof value === 'string' && (key.toLowerCase().includes('id') || key.toLowerCase().includes('event')) && value.startsWith('0x')) {
+                    console.log(`Found potential event ID in field ${key}:`, value)
+                    suiEventId = value
+                    break
+                  }
+                }
+                if (suiEventId) break
+              }
+            }
+          }
+
+          // Final fallback: use the first created object if available
+          if (!suiEventId && createdObjects.length > 0) {
+            const firstObject = createdObjects[0]
+            if (firstObject.reference?.objectId && firstObject.reference.objectId.startsWith('0x')) {
+              suiEventId = firstObject.reference.objectId
+              console.log('Using first created object as event ID:', suiEventId)
+            }
+          }
         }
+
+        // If we still don't have a valid event ID, throw an error
+        if (!suiEventId) {
+          console.error('Transaction result did not contain expected event ID structure')
+          console.error('Available data in result:', {
+            hasEffects: !!result?.effects,
+            status: result?.effects?.status,
+            createdObjectsCount: result?.effects?.created?.length || 0,
+            objectChangesCount: result?.objectChanges?.length || 0,
+            eventsCount: result?.effects?.events?.length || 0
+          })
+          throw new Error('Could not extract a valid event ID from the transaction result')
+        }
+
+        console.log('Successfully extracted event ID:', suiEventId)
       } catch (parseError) {
-        console.warn('Could not extract event ID from transaction result, using fallback:', parseError)
+        console.error('Error extracting event ID from transaction result:', parseError)
+        console.error('Transaction result details:', result)
+        throw new Error('Failed to extract event ID from blockchain transaction. Please try again.')
       }
 
       // Generate QR code for the event
@@ -378,9 +516,10 @@ export default function CreateEventPage() {
         nftImageUrl: imageUrls.nftImageUrl,
         poapImageUrl: imageUrls.poapImageUrl,
         location: eventData.location,
-        latitude: null, // Add actual latitude if available
-        longitude: null, // Add actual longitude if available
+        latitude: eventData.latitude, // Use actual latitude from location input
+        longitude: eventData.longitude, // Use actual longitude from location input
         category: eventData.category,
+        communityId: eventData.communityId || null, // Include community ID if selected
         startDate: new Date(`${eventData.date} ${eventData.time}`).toISOString(),
         endDate: new Date(`${eventData.endDate || eventData.date} ${eventData.endTime || eventData.time}`).toISOString(),
         capacity: parseInt(eventData.capacity) || 100,
@@ -399,7 +538,7 @@ export default function CreateEventPage() {
       };
 
       // Call backend API to create event
-      const backendResponse = await fetch('/api/events', {
+      const backendResponse = await fetch('http://localhost:3009/api/events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -637,16 +776,14 @@ export default function CreateEventPage() {
 
           {/* Event Location */}
           <div>
-            <Label htmlFor="location" className="text-sm font-medium text-gray-700 mb-2 block">
+            <Label className="text-sm font-medium text-gray-700 mb-2 block">
               Event Location *
             </Label>
-            <Input
-              id="location"
-              placeholder="Offline location or virtual link"
+            <LocationInput
               value={eventData.location}
-              onChange={(e) => setEventData({ ...eventData, location: e.target.value })}
-              className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-              required
+              onChange={(value) => setEventData({ ...eventData, location: value })}
+              onCoordinatesChange={handleLocationCoordinatesChange}
+              placeholder="Search for a location or enter a virtual link"
             />
           </div>
 
@@ -664,6 +801,47 @@ export default function CreateEventPage() {
               className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none"
               required
             />
+          </div>
+
+          {/* Community Selection */}
+          <div>
+            <Label htmlFor="community" className="text-sm font-medium text-gray-700 mb-2 block">
+              Community
+            </Label>
+            <select
+              id="community"
+              value={eventData.communityId}
+              onChange={(e) => setEventData({ ...eventData, communityId: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={loadingCommunities}
+            >
+              <option value="">
+                {loadingCommunities ? "Loading communities..." : "Select a community (optional)"}
+              </option>
+              {communities.map((community: any) => (
+                <option key={community.id} value={community.id}>
+                  {community.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Category Selection */}
+          <div>
+            <Label htmlFor="category" className="text-sm font-medium text-gray-700 mb-2 block">
+              Category
+            </Label>
+            <select
+              id="category"
+              value={eventData.category}
+              onChange={(e) => setEventData({ ...eventData, category: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Select a category (optional)</option>
+              <option value="developer">Developer</option>
+              <option value="community">Community</option>
+              <option value="content creator">Content Creator</option>
+            </select>
           </div>
 
           {/* Tickets */}

@@ -38,6 +38,35 @@ export async function generateEventQRCode(eventId: string): Promise<string> {
 }
 
 /**
+ * Generate a QR code for user's event ticket
+ * Format: suilens://ticket/{eventId}/{userAddress}/{timestamp}
+ */
+export async function generateUserEventQRCode(eventId: string, userAddress: string): Promise<string> {
+  const timestamp = Date.now();
+  
+  // Create the QR data URL format for user's ticket
+  const qrData = `suilens://ticket/${eventId}/${userAddress}/${timestamp}`;
+  
+  try {
+    // Generate QR code as data URL (base64 encoded image)
+    const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
+      width: 400,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF',
+      },
+      errorCorrectionLevel: 'M',
+    });
+    
+    return qrCodeDataUrl;
+  } catch (error) {
+    console.error('Error generating user event QR code:', error);
+    throw new Error('Failed to generate user event QR code');
+  }
+}
+
+/**
  * Parse QR code data from scanned string
  */
 export function parseEventQRCode(qrData: string): EventQRData | null {

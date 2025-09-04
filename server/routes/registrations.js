@@ -1,8 +1,8 @@
-import express from 'express';
-import { Event, Registration } from '../models/index.js';
-import EventSyncService from '../services/eventSyncService.js';
-import emailService from '../lib/emailService.js';
-import { generateEventQRCode } from '../utils/qrCodeUtils.js';
+const express = require('express');
+const { Event, Registration, EmailBlast } = require('../models/index.js');
+const EventSyncService = require('../services/eventSyncService.js');
+const emailService = require('../lib/emailService.js');
+const { generateEventQRCode } = require('../utils/qrCodeUtils.js');
 
 const router = express.Router();
 
@@ -63,15 +63,23 @@ router.post('/', async (req, res) => {
       }
     }
 
+    // Check if the user is the event creator
+    if (event.createdBy === userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Event creator cannot register for their own event'
+      });
+    }
+
     // Check if already registered
     const existingRegistration = await Registration.findOne({
       where: { eventId: event.id, email: email }
     });
 
     if (existingRegistration) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Already registered for this event' 
+      return res.status(400).json({
+        success: false,
+        message: 'Already registered for this event'
       });
     }
 
@@ -194,7 +202,7 @@ router.post('/sync-event', async (req, res) => {
 
     const syncService = new EventSyncService();
     const ok = await syncService.syncEventById(normalizedEventId);
-    
+
     if (!ok) return res.status(404).json({ success: false, message: 'Event not found on chain' });
 
     res.json({ success: true, message: 'Event synced', eventId });
@@ -204,4 +212,93 @@ router.post('/sync-event', async (req, res) => {
   }
 });
 
-export default router;
+// Send email blast to all registered users for an event
+router.post('/email-blast', async (req, res) => {
+  try {
+    const { eventId, subject, content, userId } = req.body;
+
+    if (!eventId || !subject || !content) {
+      return res.status(400).json({
+        success: false,
+        message: 'eventId, subject, and content are required'
+      });
+    }
+
+    // Find the event
+    const event = await Event.findOne({ where: { suiEventId: eventId } });
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found'
+      });
+    }
+
+    // Get all registrations for the event
+    const registrations = await Registration.findAll({
+      where: { eventId: event.id }
+    });
+
+    if (registrations.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No registered users found for this event'
+      });
+    }
+
+    // Extract email addresses
+    const recipients = registrations.map(reg => reg.email);
+
+    // Create email blast record
+    const emailBlast = await EmailBlast.create({
+      title: `Blast: ${subject}`,
+      subject,
+      content,
+      eventId: event.id,
+      userId: userId || null,
+      recipientCount: recipients.length,
+      status: 'draft'
+    });
+
+    // Send the email blast
+    try {
+      const results = await emailService.sendEmailBlast(recipients, {
+        subject,
+        content
+      });
+
+      // Update email blast status
+      await emailBlast.update({
+        status: 'sent',
+        sentAt: new Date()
+      });
+
+      res.json({
+        success: true,
+        message: `Email blast sent to ${recipients.length} recipients`,
+        emailBlastId: emailBlast.id,
+        recipientCount: recipients.length
+      });
+    } catch (emailError) {
+      console.error('Error sending email blast:', emailError);
+
+      // Update email blast status to failed
+      await emailBlast.update({
+        status: 'failed'
+      });
+
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send email blast',
+        error: emailError.message
+      });
+    }
+  } catch (error) {
+    console.error('Error creating email blast:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create email blast'
+    });
+  }
+});
+
+module.exports = router;

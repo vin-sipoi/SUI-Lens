@@ -5,8 +5,8 @@ import Registration from '../models/Registrations.js';
 class EventSyncService {
   constructor() {
     this.suiClient = new SuiClient({ url: 'https://fullnode.mainnet.sui.io:443' });
-    this.eventsTableId = '0x336c44a9f4da536a877c671c665cb3dc19e30e86907ddb3b4eaa26fb3f31b3aa';
-    this.attendanceTableId = '0xedabeea7b4e2a9addca8544174431dd522855d037331c86e689ea0478ffbad41';
+    this.eventsTableId = '0x177bb1957381fcefc7583a0416be84a25d5187df3a41d06294d40ddb96606d5a';
+    this.attendanceTableId = '0x8443bad7da2b03736e375ef30505978007e391139c052bd85fcc35d5327f1c7f';
   }
 
   async syncEventsFromBlockchain() {

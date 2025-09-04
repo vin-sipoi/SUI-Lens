@@ -1,5 +1,5 @@
-import express from 'express';
-import { Event } from '../models/index.js';
+const express = require('express');
+const { Event } = require('../models/index.js');
 
 const router = express.Router();
 
@@ -100,10 +100,10 @@ router.post('/', async (req, res) => {
     }
 
     // Validate category if provided
-    if (category && !['developer', 'community', 'other'].includes(category)) {
+    if (category && !['developer', 'community', 'content creator'].includes(category)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid category. Must be one of: developer, community, other'
+        message: 'Invalid category. Must be one of: developer, community, content creator'
       });
     }
 
@@ -192,10 +192,10 @@ router.put('/:id', async (req, res) => {
     }
 
     // Validate category if provided
-    if (category && !['developer', 'community', 'other'].includes(category)) {
+    if (category && !['developer', 'community', 'content creator'].includes(category)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid category. Must be one of: developer, community, other'
+        message: 'Invalid category. Must be one of: developer, community, content creator'
       });
     }
 
@@ -270,4 +270,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

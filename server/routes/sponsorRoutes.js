@@ -405,9 +405,9 @@ router.post('/execute-transaction', async (req, res) => {
         // Validate request body
         const { error, value } = executeTransactionSchema.validate(req.body);
         if (error) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 error: 'Validation failed',
-                details: error.details 
+                details: error.details
             });
         }
 
@@ -415,7 +415,7 @@ router.post('/execute-transaction', async (req, res) => {
 
         // Check if Enoki is configured
         if (!process.env.ENOKI_PRIVATE_KEY) {
-            return res.status(500).json({ 
+            return res.status(500).json({
                 error: 'Enoki not configured',
                 message: 'ENOKI_PRIVATE_KEY environment variable is not set'
             });
@@ -425,20 +425,40 @@ router.post('/execute-transaction', async (req, res) => {
 
         // Execute the sponsored transaction
         const enokiClient = await getEnokiClient();
-        const result = await enokiClient.executeSponsoredTransaction({
+        const enokiResult = await enokiClient.executeSponsoredTransaction({
             digest,
             signature,
         });
 
+        console.log('Enoki execution result:', enokiResult);
+
+        // Get the full transaction details from Sui client to include effects and object changes
+        let fullResult;
+        try {
+            fullResult = await suiClient.getTransactionBlock({
+                digest: digest,
+                options: {
+                    showEffects: true,
+                    showObjectChanges: true,
+                    showEvents: true,
+                },
+            });
+            console.log('Full transaction result from Sui client:', fullResult);
+        } catch (suiError) {
+            console.error('Error getting transaction details from Sui client:', suiError);
+            // Fallback to Enoki result if Sui client fails
+            fullResult = enokiResult;
+        }
+
         res.json({
             success: true,
-            result: result,
+            result: fullResult,
             digest: digest
         });
 
     } catch (error) {
         console.error('Error executing transaction:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Failed to execute transaction',
             details: error.message,
             code: error.code

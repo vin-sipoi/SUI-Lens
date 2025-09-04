@@ -1,5 +1,5 @@
-import { DataTypes } from 'sequelize';
-import sequelize from '../config/db.js';
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/db.js');
 
 const Event = sequelize.define('Event', {
   id: {
@@ -131,6 +131,16 @@ const Event = sequelize.define('Event', {
     field: 'sui_event_id',
     allowNull: true,
   },
+  communityId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'community_id',
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'user_id',
+  },
   createdAt: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,
@@ -149,4 +159,4 @@ const Event = sequelize.define('Event', {
   updatedAt: 'updated_at',
 });
 
-export default Event;
+module.exports = Event;
