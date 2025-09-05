@@ -1,24 +1,11 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-
 import { useCurrentAccount } from '@mysten/dapp-kit';
-import {
-	ArrowRight,
-	Calendar,
-	Mail,
-	MapPin,
-	Menu,
-	Users,
-	X,
-} from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { useUser } from '../../context/UserContext';
 import Header from '../components/Header';
-import POAPsPage from '../poaps/page';
 import POAPsSection from '@/components/PoapSection';
 import FooterSection from '@/components/FooterSection';
 

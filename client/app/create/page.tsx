@@ -41,6 +41,7 @@ import { toast } from 'sonner'
 import { useSponsoredTransaction } from '@/hooks/useSponsoredTransaction'
 import { Transaction } from '@mysten/sui/transactions'
 import LocationInput from '@/components/LocationInput'
+import { events } from "@/lib/community"
 
 export default function CreateEventPage() {
   const { user } = useUser()
@@ -599,134 +600,59 @@ export default function CreateEventPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <Header />
-      {/* Form Section with Back Button */}
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      
+      {/* Form Section */}
+      <div className="max-w-md mx-auto px-4 py-6">
         <div className="mb-6">
           <Link href="/landing" className="inline-flex items-center text-gray-600 hover:text-gray-900">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Link>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Create Event</h1>
+        
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Create a New Event</h1>
+          <p className="text-gray-600 text-sm">Fill out the details to create your event</p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Three Image Upload Sections */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-800">Event Images</h2>
-            
-            {/* 1. Event Banner */}
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0">
-                  <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                    {bannerImage.preview ? (
-                      <img src={bannerImage.preview} alt="Banner" className="w-full h-full object-cover" />
-                    ) : (
-                      <ImageIcon className="w-8 h-8 text-gray-400" />
-                    )}
+          {/* Banner Image Upload */}
+          <Card className="border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors">
+            <CardContent className="p-6 text-center">
+              <div className="mb-4">
+                {bannerImage.preview ? (
+                  <div className="w-24 h-24 mx-auto rounded-lg overflow-hidden">
+                    <img src={bannerImage.preview} alt="Banner" className="w-full h-full object-cover" />
                   </div>
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">📸 Event Banner *</h3>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Main promotional image for your event (16:9 recommended)
-                  </p>
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, 'banner')}
-                      className="hidden"
-                    />
-                    <Button type="button" variant="outline" size="sm" className="pointer-events-none">
-                      <Upload className="w-4 h-4 mr-2" />
-                      {bannerImage.file ? 'Change Image' : 'Upload Image'}
-                    </Button>
-                  </label>
-                  {bannerImage.url && (
-                    <span className="ml-2 text-sm text-green-600">✓ Uploaded</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Event NFT Image */}
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0">
-                  <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                    {nftImage.preview ? (
-                      <img src={nftImage.preview} alt="NFT" className="w-full h-full object-cover" />
-                    ) : (
-                      <Ticket className="w-8 h-8 text-gray-400" />
-                    )}
+                ) : (
+                  <div className="w-16 h-16 mx-auto bg-gray-100 rounded-lg flex items-center justify-center">
+                    <ImageIcon className="w-8 h-8 text-gray-400" />
                   </div>
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">🎫 Event NFT Image</h3>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Commemorative NFT for registered attendees (1:1 recommended)
-                  </p>
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, 'nft')}
-                      className="hidden"
-                    />
-                    <Button type="button" variant="outline" size="sm" className="pointer-events-none">
-                      <Upload className="w-4 h-4 mr-2" />
-                      {nftImage.file ? 'Change Image' : 'Upload Image'}
-                    </Button>
-                  </label>
-                  {nftImage.url && (
-                    <span className="ml-2 text-sm text-green-600">✓ Uploaded</span>
-                  )}
-                </div>
+                )}
               </div>
-            </div>
-
-            {/* 3. POAP Badge Design */}
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0">
-                  <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
-                    {poapImage.preview ? (
-                      <img src={poapImage.preview} alt="POAP" className="w-full h-full object-cover" />
-                    ) : (
-                      <Award className="w-8 h-8 text-gray-400" />
-                    )}
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">🏅 POAP Badge Design</h3>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Badge for attendees who check in (Square, badge-style recommended)
-                  </p>
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, 'poap')}
-                      className="hidden"
-                    />
-                    <Button type="button" variant="outline" size="sm" className="pointer-events-none">
-                      <Upload className="w-4 h-4 mr-2" />
-                      {poapImage.file ? 'Change Image' : 'Upload Image'}
-                    </Button>
-                  </label>
-                  {poapImage.url && (
-                    <span className="ml-2 text-sm text-green-600">✓ Uploaded</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Click to upload banner or drag and drop<br />
+                SVG, PNG, JPG or GIF (max. 800x400px)
+              </p>
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, 'banner')}
+                  className="hidden"
+                />
+                <Button type="button" variant="outline" className="pointer-events-none">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Files
+                </Button>
+              </label>
+            </CardContent>
+          </Card>
 
           {/* Event Name */}
           <div>
             <Label htmlFor="eventName" className="text-sm font-medium text-gray-700 mb-2 block">
-              Event Name *
+              Event Name
             </Label>
             <Input
               id="eventName"
@@ -738,9 +664,29 @@ export default function CreateEventPage() {
             />
           </div>
 
+          {/* Community Selection */}
+          <div>
+            <Label htmlFor="community" className="text-sm font-medium text-gray-700 mb-2 block">
+              Community
+            </Label>
+            <select
+              id="community"
+              value={eventData.communityId}
+              onChange={(e) => setEventData({ ...eventData, communityId: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Select community</option>
+              {events.map((community) => (
+                <option key={community.id} value={community.slug}>
+                  {community.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Start Date & Time */}
           <div>
-            <Label className="text-sm font-medium text-gray-700 mb-2 block">Start *</Label>
+            <Label className="text-sm font-medium text-gray-700 mb-2 block">Start</Label>
             <div className="grid grid-cols-2 gap-3">
               <Input
                 type="date"
@@ -781,20 +727,20 @@ export default function CreateEventPage() {
           {/* Event Location */}
           <div>
             <Label className="text-sm font-medium text-gray-700 mb-2 block">
-              Event Location *
+              Add Location
             </Label>
             <LocationInput
               value={eventData.location}
               onChange={(value) => setEventData({ ...eventData, location: value })}
               onCoordinatesChange={handleLocationCoordinatesChange}
-              placeholder="Search for a location or enter a virtual link"
+              placeholder="Enter location or virtual link"
             />
           </div>
 
           {/* Add Description */}
           <div>
             <Label htmlFor="description" className="text-sm font-medium text-gray-700 mb-2 block">
-              Add Description *
+              Add Description
             </Label>
             <Textarea
               id="description"
@@ -805,47 +751,6 @@ export default function CreateEventPage() {
               className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none"
               required
             />
-          </div>
-
-          {/* Community Selection */}
-          <div>
-            <Label htmlFor="community" className="text-sm font-medium text-gray-700 mb-2 block">
-              Community
-            </Label>
-            <select
-              id="community"
-              value={eventData.communityId}
-              onChange={(e) => setEventData({ ...eventData, communityId: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={loadingCommunities}
-            >
-              <option value="">
-                {loadingCommunities ? "Loading communities..." : "Select a community (optional)"}
-              </option>
-              {communities.map((community: any) => (
-                <option key={community.id} value={community.id}>
-                  {community.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Category Selection */}
-          <div>
-            <Label htmlFor="category" className="text-sm font-medium text-gray-700 mb-2 block">
-              Category
-            </Label>
-            <select
-              id="category"
-              value={eventData.category}
-              onChange={(e) => setEventData({ ...eventData, category: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Select a category (optional)</option>
-              <option value="developer">Developer</option>
-              <option value="community">Community</option>
-              <option value="content creator">Content Creator</option>
-            </select>
           </div>
 
           {/* Tickets */}
@@ -952,12 +857,12 @@ export default function CreateEventPage() {
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="capacity" className="text-right">
-                      Max Guests
+                      Limit guests
                     </Label>
                     <Input
                       id="capacity"
                       type="number"
-                      placeholder="Unlimited"
+                      placeholder="0"
                       value={tempCapacityData.capacity}
                       onChange={(e) =>
                         setTempCapacityData({ ...tempCapacityData, capacity: e.target.value })
@@ -965,9 +870,6 @@ export default function CreateEventPage() {
                       className="col-span-3"
                     />
                   </div>
-                  <p className="text-sm text-gray-600">
-                    Leave empty for unlimited capacity
-                  </p>
                 </div>
                 <DialogFooter>
                   <Button
@@ -982,10 +884,45 @@ export default function CreateEventPage() {
             </Dialog>
           </div>
 
-          {/* POAP Details (if POAP image uploaded) */}
-          {poapImage.file && (
-            <div className="border rounded-lg p-4 bg-blue-50">
-              <h3 className="font-medium text-gray-900 mb-3">POAP Details</h3>
+          {/* Add POAP Section */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-gray-700">Add POAP to your event (Optional)</h3>
+            
+            {/* POAP Image Upload */}
+            <Card className="border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors">
+              <CardContent className="p-6 text-center">
+                <div className="mb-4">
+                  {poapImage.preview ? (
+                    <div className="w-16 h-16 mx-auto rounded-full overflow-hidden">
+                      <img src={poapImage.preview} alt="POAP" className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center">
+                      <Award className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Click to upload POAP or drag and drop<br />
+                  SVG, PNG, JPG or GIF (max. 800x400px)
+                </p>
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, 'poap')}
+                    className="hidden"
+                  />
+                  <Button type="button" variant="outline" className="pointer-events-none">
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Files
+                  </Button>
+                </label>
+              </CardContent>
+            </Card>
+
+            {/* POAP Details */}
+            {poapImage.file && (
               <div className="space-y-3">
                 <div>
                   <Label htmlFor="poap-name">POAP Name</Label>
@@ -1009,8 +946,41 @@ export default function CreateEventPage() {
                   />
                 </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* NFT Image Upload - moved after POAP */}
+            <Card className="border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors">
+              <CardContent className="p-6 text-center">
+                <div className="mb-4">
+                  {nftImage.preview ? (
+                    <div className="w-16 h-16 mx-auto rounded-lg overflow-hidden">
+                      <img src={nftImage.preview} alt="NFT" className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 mx-auto bg-gray-100 rounded-lg flex items-center justify-center">
+                      <Ticket className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Click to upload NFT or drag and drop<br />
+                  SVG, PNG, JPG or GIF (max. 800x400px)
+                </p>
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, 'nft')}
+                    className="hidden"
+                  />
+                  <Button type="button" variant="outline" className="pointer-events-none">
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Files
+                  </Button>
+                </label>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Create Event Button */}
           <Button

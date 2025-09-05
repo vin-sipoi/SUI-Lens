@@ -222,11 +222,11 @@ export default function Header() {
                 </DialogTrigger>
                 <DialogContent className="flex flex-col items-center w-[95%] max-w-sm mx-auto bg-white text-black">
                   <DialogHeader>
-                    <DialogTitle className="text-[#1C1C1C] font-semibold text-xl sm:text-2xl">Get Started On SuiLens</DialogTitle>
+                    <DialogTitle className="text-[#1C1C1C] font-semibold text-xl sm:text-2xl">Login to SuiLens</DialogTitle>
                   </DialogHeader>
                   <div className="py-4">
                     <p className="text-sm text-[#888888] mb-6">A wallet will be assigned to you when you create an account.</p>
-                    <GoogleLogin className="w-full text-[#101928] bg-[#D0D5DD] flex items-center justify-center gap-2" />
+                    <GoogleLogin className="w-full text-[#101928] bg-white border-2 rounded-2xl flex items-center justify-center gap-2" />
                   </div>
                   <DialogFooter />
                 </DialogContent>
